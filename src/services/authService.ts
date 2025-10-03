@@ -20,7 +20,7 @@ const AIC_REDIRECT_PORT = 3000;
 const REDIRECT_URI = `http://localhost:${AIC_REDIRECT_PORT}`;
 
 // Scopes are requested upfront to cover all potential tool operations.
-const SCOPES = 'openid fr:idm:*';
+const SCOPES = 'openid fr:idm:* fr:idc:monitoring:*';
 
 // --- Keychain Configuration ---
 const KEYCHAIN_SERVICE = 'PingOneAIC_MCP_Server';
@@ -31,9 +31,7 @@ class AuthService {
   private tokenPromise: Promise<string> | null = null;
   private redirectServer: http.Server | null = null;
 
-  constructor() {
-    // The constructor is now lightweight. We'll trigger authentication on demand.
-  }
+  constructor() {}
 
   /**
    * Generates a secure code verifier and its corresponding S256 code challenge.
@@ -69,18 +67,14 @@ class AuthService {
     }
 
     // Start a new token acquisition process.
-    this.tokenPromise = this.initialize();
+    this.tokenPromise = this.executePkceFlow();
     return this.tokenPromise;
   }
 
   /**
-   * Initializes the PKCE flow.
+   * Executes the OAuth2 PKCE flow to obtain a new access token.
    */
-  private async initialize(): Promise<string> {
-    if (!AIC_BASE_URL) {
-      throw new Error('FATAL: AIC_BASE_URL environment variable is not set.');
-    }
-
+  private async executePkceFlow(): Promise<string> {
     const { verifier, challenge } = this.generatePkceChallenge();
 
     try {
@@ -115,7 +109,8 @@ class AuthService {
   }
 
   /**
-   * Starts a local server to listen for the OAuth redirect and opens the browser.
+   * Starts a local HTTP server to listen for the OAuth2 redirect and captures the authorization code.
+   * Also opens the user's default browser to initiate the login.
    */
   private startServerAndGetAuthCode(challenge: string): Promise<string> {
     return new Promise((resolve, reject) => {

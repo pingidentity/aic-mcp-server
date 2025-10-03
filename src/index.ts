@@ -2,7 +2,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { authService } from './services/authService.js';
-import { getUsersTool } from './tools/getUsers.js';
+import { searchUsersTool } from './tools/searchUsers.js';
+import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
 
 // Check for the required environment variable on startup
 if (!process.env.AIC_BASE_URL) {
@@ -10,30 +11,39 @@ if (!process.env.AIC_BASE_URL) {
     process.exit(1);
 }
 
-// The authService is initialized when imported, which will trigger the token acquisition process.
-// We can log to confirm it's been triggered.
-
 // Create an MCP server
 const server = new McpServer({
   name: 'pingone-aic-mcp-server',
   version: '1.0.0'
 });
 
-// Register the getUsers tool
+// Register the searchUsers tool
 server.registerTool(
-  getUsersTool.name,
+  searchUsersTool.name,
   {
-    title: 'Get Users',
-    description: getUsersTool.description,
-    inputSchema: getUsersTool.inputSchema,
+    title: searchUsersTool.title,
+    description: searchUsersTool.description,
+    inputSchema: searchUsersTool.inputSchema,
   },
-  getUsersTool.execute
+  searchUsersTool.toolFunction
+);
+
+// Register the queryAICLogsByTransactionId tool
+server.registerTool(
+  queryAICLogsByTransactionIdTool.name,
+  {
+    title: queryAICLogsByTransactionIdTool.title,
+    description: queryAICLogsByTransactionIdTool.description,
+    inputSchema: queryAICLogsByTransactionIdTool.inputSchema,
+  },
+  queryAICLogsByTransactionIdTool.toolFunction
 );
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
+// Graceful shutdown - ensure the redirect server is closed to free up the port
 function cleanup() {
   authService.closeRedirectServer();
   process.exit();
