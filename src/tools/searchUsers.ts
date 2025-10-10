@@ -10,7 +10,7 @@ export const searchUsersTool = {
   title: 'Search Users',
   description: "Search for users in a specified realm of a PingOne AIC environment using a query term that matches userName, givenName, sn, or mail.",
   inputSchema: {
-    realm: z.string().describe("The realm to query, for example 'alpha'."),
+    realm: z.string().describe("The realm the users are related to, either 'alpha' or 'bravo;."),
     queryTerm: z.string().describe("The search term to query against user fields (userName, givenName, sn, mail)."),
   },
   async toolFunction({ realm, queryTerm }: { realm: string; queryTerm: string; }) {
