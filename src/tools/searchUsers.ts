@@ -5,12 +5,15 @@ import { authService } from '../services/authService.js';
 // This will be loaded from environment variables in the main server file
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
+const SCOPES = ['fr:idm:*'];
+
 export const searchUsersTool = {
   name: 'searchUsers',
   title: 'Search Users',
   description: "Search for users in a specified realm of a PingOne AIC environment using a query term that matches userName, givenName, sn, or mail.",
+  scopes: SCOPES,
   inputSchema: {
-    realm: z.string().describe("The realm to query, for example 'alpha'."),
+    realm: z.string().describe("The realm the users are related to, either 'alpha' or 'bravo;."),
     queryTerm: z.string().describe("The search term to query against user fields (userName, givenName, sn, mail)."),
   },
   async toolFunction({ realm, queryTerm }: { realm: string; queryTerm: string; }) {
@@ -24,7 +27,7 @@ export const searchUsersTool = {
 
     try {
       // Wait for the asynchronous getToken method to resolve.
-      const token = await authService.getToken();
+      const token = await authService.getToken(SCOPES);
 
       const response = await fetch(url, {
         headers: {

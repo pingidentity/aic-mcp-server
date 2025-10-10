@@ -4,10 +4,13 @@ import { authService } from '../services/authService.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
+const SCOPES = ['fr:idc:monitoring:*'];
+
 export const queryAICLogsByTransactionIdTool = {
   name: 'queryAICLogsByTransactionId',
   title: 'Query AIC Logs by Transaction ID',
   description: 'Query am-authentication logs in a Ping Advanced Identity Cloud environment by transaction ID.',
+  scopes: SCOPES,
   inputSchema: {
     transactionId: z.string().describe("The transaction ID to query the logs for."),
   },
@@ -15,7 +18,7 @@ export const queryAICLogsByTransactionIdTool = {
     const url = `https://${aicBaseUrl}/monitoring/logs?source=am-authentication&transactionId=${transactionId}`;
 
     try {
-      const token = await authService.getToken();
+      const token = await authService.getToken(SCOPES);
 
       const response = await fetch(url, {
         headers: {
