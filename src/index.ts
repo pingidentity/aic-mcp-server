@@ -28,24 +28,25 @@ server.registerTool(
   searchUsersTool.toolFunction
 );
 
-// Register the queryAICLogsByTransactionId tool
-server.registerTool(
-  queryAICLogsByTransactionIdTool.name,
-  {
-    title: queryAICLogsByTransactionIdTool.title,
-    description: queryAICLogsByTransactionIdTool.description,
-    inputSchema: queryAICLogsByTransactionIdTool.inputSchema,
-  },
-  queryAICLogsByTransactionIdTool.toolFunction
-);
+// Register the queryAICLogsByTransactionId tool (not supported by service accounts)
+if (!authService.isServiceAccount()) {
+  server.registerTool(
+    queryAICLogsByTransactionIdTool.name,
+    {
+      title: queryAICLogsByTransactionIdTool.title,
+      description: queryAICLogsByTransactionIdTool.description,
+      inputSchema: queryAICLogsByTransactionIdTool.inputSchema,
+    },
+    queryAICLogsByTransactionIdTool.toolFunction
+  );
+}
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-// Graceful shutdown - ensure the redirect server is closed to free up the port
+// Graceful shutdown
 function cleanup() {
-  authService.closeRedirectServer();
   process.exit();
 }
 
@@ -54,6 +55,5 @@ process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
 process.on('uncaughtException', (err) => {
   console.error('Uncaught exception:', err);
-  authService.closeRedirectServer();
   process.exit(1);
 });
