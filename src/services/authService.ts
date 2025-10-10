@@ -8,16 +8,17 @@ import keytar from 'keytar';
 
 const AIC_BASE_URL = process.env.AIC_BASE_URL;
 
-// Construct the specific endpoint URLs based on the corrected paths.
-const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/realms/root/authorize`;
-const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/realms/root/access_token`;
+// Configurable OAuth client settings with defaults
+const AIC_CLIENT_REALM = process.env.AIC_CLIENT_REALM || 'alpha';
+const AIC_CLIENT_ID = process.env.AIC_CLIENT_ID || 'mcp';
+const REDIRECT_URI_PORT = parseInt(process.env.REDIRECT_URI_PORT || '3000', 10);
 
-// The client ID is pre-registered in the AIC environment for this tool.
-const AIC_CLIENT_ID = 'local-client';
+// Construct the specific endpoint URLs based on configuration
+const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/authorize`;
+const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/access_token`;
 
-// The local port for the redirect URI.
-const AIC_REDIRECT_PORT = 3000;
-const REDIRECT_URI = `http://localhost:${AIC_REDIRECT_PORT}`;
+// The local redirect URI for OAuth PKCE flow
+const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 
 // Scopes are requested upfront to cover all potential tool operations.
 const SCOPES = 'openid fr:idm:* fr:idc:monitoring:*';
@@ -115,7 +116,7 @@ class AuthService {
   private startServerAndGetAuthCode(challenge: string): Promise<string> {
     return new Promise((resolve, reject) => {
       this.redirectServer = http.createServer((req, res) => {
-        const url = new URL(req.url!, `http://localhost:${AIC_REDIRECT_PORT}`);
+        const url = new URL(req.url!, `http://localhost:${REDIRECT_URI_PORT}`);
         const authCode = url.searchParams.get('code');
 
         if (authCode) {
@@ -134,7 +135,7 @@ class AuthService {
         reject(err);
       });
 
-      this.redirectServer.listen(AIC_REDIRECT_PORT, () => {
+      this.redirectServer.listen(REDIRECT_URI_PORT, () => {
         const authUrl = new URL(AUTHORIZE_URL);
         authUrl.searchParams.append('response_type', 'code');
         authUrl.searchParams.append('client_id', AIC_CLIENT_ID);
