@@ -7,12 +7,19 @@ import { AuthStrategy, TokenData } from './types.js';
 
 // --- Configuration ---
 const AIC_BASE_URL = process.env.AIC_BASE_URL;
-const AIC_CLIENT_REALM = process.env.AIC_CLIENT_REALM || 'alpha';
-const AIC_CLIENT_ID = process.env.AIC_CLIENT_ID || 'mcp';
+const AIC_CLIENT_REALM = process.env.AIC_CLIENT_REALM || 'root';
+const AIC_CLIENT_ID = process.env.AIC_CLIENT_ID || 'local-client';
 const REDIRECT_URI_PORT = parseInt(process.env.REDIRECT_URI_PORT || '3000', 10);
 
-const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/authorize`;
-const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/access_token`;
+// URL structure adapts based on realm:
+// - root realm: /am/oauth2/{endpoint}
+// - alpha/bravo realms: /am/oauth2/{realm}/{endpoint}
+const AUTHORIZE_URL = AIC_CLIENT_REALM === 'root'
+  ? `https://${AIC_BASE_URL}/am/oauth2/authorize`
+  : `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/authorize`;
+const TOKEN_URL = AIC_CLIENT_REALM === 'root'
+  ? `https://${AIC_BASE_URL}/am/oauth2/access_token`
+  : `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/access_token`;
 const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 
 // Keychain configuration for user tokens

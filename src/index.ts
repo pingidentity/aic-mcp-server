@@ -4,6 +4,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { authService } from './services/authService.js';
 import { searchUsersTool } from './tools/searchUsers.js';
 import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
+import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
+import { createUserTool } from './tools/createUser.js';
+import { getUserTool } from './tools/getUser.js';
+import { deleteUserTool } from './tools/deleteUser.js';
 
 // Check for the required environment variable on startup
 if (!process.env.AIC_BASE_URL) {
@@ -40,6 +44,50 @@ if (!authService.isServiceAccount()) {
     queryAICLogsByTransactionIdTool.toolFunction
   );
 }
+
+// Register the getManagedObjectSchema tool
+server.registerTool(
+  getManagedObjectSchemaTool.name,
+  {
+    title: getManagedObjectSchemaTool.title,
+    description: getManagedObjectSchemaTool.description,
+    inputSchema: getManagedObjectSchemaTool.inputSchema,
+  },
+  getManagedObjectSchemaTool.toolFunction
+);
+
+// Register the createUser tool
+server.registerTool(
+  createUserTool.name,
+  {
+    title: createUserTool.title,
+    description: createUserTool.description,
+    inputSchema: createUserTool.inputSchema,
+  },
+  createUserTool.toolFunction
+);
+
+// Register the getUser tool
+server.registerTool(
+  getUserTool.name,
+  {
+    title: getUserTool.title,
+    description: getUserTool.description,
+    inputSchema: getUserTool.inputSchema,
+  },
+  getUserTool.toolFunction
+);
+
+// Register the deleteUser tool
+server.registerTool(
+  deleteUserTool.name,
+  {
+    title: deleteUserTool.title,
+    description: deleteUserTool.description,
+    inputSchema: deleteUserTool.inputSchema,
+  },
+  deleteUserTool.toolFunction
+);
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
