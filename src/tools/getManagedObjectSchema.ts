@@ -29,7 +29,10 @@ export const getManagedObjectSchemaTool = {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`Failed to fetch managed config: ${response.status} ${response.statusText} - ${errorBody}`);
+        const transactionId = response.headers.get('x-forgerock-transactionid');
+        const errorMessage = `Failed to fetch managed config: ${response.status} ${response.statusText} - ${errorBody}`;
+        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+        throw new Error(errorMessage + transactionInfo);
       }
 
       const config = await response.json();
@@ -53,10 +56,13 @@ export const getManagedObjectSchemaTool = {
         properties: managedObject.schema?.properties || {}
       };
 
+      const transactionId = response.headers.get('x-forgerock-transactionid');
+      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+
       return {
         content: [{
           type: 'text' as const,
-          text: JSON.stringify(schemaInfo, null, 2)
+          text: JSON.stringify(schemaInfo, null, 2) + transactionInfo
         }]
       };
     } catch (error: any) {

@@ -9,13 +9,13 @@ const SCOPES = ['fr:idc:monitoring:*'];
 export const queryAICLogsByTransactionIdTool = {
   name: 'queryAICLogsByTransactionId',
   title: 'Query AIC Logs by Transaction ID',
-  description: 'Query am-authentication logs in a Ping Advanced Identity Cloud environment by transaction ID.',
+  description: 'Query am-everything and idm-everything logs in a Ping Advanced Identity Cloud environment by transaction ID.',
   scopes: SCOPES,
   inputSchema: {
     transactionId: z.string().describe("The transaction ID to query the logs for."),
   },
   async toolFunction({ transactionId }: { transactionId: string; }) {
-    const url = `https://${aicBaseUrl}/monitoring/logs?source=am-authentication&transactionId=${transactionId}`;
+    const url = `https://${aicBaseUrl}/monitoring/logs?source=am-everything,idm-everything&transactionId=${transactionId}`;
 
     try {
       const token = await authService.getToken(SCOPES);
