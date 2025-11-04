@@ -31,14 +31,21 @@ export const deleteUserTool = {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`Failed to delete user: ${response.status} ${response.statusText} - ${errorBody}`);
+        const transactionId = response.headers.get('x-forgerock-transactionid');
+        const errorMessage = `Failed to delete user: ${response.status} ${response.statusText} - ${errorBody}`;
+        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+        throw new Error(errorMessage + transactionInfo);
       }
 
       // Successfully deleted (200 response)
+      const transactionId = response.headers.get('x-forgerock-transactionid');
+      const successMessage = `User with _id '${userId}' successfully deleted from ${objectType}`;
+      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+
       return {
         content: [{
           type: 'text' as const,
-          text: `User with _id '${userId}' successfully deleted from ${objectType}`
+          text: successMessage + transactionInfo
         }]
       };
     } catch (error: any) {

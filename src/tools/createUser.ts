@@ -32,16 +32,23 @@ export const createUserTool = {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`Failed to create user: ${response.status} ${response.statusText} - ${errorBody}`);
+        const transactionId = response.headers.get('x-forgerock-transactionid');
+        const errorMessage = `Failed to create user: ${response.status} ${response.statusText} - ${errorBody}`;
+        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+        throw new Error(errorMessage + transactionInfo);
       }
 
       const createdUser = await response.json();
+      const transactionId = response.headers.get('x-forgerock-transactionid');
 
       // Return only the _id to minimize context
+      const successMessage = `User created successfully with _id: ${createdUser._id}`;
+      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+
       return {
         content: [{
           type: 'text' as const,
-          text: `User created successfully with _id: ${createdUser._id}`
+          text: successMessage + transactionInfo
         }]
       };
     } catch (error: any) {

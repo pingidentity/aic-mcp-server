@@ -30,14 +30,20 @@ export const getUserTool = {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`Failed to retrieve user: ${response.status} ${response.statusText} - ${errorBody}`);
+        const transactionId = response.headers.get('x-forgerock-transactionid');
+        const errorMessage = `Failed to retrieve user: ${response.status} ${response.statusText} - ${errorBody}`;
+        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+        throw new Error(errorMessage + transactionInfo);
       }
 
       const user = await response.json();
+      const transactionId = response.headers.get('x-forgerock-transactionid');
+      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
+
       return {
         content: [{
           type: 'text' as const,
-          text: JSON.stringify(user, null, 2)
+          text: JSON.stringify(user, null, 2) + transactionInfo
         }]
       };
     } catch (error: any) {
