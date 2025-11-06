@@ -6,20 +6,13 @@ import keytar from 'keytar';
 
 // --- Configuration ---
 const AIC_BASE_URL = process.env.AIC_BASE_URL;
-const AIC_CLIENT_REALM = process.env.AIC_CLIENT_REALM || 'root';
-const AIC_CLIENT_ID = process.env.AIC_CLIENT_ID || 'local-client';
-const REDIRECT_URI_PORT = parseInt(process.env.REDIRECT_URI_PORT || '3000', 10);
 
-// URL structure adapts based on realm:
-// - root realm: /am/oauth2/{endpoint}
-// - alpha/bravo realms: /am/oauth2/{realm}/{endpoint}
-const AUTHORIZE_URL = AIC_CLIENT_REALM === 'root'
-  ? `https://${AIC_BASE_URL}/am/oauth2/authorize`
-  : `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/authorize`;
-const TOKEN_URL = AIC_CLIENT_REALM === 'root'
-  ? `https://${AIC_BASE_URL}/am/oauth2/access_token`
-  : `https://${AIC_BASE_URL}/am/oauth2/${AIC_CLIENT_REALM}/access_token`;
+// Fixed OAuth configuration
+const CLIENT_ID = 'local-client';
+const REDIRECT_URI_PORT = 3000;
 const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
+const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
+const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/access_token`;
 
 // Keychain configuration
 const KEYCHAIN_SERVICE = 'PingOneAIC_MCP_Server';
@@ -149,7 +142,7 @@ class AuthService {
       this.redirectServer.listen(REDIRECT_URI_PORT, () => {
         const authUrl = new URL(AUTHORIZE_URL);
         authUrl.searchParams.append('response_type', 'code');
-        authUrl.searchParams.append('client_id', AIC_CLIENT_ID);
+        authUrl.searchParams.append('client_id', CLIENT_ID);
         authUrl.searchParams.append('scope', scopes.join(' '));
         authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
         authUrl.searchParams.append('code_challenge', challenge);
@@ -173,7 +166,7 @@ class AuthService {
     params.append('code', code);
     params.append('redirect_uri', REDIRECT_URI);
     params.append('code_verifier', verifier);
-    params.append('client_id', AIC_CLIENT_ID);
+    params.append('client_id', CLIENT_ID);
 
     const response = await fetch(TOKEN_URL, {
       method: 'POST',

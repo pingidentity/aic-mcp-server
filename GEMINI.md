@@ -87,37 +87,19 @@ Queries am-authentication logs in PingOne AIC by transaction ID.
 
 ## Configuration
 
-### Required Environment Variables
+### Environment Variables
+
+Only one environment variable is required:
 
 - **`AIC_BASE_URL`** (required): The hostname of your PingOne AIC environment
   - Example: `openam-example.forgeblocks.com`
   - Do not include `https://` or path components
   - Server will exit on startup if not set
 
-### Optional Environment Variables
+The OAuth client configuration (client ID, realm, redirect port) is fixed as part of the AIC implementation and does not need to be configured.
 
-- **`AIC_CLIENT_REALM`** (default: `'root'`): The OAuth client's realm in PingOne AIC
-  - Used to construct OAuth endpoints: `/am/oauth2/{realm}/authorize`
-  - Change this if your OAuth client is registered in a different realm
+### Authentication Characteristics
 
-- **`AIC_CLIENT_ID`** (default: `'local-client'`): The OAuth 2.0 client ID
-  - Must match a client registered in your PingOne AIC environment
-  - Client must be configured as described below
-
-- **`REDIRECT_URI_PORT`** (default: `3000`): Port for the local OAuth redirect server
-  - Useful if port 3000 is already in use
-  - Must match the redirect URI registered in your OAuth client
-
-### OAuth Client Requirements
-
-**Required Configuration in PingOne AIC:**
-- **Client Type:** Public
-- **Token Endpoint Authentication Method:** none
-- **Grant Types:** Authorization Code
-- **Redirect URIs:** `http://localhost:3000` (or configured `REDIRECT_URI_PORT`)
-- **Scopes:** All scopes used by tools (e.g., `openid`, `fr:idm:*`, `fr:idc:monitoring:*`)
-
-**Authentication Characteristics:**
 - Browser-based interactive user authentication
 - All scopes requested upfront during login
 - Actions are auditable and traceable to authenticated users
@@ -129,7 +111,6 @@ Queries am-authentication logs in PingOne AIC by transaction ID.
 ### Prerequisites
 - Node.js (version with ES2022 support)
 - Access to a PingOne Advanced Identity Cloud environment
-- OAuth client configured in PingOne AIC (see Configuration section)
 
 ### Installation Steps
 
@@ -143,12 +124,9 @@ Queries am-authentication logs in PingOne AIC by transaction ID.
    npm run build
    ```
 
-3. **Configure environment variables:**
+3. **Configure environment variable:**
    ```bash
    export AIC_BASE_URL="your-tenant.forgeblocks.com"
-   export AIC_CLIENT_REALM="root"
-   export AIC_CLIENT_ID="local-client"
-   export REDIRECT_URI_PORT="3000"
    ```
 
 4. **Start the server:**
@@ -176,10 +154,7 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
       "command": "node",
       "args": ["/absolute/path/to/pingone_AIC_MCP/dist/index.js"],
       "env": {
-        "AIC_BASE_URL": "your-tenant.forgeblocks.com",
-        "AIC_CLIENT_REALM": "root",
-        "AIC_CLIENT_ID": "local-client",
-        "REDIRECT_URI_PORT": "3000"
+        "AIC_BASE_URL": "your-tenant.forgeblocks.com"
       }
     }
   }
@@ -188,7 +163,7 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
 
 ### Other MCP Clients
 
-Any MCP client that supports STDIO transport can use this server. Ensure environment variables are configured appropriately for your client.
+Any MCP client that supports STDIO transport can use this server. Simply configure the `AIC_BASE_URL` environment variable to point to your PingOne AIC environment.
 
 ## Authentication Flow
 
