@@ -1,6 +1,6 @@
 // src/tools/getUsers.ts
 import { z } from 'zod';
-import { authService } from '../services/authService.js';
+import { getAuthService } from '../services/authService.js';
 
 // This will be loaded from environment variables in the main server file
 const aicBaseUrl = process.env.AIC_BASE_URL;
@@ -27,7 +27,7 @@ export const searchUsersTool = {
 
     try {
       // Wait for the asynchronous getToken method to resolve.
-      const token = await authService.getToken(SCOPES);
+      const token = await getAuthService().getToken(SCOPES);
 
       const response = await fetch(url, {
         headers: {

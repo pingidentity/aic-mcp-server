@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { authService } from './services/authService.js';
+import { initAuthService, getAuthService } from './services/authService.js';
 import { searchUsersTool } from './tools/searchUsers.js';
 import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
 import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
@@ -15,6 +15,26 @@ if (!process.env.AIC_BASE_URL) {
     console.error('FATAL: AIC_BASE_URL environment variable is not set.');
     process.exit(1);
 }
+
+// Collect all tool scopes
+const allTools = [
+  searchUsersTool,
+  queryAICLogsByTransactionIdTool,
+  getManagedObjectSchemaTool,
+  createUserTool,
+  getUserTool,
+  deleteUserTool,
+  patchUserTool
+];
+
+// Extract unique scopes from all tools
+const allScopes = Array.from(
+  new Set(allTools.flatMap(tool => tool.scopes))
+);
+
+// Initialize auth service with all scopes for user PKCE auth
+initAuthService(allScopes);
+const authService = getAuthService();
 
 // Create an MCP server
 const server = new McpServer({

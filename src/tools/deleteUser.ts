@@ -1,6 +1,6 @@
 // src/tools/deleteUser.ts
 import { z } from 'zod';
-import { authService } from '../services/authService.js';
+import { getAuthService } from '../services/authService.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -19,7 +19,7 @@ export const deleteUserTool = {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${userId}`;
 
     try {
-      const token = await authService.getToken(SCOPES);
+      const token = await getAuthService().getToken(SCOPES);
 
       const response = await fetch(url, {
         method: 'DELETE',

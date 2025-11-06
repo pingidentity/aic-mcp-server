@@ -33,6 +33,11 @@ const KEYCHAIN_ACCOUNT = 'user-token';
 export class UserAuthStrategy implements AuthStrategy {
   private tokenPromise: Promise<string> | null = null;
   private redirectServer: http.Server | null = null;
+  private allScopes: string[];
+
+  constructor(allScopes: string[]) {
+    this.allScopes = allScopes;
+  }
 
   /**
    * Get a valid access token using PKCE flow
@@ -59,8 +64,8 @@ export class UserAuthStrategy implements AuthStrategy {
       return this.tokenPromise;
     }
 
-    // Start new token acquisition
-    this.tokenPromise = this.executePkceFlow(scopes);
+    // Start new token acquisition with all scopes
+    this.tokenPromise = this.executePkceFlow(this.allScopes);
     return this.tokenPromise;
   }
 

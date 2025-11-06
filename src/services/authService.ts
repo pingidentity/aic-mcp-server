@@ -11,7 +11,7 @@ class AuthService {
   private strategy: AuthStrategy;
   private _isServiceAccount: boolean;
 
-  constructor() {
+  constructor(allScopes: string[] = []) {
     // Auto-detect authentication strategy based on environment variables
     const serviceAccountId = process.env.SERVICE_ACCOUNT_ID;
     const serviceAccountKey = process.env.SERVICE_ACCOUNT_PRIVATE_KEY;
@@ -23,9 +23,9 @@ class AuthService {
       console.error('Using service account authentication');
       this.strategy = new ServiceAccountStrategy();
     } else {
-      // Fall back to user PKCE authentication
+      // Fall back to user PKCE authentication with all tool scopes
       console.error('Using user PKCE authentication');
-      this.strategy = new UserAuthStrategy();
+      this.strategy = new UserAuthStrategy(allScopes);
     }
   }
 
@@ -47,4 +47,18 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService();
+// Singleton instance
+let instance: AuthService;
+
+// Initialize and return the singleton instance
+export function initAuthService(allScopes: string[]): void {
+  instance = new AuthService(allScopes);
+}
+
+// Get the singleton instance
+export function getAuthService(): AuthService {
+  if (!instance) {
+    throw new Error('AuthService not initialized. Call initAuthService first.');
+  }
+  return instance;
+}
