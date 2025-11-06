@@ -4,9 +4,7 @@ This document provides an overview of the PingOne AIC MCP Server, a TypeScript-b
 
 ## Project Overview
 
-This server exposes tools that allow AI agents to interact with a PingOne Advanced Identity Cloud (AIC) environment. It provides programmatic access to tools such as user management and monitoring capabilities through secure authentication flows. The server supports two authentication methods:
-- **User PKCE Authentication**: OAuth 2.0 PKCE flow for interactive/desktop environments
-- **Service Account Authentication**: JWT bearer grant for headless/automated environments
+This server exposes tools that allow AI agents to interact with a PingOne Advanced Identity Cloud (AIC) environment. It provides programmatic access to tools such as user management and monitoring capabilities through secure user-based authentication. The server uses OAuth 2.0 PKCE flow for interactive authentication, ensuring all actions are traceable to authenticated users for audit and security compliance.
 
 ### Key Technologies
 
@@ -15,7 +13,6 @@ This server exposes tools that allow AI agents to interact with a PingOne Advanc
     *   `@modelcontextprotocol/sdk`: For creating the MCP server with STDIO transport
     *   `zod`: For schema validation of tool inputs
     *   `keytar`: For securely storing authentication tokens in the system keychain
-    *   `jose`: For JWT creation and signing (service account authentication)
     *   `open`: To open the user's browser for OAuth authentication
 *   **Runtime:** Node.js (ESM modules)
 
@@ -30,45 +27,28 @@ The server is initialized in [src/index.ts](src/index.ts), which:
 
 ### Authentication Architecture
 
-The authentication system uses a strategy pattern to support multiple authentication methods transparently:
+The authentication system uses OAuth 2.0 Authorization Code with PKCE (Proof Key for Code Exchange) flow.
 
-#### Main Service
-[src/services/authService.ts](src/services/authService.ts) - Coordinator that:
-- Auto-detects authentication method based on environment variables
-- Provides unified `getToken(scopes)` interface to all tools
-- Delegates to the appropriate authentication strategy
-
-#### Authentication Strategies
-
-**[src/services/auth/UserAuthStrategy.ts](src/services/auth/UserAuthStrategy.ts)** - OAuth 2.0 PKCE Flow:
-- Implements Authorization Code with PKCE for interactive authentication
-- Opens system browser for user login
+#### Authentication Service
+[src/services/authService.ts](src/services/authService.ts) - Handles all authentication:
+- Implements OAuth 2.0 PKCE flow for secure user authentication
+- Opens system browser for user login at PingOne AIC
 - Runs local HTTP server to receive OAuth redirect
 - Requests all tool scopes upfront during authentication
-- Stores tokens in keychain under `user-token` account
-- Used when service account credentials are not provided
-
-**[src/services/auth/ServiceAccountStrategy.ts](src/services/auth/ServiceAccountStrategy.ts)** - JWT Bearer Grant:
-- Imports JWK (JSON Web Key) from environment variable
-- Creates and signs JWTs using service account private key
-- Exchanges JWT for access tokens via `jwt-bearer` grant type
-- Requests only the minimal scopes needed for each operation
-- Caches tokens per scope combination (15-minute expiry)
-- Stores tokens in keychain under `sa-token-{scopeHash}` accounts
-- Used when `SERVICE_ACCOUNT_ID` and `SERVICE_ACCOUNT_PRIVATE_KEY` are set
-
-**[src/services/auth/types.ts](src/services/auth/types.ts)** - Shared interfaces and types
+- Stores tokens securely in system keychain under `user-token` account
+- Provides `getToken()` interface to all tools
 
 **Key Features:**
-- Automatic auth method detection (no manual configuration)
-- Token persistence across sessions via keychain
+- User-based authentication for full audit trail
+- Token persistence across sessions via system keychain
 - Automatic token expiry checking and refresh
-- In-flight request deduplication
-- Tool-driven minimal scope requests (service accounts only)
+- In-flight request deduplication to prevent concurrent auth flows
+- PKCE security to prevent authorization code interception
+- No client secrets required (public client configuration)
 
 ### Available Tools
 
-All tools declare required OAuth scopes, which are passed to the authentication service for minimal privilege access (service accounts) or upfront request (user auth).
+All tools declare required OAuth scopes, which are requested upfront during user authentication.
 
 #### 1. `searchUsers`
 **File:** [src/tools/searchUsers.ts](src/tools/searchUsers.ts)
@@ -107,8 +87,6 @@ Queries am-authentication logs in PingOne AIC by transaction ID.
 
 ## Configuration
 
-The server automatically detects which authentication method to use based on the environment variables provided.
-
 ### Required Environment Variables
 
 - **`AIC_BASE_URL`** (required): The hostname of your PingOne AIC environment
@@ -116,46 +94,21 @@ The server automatically detects which authentication method to use based on the
   - Do not include `https://` or path components
   - Server will exit on startup if not set
 
-### Authentication Method Selection
+### Optional Environment Variables
 
-**Service Account Authentication** (used when both are set):
-- **`SERVICE_ACCOUNT_ID`**: The service account ID from PingOne AIC
-- **`SERVICE_ACCOUNT_PRIVATE_KEY`**: The private key in JWK (JSON Web Key) format as a JSON string
-  - Example: `'{"kty":"RSA","n":"...","e":"AQAB","d":"...","p":"...","q":"...","dp":"...","dq":"...","qi":"..."}'`
-  - This is the JSON content from the service account private key file downloaded from PingOne AIC
-
-**User PKCE Authentication** (used when service account variables are not set):
-- **`AIC_CLIENT_REALM`** (default: `'alpha'`): The OAuth client's realm in PingOne AIC
+- **`AIC_CLIENT_REALM`** (default: `'root'`): The OAuth client's realm in PingOne AIC
   - Used to construct OAuth endpoints: `/am/oauth2/{realm}/authorize`
   - Change this if your OAuth client is registered in a different realm
 
-- **`AIC_CLIENT_ID`** (default: `'mcp'`): The OAuth 2.0 client ID
+- **`AIC_CLIENT_ID`** (default: `'local-client'`): The OAuth 2.0 client ID
   - Must match a client registered in your PingOne AIC environment
-  - Client must be configured as:
-    - Client Type: Public
-    - Token Endpoint Authentication Method: none
-    - Grant Types: Authorization Code
-    - Redirect URIs: `http://localhost:{REDIRECT_URI_PORT}`
-    - Scopes: All scopes used by tools (e.g., `openid fr:idm:* fr:idc:monitoring:*`)
+  - Client must be configured as described below
 
 - **`REDIRECT_URI_PORT`** (default: `3000`): Port for the local OAuth redirect server
   - Useful if port 3000 is already in use
   - Must match the redirect URI registered in your OAuth client
 
-### Service Account Requirements
-
-**Required Configuration in PingOne AIC:**
-- Service account created with appropriate scopes/permissions (e.g., `fr:idm:*`, `fr:idc:monitoring:*`)
-- Private key downloaded as JWK file and its JSON content provided via `SERVICE_ACCOUNT_PRIVATE_KEY` environment variable
-- Service Account ID provided via `SERVICE_ACCOUNT_ID` environment variable
-
-**Characteristics:**
-- No browser interaction (suitable for headless/automated environments)
-- Minimal scope requests per operation
-- 15-minute token expiry with automatic refresh
-- Ideal for CI/CD, serverless functions, and backend services
-
-### OAuth Client Requirements (User PKCE)
+### OAuth Client Requirements
 
 **Required Configuration in PingOne AIC:**
 - **Client Type:** Public
@@ -164,9 +117,11 @@ The server automatically detects which authentication method to use based on the
 - **Redirect URIs:** `http://localhost:3000` (or configured `REDIRECT_URI_PORT`)
 - **Scopes:** All scopes used by tools (e.g., `openid`, `fr:idm:*`, `fr:idc:monitoring:*`)
 
-**Characteristics:**
-- Browser-based interactive authentication
-- All scopes requested upfront
+**Authentication Characteristics:**
+- Browser-based interactive user authentication
+- All scopes requested upfront during login
+- Actions are auditable and traceable to authenticated users
+- Tokens cached securely in system keychain
 - Ideal for interactive desktop applications (e.g., Claude Desktop)
 
 ## Setup and Installation
@@ -174,7 +129,7 @@ The server automatically detects which authentication method to use based on the
 ### Prerequisites
 - Node.js (version with ES2022 support)
 - Access to a PingOne Advanced Identity Cloud environment
-- Either service account credentials OR OAuth client configured (see Configuration section)
+- OAuth client configured in PingOne AIC (see Configuration section)
 
 ### Installation Steps
 
@@ -189,19 +144,10 @@ The server automatically detects which authentication method to use based on the
    ```
 
 3. **Configure environment variables:**
-
-   For **service account authentication**:
    ```bash
    export AIC_BASE_URL="your-tenant.forgeblocks.com"
-   export SERVICE_ACCOUNT_ID="your-service-account-id"
-   export SERVICE_ACCOUNT_PRIVATE_KEY='{"kty":"RSA","n":"...","e":"AQAB","d":"...","p":"...","q":"...","dp":"...","dq":"...","qi":"..."}'
-   ```
-
-   For **user PKCE authentication**:
-   ```bash
-   export AIC_BASE_URL="your-tenant.forgeblocks.com"
-   export AIC_CLIENT_REALM="alpha"
-   export AIC_CLIENT_ID="mcp"
+   export AIC_CLIENT_REALM="root"
+   export AIC_CLIENT_ID="local-client"
    export REDIRECT_URI_PORT="3000"
    ```
 
@@ -223,7 +169,6 @@ npm run dev
 
 Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
-**With User PKCE Authentication:**
 ```json
 {
   "mcpServers": {
@@ -232,26 +177,9 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
       "args": ["/absolute/path/to/pingone_AIC_MCP/dist/index.js"],
       "env": {
         "AIC_BASE_URL": "your-tenant.forgeblocks.com",
-        "AIC_CLIENT_REALM": "alpha",
-        "AIC_CLIENT_ID": "mcp",
+        "AIC_CLIENT_REALM": "root",
+        "AIC_CLIENT_ID": "local-client",
         "REDIRECT_URI_PORT": "3000"
-      }
-    }
-  }
-}
-```
-
-**With Service Account Authentication:**
-```json
-{
-  "mcpServers": {
-    "pingone-aic": {
-      "command": "node",
-      "args": ["/absolute/path/to/pingone_AIC_MCP/dist/index.js"],
-      "env": {
-        "AIC_BASE_URL": "your-tenant.forgeblocks.com",
-        "SERVICE_ACCOUNT_ID": "your-service-account-id",
-        "SERVICE_ACCOUNT_PRIVATE_KEY": "{\"kty\":\"RSA\",\"n\":\"...\",\"e\":\"AQAB\",\"d\":\"...\",\"p\":\"...\",\"q\":\"...\",\"dp\":\"...\",\"dq\":\"...\",\"qi\":\"...\"}"
       }
     }
   }
@@ -260,49 +188,30 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
 
 ### Other MCP Clients
 
-Any MCP client that supports STDIO transport can use this server. Ensure environment variables are configured appropriately for your client and authentication method.
+Any MCP client that supports STDIO transport can use this server. Ensure environment variables are configured appropriately for your client.
 
-## Authentication Flows
+## Authentication Flow
 
-### User PKCE Flow
+### OAuth 2.0 PKCE Flow
 
 1. Tool calls `authService.getToken(scopes)`
 2. Server checks keychain for valid cached token
 3. If no valid token exists or token has expired:
    - Server starts local HTTP server on `REDIRECT_URI_PORT`
    - Opens system browser to PingOne AIC authorization page
-   - User authenticates and grants consent
+   - User authenticates and grants consent for all tool scopes
    - Browser redirects to `http://localhost:{port}` with authorization code
-   - Server exchanges authorization code for access token using PKCE
+   - Server exchanges authorization code for access token using PKCE verifier
    - Token is stored in keychain under `user-token` account
 4. Access token is used for API calls until expiration
 5. When expired, flow repeats automatically
 
 **Security Features:**
-- PKCE prevents authorization code interception
+- PKCE prevents authorization code interception attacks
 - Tokens stored in OS keychain (Keychain on macOS, Credential Manager on Windows, Secret Service on Linux)
-- No client secrets required (public client)
-- All scopes requested upfront
-
-### Service Account Flow
-
-1. Tool calls `authService.getToken(scopes)` with specific scopes
-2. Server checks keychain for valid cached token matching those scopes
-3. If no valid token exists or token has expired:
-   - Imports JWK (JSON Web Key) from environment variable
-   - Creates JWT assertion with claims (iss, sub, aud, exp, jti)
-   - Signs JWT using RS256 with imported private key
-   - Exchanges JWT for access token via `jwt-bearer` grant type
-   - Token is stored in keychain under `sa-token-{scopeHash}` account
-4. Access token is used for API calls until expiration (15 minutes)
-5. When expired, flow repeats automatically (no user interaction)
-
-**Security Features:**
-- Cryptographic JWT signing with RS256 using JWK
-- Private key never transmitted (only JWT assertion sent)
-- Minimal scopes per operation
-- Multiple token caches by scope combination
-- Tokens stored in OS keychain
+- No client secrets required (public client configuration)
+- All scopes requested upfront during authentication
+- User-based actions for complete audit trail
 
 ## Error Handling
 
@@ -321,14 +230,15 @@ pingone_AIC_MCP/
 ├── src/
 │   ├── index.ts                           # Server entry point and tool registration
 │   ├── services/
-│   │   ├── authService.ts                 # Auth coordinator with auto-detection
-│   │   └── auth/
-│   │       ├── types.ts                   # Shared auth interfaces
-│   │       ├── UserAuthStrategy.ts        # OAuth 2.0 PKCE implementation
-│   │       └── ServiceAccountStrategy.ts  # JWT bearer grant implementation
+│   │   └── authService.ts                 # OAuth 2.0 PKCE authentication
 │   └── tools/
 │       ├── searchUsers.ts                 # User search tool
-│       └── queryAICLogsByTransactionId.ts # Log query tool
+│       ├── queryAICLogsByTransactionId.ts # Log query tool
+│       ├── getManagedObjectSchema.ts      # Schema retrieval tool
+│       ├── createUser.ts                  # User creation tool
+│       ├── getUser.ts                     # User retrieval tool
+│       ├── deleteUser.ts                  # User deletion tool
+│       └── patchUser.ts                   # User update tool
 ├── dist/                                   # Compiled JavaScript (generated)
 ├── package.json                            # Dependencies and scripts
 ├── tsconfig.json                           # TypeScript configuration
@@ -422,12 +332,11 @@ All tools must declare their required scopes in the `scopes` property. When addi
 
 1. Define scopes as a constant (e.g., `const SCOPES = ['fr:idm:*'];`)
 2. Reference the constant in both the tool definition (`scopes: SCOPES`) and function call (`authService.getToken(SCOPES)`)
-3. For user PKCE auth: ensure OAuth client is configured with all tool scopes
-4. For service account auth: ensure service account has permissions for required scopes
+3. Ensure OAuth client is configured with all tool scopes
 
 **Scope Behavior:**
-- **User PKCE**: All scopes from all tools requested upfront during authentication
-- **Service Account**: Minimal scopes requested per operation; tokens cached by scope combination
+- All scopes from all tools are collected and requested upfront during user authentication
+- The scopes parameter in `getToken(scopes)` is kept for future token exchange support but currently unused
 
 ## Known Limitations
 

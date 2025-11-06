@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { initAuthService, getAuthService } from './services/authService.js';
+import { initAuthService } from './services/authService.js';
 import { searchUsersTool } from './tools/searchUsers.js';
 import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
 import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
@@ -32,9 +32,8 @@ const allScopes = Array.from(
   new Set(allTools.flatMap(tool => tool.scopes))
 );
 
-// Initialize auth service with all scopes for user PKCE auth
+// Initialize auth service with all scopes
 initAuthService(allScopes);
-const authService = getAuthService();
 
 // Create an MCP server
 const server = new McpServer({
@@ -53,18 +52,16 @@ server.registerTool(
   searchUsersTool.toolFunction
 );
 
-// Register the queryAICLogsByTransactionId tool (not supported by service accounts)
-if (!authService.isServiceAccount()) {
-  server.registerTool(
-    queryAICLogsByTransactionIdTool.name,
-    {
-      title: queryAICLogsByTransactionIdTool.title,
-      description: queryAICLogsByTransactionIdTool.description,
-      inputSchema: queryAICLogsByTransactionIdTool.inputSchema,
-    },
-    queryAICLogsByTransactionIdTool.toolFunction
-  );
-}
+// Register the queryAICLogsByTransactionId tool
+server.registerTool(
+  queryAICLogsByTransactionIdTool.name,
+  {
+    title: queryAICLogsByTransactionIdTool.title,
+    description: queryAICLogsByTransactionIdTool.description,
+    inputSchema: queryAICLogsByTransactionIdTool.inputSchema,
+  },
+  queryAICLogsByTransactionIdTool.toolFunction
+);
 
 // Register the getManagedObjectSchema tool
 server.registerTool(
