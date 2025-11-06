@@ -1,6 +1,6 @@
 // src/tools/queryAICLogsByTransactionId.ts
 import { z } from 'zod';
-import { authService } from '../services/authService.js';
+import { getAuthService } from '../services/authService.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -18,7 +18,7 @@ export const queryAICLogsByTransactionIdTool = {
     const url = `https://${aicBaseUrl}/monitoring/logs?source=am-everything,idm-everything&transactionId=${transactionId}`;
 
     try {
-      const token = await authService.getToken(SCOPES);
+      const token = await getAuthService().getToken(SCOPES);
 
       const response = await fetch(url, {
         headers: {
