@@ -8,6 +8,7 @@ import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
 import { createUserTool } from './tools/createUser.js';
 import { getUserTool } from './tools/getUser.js';
 import { deleteUserTool } from './tools/deleteUser.js';
+import { patchUserTool } from './tools/patchUser.js';
 
 // Check for the required environment variable on startup
 if (!process.env.AIC_BASE_URL) {
@@ -87,6 +88,17 @@ server.registerTool(
     inputSchema: deleteUserTool.inputSchema,
   },
   deleteUserTool.toolFunction
+);
+
+// Register the patchUser tool
+server.registerTool(
+  patchUserTool.name,
+  {
+    title: patchUserTool.title,
+    description: patchUserTool.description,
+    inputSchema: patchUserTool.inputSchema,
+  },
+  patchUserTool.toolFunction
 );
 
 // Start receiving messages on stdin and sending messages on stdout
