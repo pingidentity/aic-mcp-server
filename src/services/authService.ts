@@ -8,11 +8,14 @@ import keytar from 'keytar';
 const AIC_BASE_URL = process.env.AIC_BASE_URL;
 
 // Fixed OAuth configuration
-const CLIENT_ID = 'local-client';
+const CLIENT_ID = 'AICMCPClient';
 const REDIRECT_URI_PORT = 3000;
 const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
 const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/access_token`;
+
+// Feature flag for token exchange (temporary - will be removed once stable)
+const ENABLE_TOKEN_EXCHANGE = process.env.ENABLE_TOKEN_EXCHANGE === 'true';
 
 // Keychain configuration
 const KEYCHAIN_SERVICE = 'PingOneAIC_MCP_Server';
@@ -24,6 +27,7 @@ const KEYCHAIN_ACCOUNT = 'user-token';
 interface TokenData {
   accessToken: string;
   expiresAt: number; // Unix timestamp in milliseconds
+  aicBaseUrl: string; // The AIC tenant this token was obtained for
 }
 
 /**
@@ -34,6 +38,7 @@ class AuthService {
   private tokenPromise: Promise<string> | null = null;
   private redirectServer: http.Server | null = null;
   private allScopes: string[];
+  private hasAuthenticatedThisSession: boolean = false;
 
   constructor(allScopes: string[]) {
     this.allScopes = allScopes;
@@ -41,24 +46,37 @@ class AuthService {
   }
 
   /**
-   * Get a valid access token using PKCE flow
-   * Retrieves from cache if available and valid, otherwise performs authentication
-   * @param scopes - OAuth scopes (currently unused; all scopes requested upfront)
+   * Get the primary access token with all scopes
+   * Retrieves from keychain if available and valid, otherwise performs PKCE authentication
+   * Always requires fresh authentication on first request of the session
+   * @returns Primary access token with all scopes
    */
-  async getToken(scopes?: string[]): Promise<string> {
-    // Try to get token from keychain
-    try {
-      const storedTokenData = await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
-      if (storedTokenData) {
-        const { accessToken, expiresAt }: TokenData = JSON.parse(storedTokenData);
+  private async getPrimaryToken(): Promise<string> {
+    // Always skip keychain check on first request to require fresh authentication
+    const shouldSkipCache = !this.hasAuthenticatedThisSession;
 
-        // Check if token is still valid
-        if (Date.now() < expiresAt) {
-          return accessToken;
+    if (!shouldSkipCache) {
+      // Try to get token from keychain
+      try {
+        const storedTokenData = await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
+        if (storedTokenData) {
+          const { accessToken, expiresAt, aicBaseUrl }: TokenData = JSON.parse(storedTokenData);
+
+          // Check if token is for the current tenant
+          if (aicBaseUrl !== AIC_BASE_URL) {
+            console.error(`Cached token is for different tenant (${aicBaseUrl}), current tenant is ${AIC_BASE_URL}. Re-authenticating...`);
+            // Token is for different tenant, proceed to get new token
+          }
+          // Check if token is still valid (and for correct tenant)
+          else if (Date.now() < expiresAt) {
+            return accessToken;
+          }
         }
+      } catch (error) {
+        console.error('Error accessing keychain:', error);
       }
-    } catch (error) {
-      console.error('Error accessing keychain:', error);
+    } else {
+      console.error('Fresh authentication required on startup');
     }
 
     // If token request is already in flight, return existing promise
@@ -69,6 +87,102 @@ class AuthService {
     // Start new token acquisition with all scopes
     this.tokenPromise = this.executePkceFlow(this.allScopes);
     return this.tokenPromise;
+  }
+
+  /**
+   * Exchange the primary token for a scoped-down token via RFC 8693 token exchange
+   * @param primaryToken - The broad-scope access token
+   * @param requestedScopes - Specific scopes needed for this operation
+   * @returns Scoped access token
+   */
+  private async exchangeToken(
+    primaryToken: string,
+    requestedScopes: string[]
+  ): Promise<string> {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'urn:ietf:params:oauth:grant-type:token-exchange');
+    params.append('subject_token', primaryToken);
+    params.append('subject_token_type', 'urn:ietf:params:oauth:token-type:access_token');
+    params.append('requested_token_type', 'urn:ietf:params:oauth:token-type:access_token');
+    params.append('scope', requestedScopes.join(' '));
+    params.append('client_id', CLIENT_ID);
+
+    const response = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      const errorMessage = `Token exchange failed (${response.status} ${response.statusText}): ${errorText}`;
+
+      // For 401, throw a specific error that we can catch and retry with re-auth
+      if (response.status === 401) {
+        const error = new Error(errorMessage);
+        (error as any).shouldRetryWithReauth = true;
+        throw error;
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data.access_token;
+  }
+
+  /**
+   * Get a valid access token scoped to specific permissions via token exchange
+   * @param scopes - OAuth scopes required for this operation (mandatory when token exchange is enabled)
+   * @returns Access token scoped to the requested permissions
+   */
+  async getToken(scopes?: string[]): Promise<string> {
+    // Temporary: Allow bypassing token exchange during development
+    if (!ENABLE_TOKEN_EXCHANGE) {
+      console.error('Token exchange disabled, returning primary token');
+      return this.getPrimaryToken();
+    }
+
+    if (!scopes || scopes.length === 0) {
+      throw new Error('Scopes parameter is required when token exchange is enabled');
+    }
+
+    console.error(`Token exchange: requesting scopes [${scopes.join(', ')}]`);
+
+    try {
+      // Get primary token (may trigger PKCE flow)
+      const primaryToken = await this.getPrimaryToken();
+
+      // Exchange for scoped-down token
+      const exchangedToken = await this.exchangeToken(primaryToken, scopes);
+
+      console.error(`Token exchange successful for scopes: [${scopes.join(', ')}]`);
+
+      return exchangedToken;
+    } catch (error: any) {
+      // If token exchange failed due to expired/invalid token, retry with fresh auth
+      if (error.shouldRetryWithReauth) {
+        console.error('Primary token invalid, re-authenticating and retrying token exchange...');
+
+        // Force fresh authentication
+        this.hasAuthenticatedThisSession = false;
+
+        // Get fresh primary token (will trigger PKCE flow)
+        const freshPrimaryToken = await this.getPrimaryToken();
+
+        // Retry exchange with fresh token
+        const exchangedToken = await this.exchangeToken(freshPrimaryToken, scopes);
+
+        console.error(`Token exchange successful after re-authentication for scopes: [${scopes.join(', ')}]`);
+
+        return exchangedToken;
+      }
+
+      // Re-throw other errors
+      throw error;
+    }
   }
 
   /**
@@ -97,13 +211,20 @@ class AuthService {
       // Calculate expiry time
       const expiresAt = Date.now() + expiresIn * 1000;
 
-      // Store token in keychain
+      // Store token in keychain with tenant information
       try {
-        const tokenData: TokenData = { accessToken, expiresAt };
+        const tokenData: TokenData = {
+          accessToken,
+          expiresAt,
+          aicBaseUrl: AIC_BASE_URL!
+        };
         await keytar.setPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, JSON.stringify(tokenData));
       } catch (error) {
         console.error('Failed to store token in keychain:', error);
       }
+
+      // Mark that we've authenticated this session
+      this.hasAuthenticatedThisSession = true;
 
       return accessToken;
     } catch (error) {
@@ -178,7 +299,7 @@ class AuthService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to exchange code for token: ${response.statusText} - ${errorText}`);
+      throw new Error(`Authorization code exchange failed (${response.status} ${response.statusText}): ${errorText}`);
     }
 
     const data = await response.json();
