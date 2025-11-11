@@ -8,7 +8,7 @@ import keytar from 'keytar';
 const AIC_BASE_URL = process.env.AIC_BASE_URL;
 
 // Fixed OAuth configuration
-const CLIENT_ID = 'local-client';
+const CLIENT_ID = 'AICMCPClient';
 const REDIRECT_URI_PORT = 3000;
 const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
@@ -24,6 +24,7 @@ const KEYCHAIN_ACCOUNT = 'user-token';
 interface TokenData {
   accessToken: string;
   expiresAt: number; // Unix timestamp in milliseconds
+  aicBaseUrl: string; // The AIC tenant this token was obtained for
 }
 
 /**
@@ -34,6 +35,7 @@ class AuthService {
   private tokenPromise: Promise<string> | null = null;
   private redirectServer: http.Server | null = null;
   private allScopes: string[];
+  private hasAuthenticatedThisSession: boolean = false;
 
   constructor(allScopes: string[]) {
     this.allScopes = allScopes;
@@ -41,24 +43,37 @@ class AuthService {
   }
 
   /**
-   * Get a valid access token using PKCE flow
-   * Retrieves from cache if available and valid, otherwise performs authentication
-   * @param scopes - OAuth scopes (currently unused; all scopes requested upfront)
+   * Get the primary access token with all scopes
+   * Retrieves from keychain if available and valid, otherwise performs PKCE authentication
+   * Always requires fresh authentication on first request of the session
+   * @returns Primary access token with all scopes
    */
-  async getToken(scopes?: string[]): Promise<string> {
-    // Try to get token from keychain
-    try {
-      const storedTokenData = await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
-      if (storedTokenData) {
-        const { accessToken, expiresAt }: TokenData = JSON.parse(storedTokenData);
+  private async getPrimaryToken(): Promise<string> {
+    // Always skip keychain check on first request to require fresh authentication
+    const shouldSkipCache = !this.hasAuthenticatedThisSession;
 
-        // Check if token is still valid
-        if (Date.now() < expiresAt) {
-          return accessToken;
+    if (!shouldSkipCache) {
+      // Try to get token from keychain
+      try {
+        const storedTokenData = await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
+        if (storedTokenData) {
+          const { accessToken, expiresAt, aicBaseUrl }: TokenData = JSON.parse(storedTokenData);
+
+          // Check if token is for the current tenant
+          if (aicBaseUrl !== AIC_BASE_URL) {
+            console.error(`Cached token is for different tenant (${aicBaseUrl}), current tenant is ${AIC_BASE_URL}. Re-authenticating...`);
+            // Token is for different tenant, proceed to get new token
+          }
+          // Check if token is still valid (and for correct tenant)
+          else if (Date.now() < expiresAt) {
+            return accessToken;
+          }
         }
+      } catch (error) {
+        console.error('Error accessing keychain:', error);
       }
-    } catch (error) {
-      console.error('Error accessing keychain:', error);
+    } else {
+      console.error('Fresh authentication required on startup');
     }
 
     // If token request is already in flight, return existing promise
@@ -69,6 +84,15 @@ class AuthService {
     // Start new token acquisition with all scopes
     this.tokenPromise = this.executePkceFlow(this.allScopes);
     return this.tokenPromise;
+  }
+
+  /**
+   * Get a valid access token using PKCE flow
+   * Retrieves from cache if available and valid, otherwise performs authentication
+   * @param scopes - OAuth scopes (currently unused; all scopes requested upfront)
+   */
+  async getToken(scopes?: string[]): Promise<string> {
+    return this.getPrimaryToken();
   }
 
   /**
@@ -97,13 +121,20 @@ class AuthService {
       // Calculate expiry time
       const expiresAt = Date.now() + expiresIn * 1000;
 
-      // Store token in keychain
+      // Store token in keychain with tenant information
       try {
-        const tokenData: TokenData = { accessToken, expiresAt };
+        const tokenData: TokenData = {
+          accessToken,
+          expiresAt,
+          aicBaseUrl: AIC_BASE_URL!
+        };
         await keytar.setPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, JSON.stringify(tokenData));
       } catch (error) {
         console.error('Failed to store token in keychain:', error);
       }
+
+      // Mark that we've authenticated this session
+      this.hasAuthenticatedThisSession = true;
 
       return accessToken;
     } catch (error) {
