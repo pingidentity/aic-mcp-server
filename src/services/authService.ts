@@ -14,6 +14,9 @@ const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
 const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/access_token`;
 
+// Feature flag for token exchange (temporary - will be removed once stable)
+const ENABLE_TOKEN_EXCHANGE = process.env.ENABLE_TOKEN_EXCHANGE === 'true';
+
 // Keychain configuration
 const KEYCHAIN_SERVICE = 'PingOneAIC_MCP_Server';
 const KEYCHAIN_ACCOUNT = 'user-token';
@@ -87,12 +90,99 @@ class AuthService {
   }
 
   /**
-   * Get a valid access token using PKCE flow
-   * Retrieves from cache if available and valid, otherwise performs authentication
-   * @param scopes - OAuth scopes (currently unused; all scopes requested upfront)
+   * Exchange the primary token for a scoped-down token via RFC 8693 token exchange
+   * @param primaryToken - The broad-scope access token
+   * @param requestedScopes - Specific scopes needed for this operation
+   * @returns Scoped access token
+   */
+  private async exchangeToken(
+    primaryToken: string,
+    requestedScopes: string[]
+  ): Promise<string> {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'urn:ietf:params:oauth:grant-type:token-exchange');
+    params.append('subject_token', primaryToken);
+    params.append('subject_token_type', 'urn:ietf:params:oauth:token-type:access_token');
+    params.append('requested_token_type', 'urn:ietf:params:oauth:token-type:access_token');
+    params.append('scope', requestedScopes.join(' '));
+    params.append('client_id', CLIENT_ID);
+
+    const response = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      const errorMessage = `Token exchange failed (${response.status} ${response.statusText}): ${errorText}`;
+
+      // For 401, throw a specific error that we can catch and retry with re-auth
+      if (response.status === 401) {
+        const error = new Error(errorMessage);
+        (error as any).shouldRetryWithReauth = true;
+        throw error;
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data.access_token;
+  }
+
+  /**
+   * Get a valid access token scoped to specific permissions via token exchange
+   * @param scopes - OAuth scopes required for this operation (mandatory when token exchange is enabled)
+   * @returns Access token scoped to the requested permissions
    */
   async getToken(scopes?: string[]): Promise<string> {
-    return this.getPrimaryToken();
+    // Temporary: Allow bypassing token exchange during development
+    if (!ENABLE_TOKEN_EXCHANGE) {
+      console.error('Token exchange disabled, returning primary token');
+      return this.getPrimaryToken();
+    }
+
+    if (!scopes || scopes.length === 0) {
+      throw new Error('Scopes parameter is required when token exchange is enabled');
+    }
+
+    console.error(`Token exchange: requesting scopes [${scopes.join(', ')}]`);
+
+    try {
+      // Get primary token (may trigger PKCE flow)
+      const primaryToken = await this.getPrimaryToken();
+
+      // Exchange for scoped-down token
+      const exchangedToken = await this.exchangeToken(primaryToken, scopes);
+
+      console.error(`Token exchange successful for scopes: [${scopes.join(', ')}]`);
+
+      return exchangedToken;
+    } catch (error: any) {
+      // If token exchange failed due to expired/invalid token, retry with fresh auth
+      if (error.shouldRetryWithReauth) {
+        console.error('Primary token invalid, re-authenticating and retrying token exchange...');
+
+        // Force fresh authentication
+        this.hasAuthenticatedThisSession = false;
+
+        // Get fresh primary token (will trigger PKCE flow)
+        const freshPrimaryToken = await this.getPrimaryToken();
+
+        // Retry exchange with fresh token
+        const exchangedToken = await this.exchangeToken(freshPrimaryToken, scopes);
+
+        console.error(`Token exchange successful after re-authentication for scopes: [${scopes.join(', ')}]`);
+
+        return exchangedToken;
+      }
+
+      // Re-throw other errors
+      throw error;
+    }
   }
 
   /**
@@ -209,7 +299,7 @@ class AuthService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to exchange code for token: ${response.statusText} - ${errorText}`);
+      throw new Error(`Authorization code exchange failed (${response.status} ${response.statusText}): ${errorText}`);
     }
 
     const data = await response.json();
