@@ -85,6 +85,100 @@ Queries am-authentication logs in PingOne AIC by transaction ID.
 - Filters by source type: `am-authentication`
 - Useful for debugging authentication flows and tracking user sessions
 
+#### 3. `getManagedObjectSchema`
+**File:** [src/tools/getManagedObjectSchema.ts](src/tools/getManagedObjectSchema.ts)
+
+Retrieves the schema definition for a specific managed object type to understand its structure and requirements.
+
+**Parameters:**
+- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user', 'alpha_role')
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** JSON object containing required properties and their formats
+
+**Implementation Notes:**
+- Queries the IDM configuration endpoint (`/openidm/config/managed`)
+- Returns only required properties to minimize context
+- Use before creating users to understand what fields are necessary
+
+#### 4. `createUser`
+**File:** [src/tools/createUser.ts](src/tools/createUser.ts)
+
+Creates a new user in a specified realm of PingOne AIC.
+
+**Parameters:**
+- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userData` (object): JSON object containing user properties (must include all required fields)
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Success message with the created user's `_id` and transaction ID
+
+**Implementation Notes:**
+- Uses the IDM managed user creation endpoint (`/openidm/managed/{objectType}?_action=create`)
+- Returns only the `_id` to minimize context usage
+- Includes transaction ID in response for debugging
+- Use `getManagedObjectSchema` first to determine required fields
+
+#### 5. `getUser`
+**File:** [src/tools/getUser.ts](src/tools/getUser.ts)
+
+Retrieves a user's complete profile by their unique identifier.
+
+**Parameters:**
+- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userId` (string): The unique identifier (`_id`) of the user
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Complete user object including all fields and metadata
+
+**Implementation Notes:**
+- Queries the IDM managed user endpoint (`/openidm/managed/{objectType}/{userId}`)
+- Returns full user profile including `_rev` (revision) field
+- The `_rev` field is required for safe updates using `patchUser`
+
+#### 6. `patchUser`
+**File:** [src/tools/patchUser.ts](src/tools/patchUser.ts)
+
+Updates specific fields of a user using JSON Patch operations (RFC 6902).
+
+**Parameters:**
+- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userId` (string): The unique identifier (`_id`) of the user
+- `revision` (string): The current revision (`_rev`) from `getUser`
+- `operations` (array): Array of JSON Patch operations
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Success message with updated user's `_id` and new `_rev`
+
+**Implementation Notes:**
+- Uses HTTP PATCH with JSON Patch operations
+- Requires current `_rev` value to prevent conflicting concurrent updates
+- Always call `getUser` first to obtain the current `_rev`
+- Supports operations: add, remove, replace, move, copy, test
+- Field paths use JSON Pointer format (e.g., '/sn', '/givenName', '/mail')
+
+#### 7. `deleteUser`
+**File:** [src/tools/deleteUser.ts](src/tools/deleteUser.ts)
+
+Deletes a user by their unique identifier.
+
+**Parameters:**
+- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userId` (string): The unique identifier (`_id`) of the user
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Success message confirming deletion with transaction ID
+
+**Implementation Notes:**
+- Uses HTTP DELETE on the IDM managed user endpoint
+- Permanent deletion - cannot be undone
+- Includes transaction ID in response for audit trail
+
 ## Configuration
 
 ### Environment Variables
@@ -232,7 +326,7 @@ To add a new tool:
 
 ```typescript
 import { z } from 'zod';
-import { authService } from '../services/authService.js';
+import { getAuthService } from '../services/authService.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -250,7 +344,7 @@ export const myNewTool = {
   },
   async toolFunction({ param1, param2 }: { param1: string; param2?: number }) {
     try {
-      const token = await authService.getToken(SCOPES);
+      const token = await getAuthService().getToken(SCOPES);
 
       const response = await fetch(`https://${aicBaseUrl}/your/api/endpoint`, {
         headers: {
@@ -325,19 +419,18 @@ All tools must declare their required scopes in the `scopes` property. When addi
 Set the `AIC_BASE_URL` environment variable to your PingOne AIC hostname.
 
 ### "Failed to exchange code for token: invalid_client"
-Your OAuth client may not exist or is misconfigured. Verify:
-- Client ID matches `AIC_CLIENT_ID` (default: 'mcp')
-- Client exists in the correct realm (`AIC_CLIENT_REALM`, default: 'alpha')
-- Client is configured as Public with Token Endpoint Auth Method = 'none'
+Contact your PingOne AIC administrator to verify the OAuth client configuration. The client ID is hardcoded as 'AICMCPClient' and must be properly configured in your environment.
 
 ### "Port 3000 is already in use"
-Change `REDIRECT_URI_PORT` to an available port and update your OAuth client's redirect URI accordingly.
+Port 3000 is hardcoded for the OAuth redirect URI. Stop the service using port 3000 or contact your administrator to reconfigure the server with a different port (requires code changes in [src/services/authService.ts](src/services/authService.ts#L12)).
 
 ### "Unknown/invalid scope(s)"
-Ensure your OAuth client in PingOne AIC has the required scopes configured:
+The OAuth client in PingOne AIC must have the following scopes configured:
 - `openid`
 - `fr:idm:*`
 - `fr:idc:monitoring:*`
+
+Contact your administrator if you encounter scope-related errors.
 
 ### Browser doesn't open during authentication
 Manually navigate to the URL shown in error logs, or check if the `open` package has permissions to open your browser.
@@ -360,5 +453,5 @@ This project is designed to be extended and modified for specific use cases. Whe
 
 ---
 
-*Last Updated: 2025-01-10*
+*Last Updated: 2025-01-11*
 *Version: 1.0.0*

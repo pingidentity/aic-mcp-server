@@ -1,6 +1,6 @@
 # PingOne Advanced Identity Cloud MCP Server
 
-An MCP (Model Context Protocol) server that enables AI assistants to interact with PingOne Advanced Identity Cloud environments. Query users, analyze authentication logs, and manage identity data directly from your AI conversations.
+An MCP (Model Context Protocol) server that enables AI assistants to interact with PingOne Advanced Identity Cloud environments. Manage users, analyze authentication logs, and query identity data directly from your AI conversations.
 
 ## What is This?
 
@@ -9,23 +9,22 @@ This server allows AI assistants like Claude to access your PingOne AIC environm
 **Example queries:**
 - "Find all users with email starting with john@example.com"
 - "Show me the authentication logs for transaction ID xyz123"
-- "Search for users in the alpha realm with lastname Smith"
+- "Create a new user in the alpha realm"
+- "Get the schema for alpha_user to see what fields are required"
 
 ## Features
 
-- 🔐 **Dual Authentication**: Supports both interactive user login (PKCE) and service account authentication
+- 🔐 **Secure Authentication**: OAuth 2.0 PKCE flow with browser-based user login
 - 🔍 **User Search**: Query users across realms with flexible search criteria
+- 👤 **User Management**: Create, read, update, and delete users
+- 📋 **Schema Discovery**: Retrieve managed object schemas to understand data structure
 - 📊 **Log Analysis**: Retrieve authentication logs by transaction ID
-- 🔒 **Secure**: Tokens stored in system keychain, automatic expiration handling
-- ⚡ **Efficient**: Per-scope token caching for service accounts
+- 🔒 **Secure Token Storage**: Tokens stored in system keychain with automatic expiration handling
 
 ## Prerequisites
 
 - Node.js (with ES2022 support)
 - Access to a PingOne Advanced Identity Cloud environment
-- One of the following:
-  - **For interactive use**: An OAuth 2.0 public client configured in PingOne AIC
-  - **For automation**: A service account with appropriate permissions
 
 ## Quick Start
 
@@ -38,44 +37,15 @@ npm install
 npm run build
 ```
 
-### 2. Configure Authentication
+### 2. Configure Environment
 
-Choose one authentication method:
+Set the required environment variable:
 
-#### Option A: User Authentication (Interactive)
-
-Best for: Desktop AI assistants, development, testing
-
-Required OAuth client configuration in PingOne AIC:
-- Client Type: **Public**
-- Grant Types: **Authorization Code**
-- Redirect URI: `http://localhost:3000`
-- Scopes: `openid`, `fr:idm:*`, `fr:idc:monitoring:*`
-
-Set environment variables:
 ```bash
 export AIC_BASE_URL="your-tenant.forgeblocks.com"
-export AIC_CLIENT_REALM="alpha"          # optional, defaults to 'alpha'
-export AIC_CLIENT_ID="mcp"               # optional, defaults to 'mcp'
-export REDIRECT_URI_PORT="3000"          # optional, defaults to 3000
 ```
 
-#### Option B: Service Account Authentication
-
-Best for: CI/CD, automation, headless environments
-
-Required setup in PingOne AIC:
-- Service account with permissions: `fr:idm:*`, `fr:idc:monitoring:*`
-- Private key downloaded as JWK file
-
-Set environment variables:
-```bash
-export AIC_BASE_URL="your-tenant.forgeblocks.com"
-export SERVICE_ACCOUNT_ID="your-service-account-id"
-export SERVICE_ACCOUNT_PRIVATE_KEY='{"kty":"RSA","n":"...","e":"AQAB",...}'
-```
-
-> **Note**: Service accounts do not support monitoring scopes, so log query tools won't be available.
+> **Note**: Do not include `https://` or path components in the URL.
 
 ### 3. Configure Your AI Assistant
 
@@ -83,7 +53,6 @@ export SERVICE_ACCOUNT_PRIVATE_KEY='{"kty":"RSA","n":"...","e":"AQAB",...}'
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
-**User Authentication:**
 ```json
 {
   "mcpServers": {
@@ -91,26 +60,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "command": "node",
       "args": ["/absolute/path/to/pingone_AIC_MCP/dist/index.js"],
       "env": {
-        "AIC_BASE_URL": "your-tenant.forgeblocks.com",
-        "AIC_CLIENT_REALM": "alpha",
-        "AIC_CLIENT_ID": "mcp"
-      }
-    }
-  }
-}
-```
-
-**Service Account:**
-```json
-{
-  "mcpServers": {
-    "pingone-aic": {
-      "command": "node",
-      "args": ["/absolute/path/to/pingone_AIC_MCP/dist/index.js"],
-      "env": {
-        "AIC_BASE_URL": "your-tenant.forgeblocks.com",
-        "SERVICE_ACCOUNT_ID": "your-service-account-id",
-        "SERVICE_ACCOUNT_PRIVATE_KEY": "{\"kty\":\"RSA\",\"n\":\"...\",\"e\":\"AQAB\",...}"
+        "AIC_BASE_URL": "your-tenant.forgeblocks.com"
       }
     }
   }
@@ -119,11 +69,11 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ### 4. Start Using
 
-Restart your AI assistant and start asking questions about your PingOne AIC environment!
+Restart your AI assistant and start asking questions about your PingOne AIC environment! On first use, your browser will open for authentication.
 
 ## Available Tools
 
-### Search Users
+### searchUsers
 Search for users in a specified realm.
 
 **Parameters:**
@@ -137,15 +87,86 @@ Search for users in a specified realm.
 "Find users in the alpha realm with email starting with admin"
 ```
 
-### Query Logs by Transaction ID
+### getManagedObjectSchema
+Retrieve the schema definition for a managed object type to understand required and optional fields.
+
+**Parameters:**
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user', 'alpha_role')
+
+**Required Scopes:** `fr:idm:*`
+
+**Example:**
+```
+"What fields are required to create an alpha_user?"
+```
+
+### createUser
+Create a new user in a specified realm.
+
+**Parameters:**
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userData`: JSON object containing user properties (must include all required fields)
+
+**Required Scopes:** `fr:idm:*`
+
+**Example:**
+```
+"Create a new user in the alpha realm with username jsmith and email john.smith@example.com"
+```
+
+### getUser
+Retrieve a user's complete profile by their unique identifier.
+
+**Parameters:**
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userId`: The unique identifier (_id) of the user
+
+**Required Scopes:** `fr:idm:*`
+
+**Example:**
+```
+"Get the user details for ID abc123 in the alpha realm"
+```
+
+### patchUser
+Update specific fields of a user using JSON Patch operations.
+
+**Parameters:**
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userId`: The unique identifier (_id) of the user
+- `revision`: The current revision (_rev) from getUser (ensures safe concurrent updates)
+- `operations`: Array of JSON Patch operations (add, remove, replace, etc.)
+
+**Required Scopes:** `fr:idm:*`
+
+**Important:** Always retrieve the user first with `getUser` to obtain the current `_rev` value.
+
+**Example:**
+```
+"Update the email address for user abc123 to newemail@example.com"
+```
+
+### deleteUser
+Delete a user by their unique identifier.
+
+**Parameters:**
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
+- `userId`: The unique identifier (_id) of the user
+
+**Required Scopes:** `fr:idm:*`
+
+**Example:**
+```
+"Delete the user with ID abc123 from the alpha realm"
+```
+
+### queryAICLogsByTransactionId
 Retrieve authentication logs for a specific transaction.
 
 **Parameters:**
 - `transactionId`: The transaction ID to look up
 
 **Required Scopes:** `fr:idc:monitoring:*`
-
-**Note:** Not available when using service account authentication (monitoring scopes not supported).
 
 **Example:**
 ```
@@ -154,68 +175,70 @@ Retrieve authentication logs for a specific transaction.
 
 ## How Authentication Works
 
-The server automatically detects which authentication method to use:
+The server uses OAuth 2.0 PKCE (Proof Key for Code Exchange) flow for secure user authentication:
 
-1. **Service Account Detected** (if both `SERVICE_ACCOUNT_ID` and `SERVICE_ACCOUNT_PRIVATE_KEY` are set):
-   - Creates signed JWT assertions
-   - Exchanges for access tokens with minimal required scopes
-   - Caches tokens per scope combination
-   - 15-minute token expiry with automatic refresh
+1. **First Use**: Browser opens automatically for user login at PingOne AIC
+2. **Token Storage**: Access token stored securely in system keychain
+3. **Automatic Reuse**: Cached token used for subsequent requests
+4. **Tenant Awareness**: Tokens are validated against the configured `AIC_BASE_URL`
+5. **Auto Re-authentication**: When token expires, browser opens again for new login
 
-2. **User PKCE** (otherwise):
-   - Opens browser for user authentication (first use only)
-   - Requests all tool scopes upfront
-   - Stores token in system keychain
-   - Automatic re-authentication when token expires
+**Security Features:**
+- PKCE prevents authorization code interception attacks
+- Tokens stored in OS keychain (Keychain on macOS, Credential Manager on Windows, Secret Service on Linux)
+- No client secrets required (public client configuration)
+- All scopes requested upfront during authentication
+- User-based actions for complete audit trail
+- Fresh authentication required on each server startup
 
 ## Configuration Reference
 
-### Required
+### Required Environment Variables
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `AIC_BASE_URL` | Your PingOne AIC hostname | `openam-example.forgeblocks.com` |
+| `AIC_BASE_URL` | Your PingOne AIC hostname (without `https://`) | `openam-example.forgeblocks.com` |
 
-### User Authentication (Optional)
+### Optional Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AIC_CLIENT_REALM` | `alpha` | OAuth client realm |
-| `AIC_CLIENT_ID` | `mcp` | OAuth client ID |
-| `REDIRECT_URI_PORT` | `3000` | Local redirect server port |
-
-### Service Account (Optional)
-
-| Variable | Description |
-|----------|-------------|
-| `SERVICE_ACCOUNT_ID` | Service account identifier from PingOne AIC |
-| `SERVICE_ACCOUNT_PRIVATE_KEY` | JWK private key as JSON string |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ENABLE_TOKEN_EXCHANGE` | Enable RFC 8693 token exchange (experimental) | `false` |
 
 ## Troubleshooting
 
 ### "FATAL: AIC_BASE_URL environment variable is not set"
 Set the `AIC_BASE_URL` environment variable to your PingOne AIC hostname (without `https://`).
 
-### "Failed to import service account JWK"
-Ensure `SERVICE_ACCOUNT_PRIVATE_KEY` is valid JSON in JWK format. Check that quotes are properly escaped in your configuration.
+### "Failed to exchange code for token"
+Contact your PingOne AIC administrator to verify the OAuth client configuration for this MCP server.
 
 ### "Port 3000 is already in use"
-Change `REDIRECT_URI_PORT` to an available port and update your OAuth client's redirect URI to match.
+Another service is using port 3000. Stop that service and try again.
 
-### Browser doesn't open during authentication
+### "Browser doesn't open during authentication"
 Check that the `open` package has permissions to launch your browser, or manually navigate to the URL shown in the error message.
 
-### Tool not available when using service account
-The log query tool requires monitoring scopes (`fr:idc:monitoring:*`), which are not supported by service accounts. Use user authentication instead.
+### "Cached token is for different tenant"
+The server detects tenant mismatches automatically. Simply re-authenticate when prompted, and the new token will be cached.
 
 ## Development
 
-See [CLAUDE.md](CLAUDE.md) or [GEMINI.md](GEMINI.md) for detailed architecture documentation and development guides.
+See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation and development guides.
+
+### Build & Run
+
+```bash
+npm install          # Install dependencies
+npm run build        # Compile TypeScript
+npm start            # Run the server
+npm run dev          # Watch mode for development
+```
 
 ## Security
 
 - Authentication tokens stored securely in system keychain
 - PKCE flow prevents authorization code interception
-- Service account private keys never transmitted (only signed JWTs)
-- Minimal scope requests per operation (service accounts)
-- Automatic token expiration and refresh
+- Fresh authentication required on server startup
+- Automatic token expiration and re-authentication
+- All actions traceable to authenticated users for audit compliance
