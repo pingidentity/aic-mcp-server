@@ -1,6 +1,7 @@
 // src/tools/patchUser.ts
 import { z } from 'zod';
-import { getAuthService } from '../services/authService.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
+import { formatSuccess } from '../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -33,46 +34,20 @@ export const patchUserTool = {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${userId}`;
 
     try {
-      const token = await getAuthService().getToken(SCOPES);
-
-      const response = await fetch(url, {
+      const { data, response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
           'If-Match': revision
         },
         body: JSON.stringify(operations)
       });
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        const transactionId = response.headers.get('x-forgerock-transactionid');
-        const errorMessage = `Failed to patch user: ${response.status} ${response.statusText} - ${errorBody}`;
-        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-        throw new Error(errorMessage + transactionInfo);
-      }
-
-      const patchedUser = await response.json();
-      const transactionId = response.headers.get('x-forgerock-transactionid');
-
-      // Return confirmation with updated _rev
+      const patchedUser = data as any;
       const successMessage = `User with _id '${userId}' successfully patched. New revision: ${patchedUser._rev}`;
-      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
 
-      return {
-        content: [{
-          type: 'text' as const,
-          text: successMessage + transactionInfo
-        }]
-      };
+      return createToolResponse(formatSuccess(successMessage, response));
     } catch (error: any) {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: `Error patching user: ${error.message}`
-        }]
-      };
+      return createToolResponse(`Error patching user: ${error.message}`);
     }
   }
 };

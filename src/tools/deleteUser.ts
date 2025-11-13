@@ -1,6 +1,7 @@
 // src/tools/deleteUser.ts
 import { z } from 'zod';
-import { getAuthService } from '../services/authService.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
+import { formatSuccess } from '../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -19,42 +20,14 @@ export const deleteUserTool = {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${userId}`;
 
     try {
-      const token = await getAuthService().getToken(SCOPES);
-
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const { response } = await makeAuthenticatedRequest(url, SCOPES, {
+        method: 'DELETE'
       });
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        const transactionId = response.headers.get('x-forgerock-transactionid');
-        const errorMessage = `Failed to delete user: ${response.status} ${response.statusText} - ${errorBody}`;
-        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-        throw new Error(errorMessage + transactionInfo);
-      }
-
-      // Successfully deleted (200 response)
-      const transactionId = response.headers.get('x-forgerock-transactionid');
       const successMessage = `User with _id '${userId}' successfully deleted from ${objectType}`;
-      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-
-      return {
-        content: [{
-          type: 'text' as const,
-          text: successMessage + transactionInfo
-        }]
-      };
+      return createToolResponse(formatSuccess(successMessage, response));
     } catch (error: any) {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: `Error deleting user: ${error.message}`
-        }]
-      };
+      return createToolResponse(`Error deleting user: ${error.message}`);
     }
   }
 };

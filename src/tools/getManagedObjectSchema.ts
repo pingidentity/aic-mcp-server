@@ -1,6 +1,7 @@
 // src/tools/getManagedObjectSchema.ts
 import { z } from 'zod';
-import { getAuthService } from '../services/authService.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
+import { formatSuccess } from '../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -18,35 +19,17 @@ export const getManagedObjectSchemaTool = {
     const url = `https://${aicBaseUrl}/openidm/config/managed`;
 
     try {
-      const token = await getAuthService().getToken(SCOPES);
+      const { data, response } = await makeAuthenticatedRequest(url, SCOPES);
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        const transactionId = response.headers.get('x-forgerock-transactionid');
-        const errorMessage = `Failed to fetch managed config: ${response.status} ${response.statusText} - ${errorBody}`;
-        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-        throw new Error(errorMessage + transactionInfo);
-      }
-
-      const config = await response.json();
+      const config = data as any;
 
       // Find the specific managed object by name
       const managedObject = config.objects?.find((obj: any) => obj.name === objectType);
 
       if (!managedObject) {
-        return {
-          content: [{
-            type: 'text' as const,
-            text: `Managed object type '${objectType}' not found. Available types: ${config.objects?.map((obj: any) => obj.name).join(', ') || 'none'}`
-          }]
-        };
+        return createToolResponse(
+          `Managed object type '${objectType}' not found. Available types: ${config.objects?.map((obj: any) => obj.name).join(', ') || 'none'}`
+        );
       }
 
       // Extract only the essential schema information
@@ -56,22 +39,9 @@ export const getManagedObjectSchemaTool = {
         properties: managedObject.schema?.properties || {}
       };
 
-      const transactionId = response.headers.get('x-forgerock-transactionid');
-      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify(schemaInfo, null, 2) + transactionInfo
-        }]
-      };
+      return createToolResponse(formatSuccess(schemaInfo, response));
     } catch (error: any) {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: `Error retrieving managed object schema: ${error.message}`
-        }]
-      };
+      return createToolResponse(`Error retrieving managed object schema: ${error.message}`);
     }
   }
 };

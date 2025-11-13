@@ -11,6 +11,8 @@ This server allows AI assistants like Claude to access your PingOne AIC environm
 - "Show me the authentication logs for transaction ID xyz123"
 - "Create a new user in the alpha realm"
 - "Get the schema for alpha_user to see what fields are required"
+- "What log sources are available?"
+- "Show me all ERROR level logs from the am-authentication source in the last hour"
 
 ## Features
 
@@ -18,7 +20,7 @@ This server allows AI assistants like Claude to access your PingOne AIC environm
 - 🔍 **User Search**: Query users across realms with flexible search criteria
 - 👤 **User Management**: Create, read, update, and delete users
 - 📋 **Schema Discovery**: Retrieve managed object schemas to understand data structure
-- 📊 **Log Analysis**: Retrieve authentication logs by transaction ID
+- 📊 **Advanced Log Querying**: Query logs with flexible filtering by time range, source, transaction ID, and payload content with pagination support
 - 🔒 **Secure Token Storage**: Tokens stored in system keychain with automatic expiration handling
 
 ## Prerequisites
@@ -160,8 +162,60 @@ Delete a user by their unique identifier.
 "Delete the user with ID abc123 from the alpha realm"
 ```
 
+### getLogSources
+Retrieve the list of available log sources in PingOne AIC.
+
+**Parameters:** None
+
+**Required Scopes:** `fr:idc:monitoring:*`
+
+**Returns:** List of available log sources (e.g., 'am-authentication', 'am-everything', 'idm-activity', 'idm-everything')
+
+**Example:**
+```
+"What log sources are available in this environment?"
+```
+
+### queryLogs
+Query PingOne AIC logs with advanced filtering capabilities including time ranges, log sources, transaction IDs, and payload content filters.
+
+**Parameters:**
+- `sources` (optional): Array of log sources to query (e.g., ['am-authentication', 'idm-activity'])
+- `beginTime` (optional): Start time in ISO 8601 format (e.g., '2025-01-11T10:00:00Z')
+- `endTime` (optional): End time in ISO 8601 format (e.g., '2025-01-11T12:00:00Z')
+- `transactionId` (optional): Filter by specific transaction ID
+- `queryFilter` (optional): Advanced payload content filter using ForgeRock query filter syntax
+- `pageSize` (optional): Number of logs to return (1-1000, default 100)
+- `pagedResultsCookie` (optional): Pagination token for retrieving next page of results
+
+**Required Scopes:** `fr:idc:monitoring:*`
+
+**Important:**
+- Time range limited to 24 hours maximum
+- Logs stored for 30 days
+- Rate limit: 60 requests/min
+- Use `pagedResultsCookie` from response to retrieve additional pages
+
+**Query Filter Examples:**
+```
+/payload/level eq "ERROR"
+/payload/eventName eq "AM-LOGIN-COMPLETED"
+/payload/result eq "SUCCESSFUL"
+/payload/client/ip co "10.104.1.5"
+/payload/principal co "bob"
+/payload/response.statusCode ge 400
+```
+
+**Examples:**
+```
+"Show me ERROR level logs from the last 2 hours"
+"Find all authentication logs where the user is john.doe"
+"Get logs from am-authentication source between 10am and 11am today"
+"Show me the next page of results using this pagination token"
+```
+
 ### queryAICLogsByTransactionId
-Retrieve authentication logs for a specific transaction.
+Retrieve am-everything and idm-everything logs for a specific transaction ID.
 
 **Parameters:**
 - `transactionId`: The transaction ID to look up
@@ -198,12 +252,6 @@ The server uses OAuth 2.0 PKCE (Proof Key for Code Exchange) flow for secure use
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `AIC_BASE_URL` | Your PingOne AIC hostname (without `https://`) | `openam-example.forgeblocks.com` |
-
-### Optional Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ENABLE_TOKEN_EXCHANGE` | Enable RFC 8693 token exchange (experimental) | `false` |
 
 ## Troubleshooting
 

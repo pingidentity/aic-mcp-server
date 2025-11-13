@@ -1,6 +1,7 @@
 // src/tools/getUser.ts
 import { z } from 'zod';
-import { getAuthService } from '../services/authService.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
+import { formatSuccess } from '../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -19,40 +20,10 @@ export const getUserTool = {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${userId}`;
 
     try {
-      const token = await getAuthService().getToken(SCOPES);
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        const transactionId = response.headers.get('x-forgerock-transactionid');
-        const errorMessage = `Failed to retrieve user: ${response.status} ${response.statusText} - ${errorBody}`;
-        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-        throw new Error(errorMessage + transactionInfo);
-      }
-
-      const user = await response.json();
-      const transactionId = response.headers.get('x-forgerock-transactionid');
-      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify(user, null, 2) + transactionInfo
-        }]
-      };
+      const { data, response } = await makeAuthenticatedRequest(url, SCOPES);
+      return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: `Error retrieving user: ${error.message}`
-        }]
-      };
+      return createToolResponse(`Error retrieving user: ${error.message}`);
     }
   }
 };

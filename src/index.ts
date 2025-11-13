@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { z } from 'zod';
 import { initAuthService } from './services/authService.js';
 import { searchUsersTool } from './tools/searchUsers.js';
 import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
@@ -9,6 +10,17 @@ import { createUserTool } from './tools/createUser.js';
 import { getUserTool } from './tools/getUser.js';
 import { deleteUserTool } from './tools/deleteUser.js';
 import { patchUserTool } from './tools/patchUser.js';
+import { getLogSourcesTool } from './tools/getLogSources.js';
+import { queryLogsTool } from './tools/queryLogs.js';
+
+/**
+ * Tool configuration structure for MCP tool registration
+ */
+interface ToolConfig {
+  title: string;
+  description: string;
+  inputSchema?: Record<string, z.ZodTypeAny>;
+}
 
 // Check for the required environment variable on startup
 if (!process.env.AIC_BASE_URL) {
@@ -24,7 +36,9 @@ const allTools = [
   createUserTool,
   getUserTool,
   deleteUserTool,
-  patchUserTool
+  patchUserTool,
+  getLogSourcesTool,
+  queryLogsTool
 ];
 
 // Extract unique scopes from all tools
@@ -41,82 +55,20 @@ const server = new McpServer({
   version: '1.0.0'
 });
 
-// Register the searchUsers tool
-server.registerTool(
-  searchUsersTool.name,
-  {
-    title: searchUsersTool.title,
-    description: searchUsersTool.description,
-    inputSchema: searchUsersTool.inputSchema,
-  },
-  searchUsersTool.toolFunction
-);
+// Register all tools
+allTools.forEach(tool => {
+  const toolConfig: ToolConfig = {
+    title: tool.title,
+    description: tool.description,
+  };
 
-// Register the queryAICLogsByTransactionId tool
-server.registerTool(
-  queryAICLogsByTransactionIdTool.name,
-  {
-    title: queryAICLogsByTransactionIdTool.title,
-    description: queryAICLogsByTransactionIdTool.description,
-    inputSchema: queryAICLogsByTransactionIdTool.inputSchema,
-  },
-  queryAICLogsByTransactionIdTool.toolFunction
-);
+  // Only add inputSchema if it exists (some tools like getLogSources don't have one)
+  if ('inputSchema' in tool && tool.inputSchema) {
+    toolConfig.inputSchema = tool.inputSchema;
+  }
 
-// Register the getManagedObjectSchema tool
-server.registerTool(
-  getManagedObjectSchemaTool.name,
-  {
-    title: getManagedObjectSchemaTool.title,
-    description: getManagedObjectSchemaTool.description,
-    inputSchema: getManagedObjectSchemaTool.inputSchema,
-  },
-  getManagedObjectSchemaTool.toolFunction
-);
-
-// Register the createUser tool
-server.registerTool(
-  createUserTool.name,
-  {
-    title: createUserTool.title,
-    description: createUserTool.description,
-    inputSchema: createUserTool.inputSchema,
-  },
-  createUserTool.toolFunction
-);
-
-// Register the getUser tool
-server.registerTool(
-  getUserTool.name,
-  {
-    title: getUserTool.title,
-    description: getUserTool.description,
-    inputSchema: getUserTool.inputSchema,
-  },
-  getUserTool.toolFunction
-);
-
-// Register the deleteUser tool
-server.registerTool(
-  deleteUserTool.name,
-  {
-    title: deleteUserTool.title,
-    description: deleteUserTool.description,
-    inputSchema: deleteUserTool.inputSchema,
-  },
-  deleteUserTool.toolFunction
-);
-
-// Register the patchUser tool
-server.registerTool(
-  patchUserTool.name,
-  {
-    title: patchUserTool.title,
-    description: patchUserTool.description,
-    inputSchema: patchUserTool.inputSchema,
-  },
-  patchUserTool.toolFunction
-);
+  server.registerTool(tool.name, toolConfig, tool.toolFunction as any);
+});
 
 // Start receiving messages on stdin and sending messages on stdout
 const transport = new StdioServerTransport();
