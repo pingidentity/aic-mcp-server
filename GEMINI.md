@@ -4,7 +4,15 @@ This document provides an overview of the PingOne AIC MCP Server, a TypeScript-b
 
 ## Project Overview
 
-This server exposes tools that allow AI agents to interact with a PingOne Advanced Identity Cloud (AIC) environment. It provides programmatic access to tools such as user management and monitoring capabilities through secure user-based authentication. The server uses OAuth 2.0 PKCE flow for interactive authentication, ensuring all actions are traceable to authenticated users for audit and security compliance.
+This server exposes tools that allow AI agents to interact with a PingOne Advanced Identity Cloud (AIC) environment. It provides programmatic access to managed object operations (create, read, update, delete, search) for users, roles, groups, and organizations, as well as monitoring capabilities through secure user-based authentication. The server uses OAuth 2.0 PKCE flow for interactive authentication, ensuring all actions are traceable to authenticated users for audit and security compliance.
+
+### Supported Managed Object Types
+
+The server provides generic CRUD operations for the following object types across alpha and bravo realms:
+- **Users** (`alpha_user`, `bravo_user`) - Identity records with authentication credentials
+- **Roles** (`alpha_role`, `bravo_role`) - Collections of permissions and entitlements
+- **Groups** (`alpha_group`, `bravo_group`) - Collections of users or other objects
+- **Organizations** (`alpha_organization`, `bravo_organization`) - Organizational units or tenants
 
 ### Key Technologies
 
@@ -50,23 +58,31 @@ The authentication system uses OAuth 2.0 Authorization Code with PKCE (Proof Key
 
 All tools declare required OAuth scopes, which are requested upfront during user authentication.
 
-#### 1. `searchUsers`
-**File:** [src/tools/searchUsers.ts](src/tools/searchUsers.ts)
+#### 1. `searchManagedObjects`
+**File:** [src/tools/searchManagedObjects.ts](src/tools/searchManagedObjects.ts)
 
-Searches for users in a specified PingOne AIC realm.
+Searches for managed objects in PingOne AIC using a query term.
 
 **Parameters:**
-- `realm` (string): The realm to query (e.g., 'alpha')
-- `queryTerm` (string): Search term to match against userName, givenName, sn, or mail
+- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `queryTerm` (string): Search term (minimum 3 characters)
+
+**Supported Object Types:**
+- `alpha_user`, `bravo_user` - Searches: userName, givenName, sn, mail
+- `alpha_role`, `bravo_role` - Searches: name, description
+- `alpha_group`, `bravo_group` - Searches: name, description
+- `alpha_organization`, `bravo_organization` - Searches: name, description
 
 **Required Scopes:** `fr:idm:*`
 
-**Returns:** JSON array of matching users (max 10 results) with fields: userName, givenName, sn, mail
+**Returns:** JSON array of matching objects (max 10 results)
 
 **Implementation Notes:**
 - Uses SCIM-style query filter with `sw` (starts with) operator
-- Queries the IDM managed user endpoint (`/openidm/managed/{realm}_user`)
-- Results are sorted by userName
+- Configuration-driven search fields based on object type
+- Validates object type using Zod enum
+- Enforces minimum query term length of 3 characters
+- Results sorted by first search field
 
 #### 2. `queryAICLogsByTransactionId`
 **File:** [src/tools/queryAICLogsByTransactionId.ts](src/tools/queryAICLogsByTransactionId.ts)
@@ -91,7 +107,7 @@ Queries am-authentication logs in PingOne AIC by transaction ID.
 Retrieves the schema definition for a specific managed object type to understand its structure and requirements.
 
 **Parameters:**
-- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user', 'alpha_role')
+- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
 
 **Required Scopes:** `fr:idm:*`
 
@@ -100,84 +116,95 @@ Retrieves the schema definition for a specific managed object type to understand
 **Implementation Notes:**
 - Queries the IDM configuration endpoint (`/openidm/config/managed`)
 - Returns only required properties to minimize context
-- Use before creating users to understand what fields are necessary
+- Use before creating managed objects to understand what fields are necessary
+- Works for all supported object types: user, role, group, organization
 
-#### 4. `createUser`
-**File:** [src/tools/createUser.ts](src/tools/createUser.ts)
+#### 4. `createManagedObject`
+**File:** [src/tools/createManagedObject.ts](src/tools/createManagedObject.ts)
 
-Creates a new user in a specified realm of PingOne AIC.
+Creates a new managed object in PingOne AIC.
 
 **Parameters:**
-- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userData` (object): JSON object containing user properties (must include all required fields)
+- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectData` (object): JSON object containing object properties (must include all required fields)
+
+**Supported Object Types:**
+- `alpha_user`, `bravo_user`
+- `alpha_role`, `bravo_role`
+- `alpha_group`, `bravo_group`
+- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
-**Returns:** Success message with the created user's `_id` and transaction ID
+**Returns:** Success message with the created object's `_id` and transaction ID
 
 **Implementation Notes:**
-- Uses the IDM managed user creation endpoint (`/openidm/managed/{objectType}?_action=create`)
+- Uses the IDM managed object creation endpoint (`/openidm/managed/{objectType}?_action=create`)
 - Returns only the `_id` to minimize context usage
 - Includes transaction ID in response for debugging
+- Validates objectType using Zod enum
 - Use `getManagedObjectSchema` first to determine required fields
 
-#### 5. `getUser`
-**File:** [src/tools/getUser.ts](src/tools/getUser.ts)
+#### 5. `getManagedObject`
+**File:** [src/tools/getManagedObject.ts](src/tools/getManagedObject.ts)
 
-Retrieves a user's complete profile by their unique identifier.
+Retrieves a managed object's complete profile by its unique identifier.
 
 **Parameters:**
-- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userId` (string): The unique identifier (`_id`) of the user
+- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectId` (string): The unique identifier (`_id`) of the object
 
 **Required Scopes:** `fr:idm:*`
 
-**Returns:** Complete user object including all fields and metadata
+**Returns:** Complete object including all fields and metadata
 
 **Implementation Notes:**
-- Queries the IDM managed user endpoint (`/openidm/managed/{objectType}/{userId}`)
-- Returns full user profile including `_rev` (revision) field
-- The `_rev` field is required for safe updates using `patchUser`
+- Queries the IDM managed object endpoint (`/openidm/managed/{objectType}/{objectId}`)
+- Returns full object profile including `_rev` (revision) field
+- The `_rev` field is required for safe updates using `patchManagedObject`
+- Works for all supported object types
 
-#### 6. `patchUser`
-**File:** [src/tools/patchUser.ts](src/tools/patchUser.ts)
+#### 6. `patchManagedObject`
+**File:** [src/tools/patchManagedObject.ts](src/tools/patchManagedObject.ts)
 
-Updates specific fields of a user using JSON Patch operations (RFC 6902).
+Updates specific fields of a managed object using JSON Patch operations (RFC 6902).
 
 **Parameters:**
-- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userId` (string): The unique identifier (`_id`) of the user
-- `revision` (string): The current revision (`_rev`) from `getUser`
+- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectId` (string): The unique identifier (`_id`) of the object
+- `revision` (string): The current revision (`_rev`) from `getManagedObject`
 - `operations` (array): Array of JSON Patch operations
 
 **Required Scopes:** `fr:idm:*`
 
-**Returns:** Success message with updated user's `_id` and new `_rev`
+**Returns:** Success message with updated object's `_id` and new `_rev`
 
 **Implementation Notes:**
 - Uses HTTP PATCH with JSON Patch operations
-- Requires current `_rev` value to prevent conflicting concurrent updates
-- Always call `getUser` first to obtain the current `_rev`
+- Requires current `_rev` value to prevent conflicting concurrent updates (optimistic locking)
+- Always call `getManagedObject` first to obtain the current `_rev`
 - Supports operations: add, remove, replace, move, copy, test
-- Field paths use JSON Pointer format (e.g., '/sn', '/givenName', '/mail')
+- Field paths use JSON Pointer format (e.g., '/name', '/description', '/mail')
+- Works for all supported object types
 
-#### 7. `deleteUser`
-**File:** [src/tools/deleteUser.ts](src/tools/deleteUser.ts)
+#### 7. `deleteManagedObject`
+**File:** [src/tools/deleteManagedObject.ts](src/tools/deleteManagedObject.ts)
 
-Deletes a user by their unique identifier.
+Deletes a managed object by its unique identifier.
 
 **Parameters:**
-- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userId` (string): The unique identifier (`_id`) of the user
+- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectId` (string): The unique identifier (`_id`) of the object
 
 **Required Scopes:** `fr:idm:*`
 
 **Returns:** Success message confirming deletion with transaction ID
 
 **Implementation Notes:**
-- Uses HTTP DELETE on the IDM managed user endpoint
+- Uses HTTP DELETE on the IDM managed object endpoint
 - Permanent deletion - cannot be undone
 - Includes transaction ID in response for audit trail
+- Works for all supported object types
 
 ## Configuration
 
@@ -297,22 +324,29 @@ The server handles common error scenarios:
 ```
 pingone_AIC_MCP/
 ├── src/
-│   ├── index.ts                           # Server entry point and tool registration
+│   ├── index.ts                            # Server entry point and tool registration
+│   ├── config/
+│   │   └── managedObjectTypes.ts           # Shared object type configuration and validation
 │   ├── services/
-│   │   └── authService.ts                 # OAuth 2.0 PKCE authentication
+│   │   └── authService.ts                  # OAuth 2.0 PKCE authentication
+│   ├── utils/
+│   │   ├── apiHelpers.ts                   # Shared API request helpers
+│   │   └── responseHelpers.ts              # Response formatting utilities
 │   └── tools/
-│       ├── searchUsers.ts                 # User search tool
-│       ├── queryAICLogsByTransactionId.ts # Log query tool
-│       ├── getManagedObjectSchema.ts      # Schema retrieval tool
-│       ├── createUser.ts                  # User creation tool
-│       ├── getUser.ts                     # User retrieval tool
-│       ├── deleteUser.ts                  # User deletion tool
-│       └── patchUser.ts                   # User update tool
-├── dist/                                   # Compiled JavaScript (generated)
-├── package.json                            # Dependencies and scripts
-├── tsconfig.json                           # TypeScript configuration
-├── CLAUDE.md                               # This file
-└── LICENSE                                 # MIT License
+│       ├── searchManagedObjects.ts         # Generic managed object search
+│       ├── createManagedObject.ts          # Generic object creation
+│       ├── getManagedObject.ts             # Generic object retrieval
+│       ├── patchManagedObject.ts           # Generic object update (JSON Patch)
+│       ├── deleteManagedObject.ts          # Generic object deletion
+│       ├── getManagedObjectSchema.ts       # Schema retrieval
+│       ├── queryAICLogsByTransactionId.ts  # Log query by transaction ID
+│       ├── getLogSources.ts                # Available log sources
+│       └── queryLogs.ts                    # Advanced log querying
+├── dist/                                    # Compiled JavaScript (generated)
+├── package.json                             # Dependencies and scripts
+├── tsconfig.json                            # TypeScript configuration
+├── CLAUDE.md                                # This file
+└── LICENSE                                  # MIT License
 ```
 
 ## Extending the Server
@@ -406,6 +440,43 @@ All tools must declare their required scopes in the `scopes` property. When addi
 **Scope Behavior:**
 - All scopes from all tools are collected and requested upfront during user authentication
 - The scopes parameter in `getToken(scopes)` is kept for future token exchange support but currently unused
+
+### Adding New Managed Object Types
+
+To add support for a new managed object type (e.g., `device`, `application`):
+
+1. **Update the shared configuration** in `src/config/managedObjectTypes.ts`:
+   ```typescript
+   export const BASE_OBJECT_TYPES = ['user', 'role', 'group', 'organization', 'device'] as const;
+   ```
+
+2. **Add search field configuration** in `src/tools/searchManagedObjects.ts`:
+   ```typescript
+   const SEARCH_FIELD_CONFIG: Record<string, string[]> = {
+     user: ['userName', 'givenName', 'sn', 'mail'],
+     role: ['name', 'description'],
+     group: ['name', 'description'],
+     organization: ['name', 'description'],
+     device: ['deviceId', 'deviceName', 'status'], // New object type
+   };
+
+   const RETURN_FIELD_CONFIG: Record<string, string[]> = {
+     user: ['userName', 'givenName', 'sn', 'mail'],
+     role: ['name', 'description'],
+     group: ['name', 'description'],
+     organization: ['name', 'description'],
+     device: ['deviceId', 'deviceName', 'status'], // New object type
+   };
+   ```
+
+3. **Update tool descriptions** to include the new object type in:
+   - `searchManagedObjects` - Add to description
+   - `createManagedObject` - Add to Supported Object Types section
+   - Other tools will automatically support it via the enum validation
+
+4. **Rebuild**: `npm run build`
+
+**No code changes needed** for createManagedObject, getManagedObject, patchManagedObject, deleteManagedObject, or getManagedObjectSchema - they work with any object type automatically!
 
 ## Known Limitations
 
