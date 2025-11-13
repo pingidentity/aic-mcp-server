@@ -1,6 +1,7 @@
 // src/tools/createUser.ts
 import { z } from 'zod';
-import { getAuthService } from '../services/authService.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
+import { formatSuccess } from '../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -19,45 +20,17 @@ export const createUserTool = {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}?_action=create`;
 
     try {
-      const token = await getAuthService().getToken(SCOPES);
-
-      const response = await fetch(url, {
+      const { data, response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(userData)
       });
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        const transactionId = response.headers.get('x-forgerock-transactionid');
-        const errorMessage = `Failed to create user: ${response.status} ${response.statusText} - ${errorBody}`;
-        const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
-        throw new Error(errorMessage + transactionInfo);
-      }
-
-      const createdUser = await response.json();
-      const transactionId = response.headers.get('x-forgerock-transactionid');
-
-      // Return only the _id to minimize context
+      const createdUser = data as any;
       const successMessage = `User created successfully with _id: ${createdUser._id}`;
-      const transactionInfo = transactionId ? `\n\nTransaction ID: ${transactionId}` : '';
 
-      return {
-        content: [{
-          type: 'text' as const,
-          text: successMessage + transactionInfo
-        }]
-      };
+      return createToolResponse(formatSuccess(successMessage, response));
     } catch (error: any) {
-      return {
-        content: [{
-          type: 'text' as const,
-          text: `Error creating user: ${error.message}`
-        }]
-      };
+      return createToolResponse(`Error creating user: ${error.message}`);
     }
   }
 };

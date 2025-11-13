@@ -14,9 +14,6 @@ const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
 const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/access_token`;
 
-// Feature flag for token exchange (temporary - will be removed once stable)
-const ENABLE_TOKEN_EXCHANGE = process.env.ENABLE_TOKEN_EXCHANGE === 'true';
-
 // Keychain configuration
 const KEYCHAIN_SERVICE = 'PingOneAIC_MCP_Server';
 const KEYCHAIN_ACCOUNT = 'user-token';
@@ -135,18 +132,12 @@ class AuthService {
 
   /**
    * Get a valid access token scoped to specific permissions via token exchange
-   * @param scopes - OAuth scopes required for this operation (mandatory when token exchange is enabled)
+   * @param scopes - OAuth scopes required for this operation
    * @returns Access token scoped to the requested permissions
    */
   async getToken(scopes?: string[]): Promise<string> {
-    // Temporary: Allow bypassing token exchange during development
-    if (!ENABLE_TOKEN_EXCHANGE) {
-      console.error('Token exchange disabled, returning primary token');
-      return this.getPrimaryToken();
-    }
-
     if (!scopes || scopes.length === 0) {
-      throw new Error('Scopes parameter is required when token exchange is enabled');
+      throw new Error('Scopes parameter is required for token exchange');
     }
 
     console.error(`Token exchange: requesting scopes [${scopes.join(', ')}]`);
