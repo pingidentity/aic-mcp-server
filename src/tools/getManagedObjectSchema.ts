@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
 import { formatSuccess } from '../utils/responseHelpers.js';
+import { SUPPORTED_OBJECT_TYPES } from '../config/managedObjectTypes.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -10,10 +11,10 @@ const SCOPES = ['fr:idm:*'];
 export const getManagedObjectSchemaTool = {
   name: 'getManagedObjectSchema',
   title: 'Get Managed Object Schema',
-  description: 'Retrieve the schema definition for a specific managed object type (e.g., alpha_user, bravo_user) from PingOne AIC. Returns only the required properties and their formats to minimize context. Use this before creating users to understand what fields are required.',
+  description: 'Retrieve the schema definition for a specific managed object type from PingOne AIC. Supported types: alpha_user, bravo_user, alpha_role, bravo_role, alpha_group, bravo_group, alpha_organization, bravo_organization. Returns only the required properties and their formats to minimize context. Use this before creating objects to understand what fields are required.',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.string().describe("The managed object type to get schema for (e.g., 'alpha_user', 'bravo_user', 'alpha_role')"),
+    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe("The managed object type to get schema for (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')"),
   },
   async toolFunction({ objectType }: { objectType: string }) {
     const url = `https://${aicBaseUrl}/openidm/config/managed`;

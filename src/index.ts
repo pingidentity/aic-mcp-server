@@ -3,13 +3,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { initAuthService } from './services/authService.js';
-import { searchUsersTool } from './tools/searchUsers.js';
+import { searchManagedObjectsTool } from './tools/searchManagedObjects.js';
 import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
 import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
-import { createUserTool } from './tools/createUser.js';
-import { getUserTool } from './tools/getUser.js';
-import { deleteUserTool } from './tools/deleteUser.js';
-import { patchUserTool } from './tools/patchUser.js';
+import { createManagedObjectTool } from './tools/createManagedObject.js';
+import { getManagedObjectTool } from './tools/getManagedObject.js';
+import { deleteManagedObjectTool } from './tools/deleteManagedObject.js';
+import { patchManagedObjectTool } from './tools/patchManagedObject.js';
 import { getLogSourcesTool } from './tools/getLogSources.js';
 import { queryLogsTool } from './tools/queryLogs.js';
 
@@ -30,13 +30,13 @@ if (!process.env.AIC_BASE_URL) {
 
 // Collect all tool scopes
 const allTools = [
-  searchUsersTool,
+  searchManagedObjectsTool,
   queryAICLogsByTransactionIdTool,
   getManagedObjectSchemaTool,
-  createUserTool,
-  getUserTool,
-  deleteUserTool,
-  patchUserTool,
+  createManagedObjectTool,
+  getManagedObjectTool,
+  deleteManagedObjectTool,
+  patchManagedObjectTool,
   getLogSourcesTool,
   queryLogsTool
 ];

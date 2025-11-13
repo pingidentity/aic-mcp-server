@@ -1,27 +1,38 @@
 # PingOne Advanced Identity Cloud MCP Server
 
-An MCP (Model Context Protocol) server that enables AI assistants to interact with PingOne Advanced Identity Cloud environments. Manage users, analyze authentication logs, and query identity data directly from your AI conversations.
+An MCP (Model Context Protocol) server that enables AI assistants to interact with PingOne Advanced Identity Cloud environments. Manage users, roles, groups, organizations, analyze authentication logs, and query identity data directly from your AI conversations.
 
 ## What is This?
 
 This server allows AI assistants like Claude to access your PingOne AIC environment through secure, authenticated API calls. Instead of manually querying APIs or navigating the admin console, you can ask your AI assistant natural language questions and get instant answers.
 
 **Example queries:**
-- "Find all users with email starting with john@example.com"
+- "Find all alpha_users with email starting with john@example.com"
+- "Search for bravo_roles with name containing admin"
 - "Show me the authentication logs for transaction ID xyz123"
-- "Create a new user in the alpha realm"
-- "Get the schema for alpha_user to see what fields are required"
+- "Create a new alpha_user with username jsmith"
+- "Create a bravo_role called AdminRole"
+- "Get the schema for alpha_group to see what fields are required"
+- "Update the description of alpha_organization abc123"
 - "What log sources are available?"
 - "Show me all ERROR level logs from the am-authentication source in the last hour"
 
 ## Features
 
 - 🔐 **Secure Authentication**: OAuth 2.0 PKCE flow with browser-based user login
-- 🔍 **User Search**: Query users across realms with flexible search criteria
-- 👤 **User Management**: Create, read, update, and delete users
+- 🔍 **Generic Object Search**: Query users, roles, groups, and organizations with flexible search criteria
+- 👥 **Managed Object Operations**: Create, read, update, and delete users, roles, groups, and organizations
 - 📋 **Schema Discovery**: Retrieve managed object schemas to understand data structure
 - 📊 **Advanced Log Querying**: Query logs with flexible filtering by time range, source, transaction ID, and payload content with pagination support
 - 🔒 **Secure Token Storage**: Tokens stored in system keychain with automatic expiration handling
+
+### Supported Managed Object Types
+
+The server provides generic CRUD operations for the following object types across alpha and bravo realms:
+- **Users** (`alpha_user`, `bravo_user`) - Identity records with authentication credentials
+- **Roles** (`alpha_role`, `bravo_role`) - Collections of permissions and entitlements
+- **Groups** (`alpha_group`, `bravo_group`) - Collections of users or other objects
+- **Organizations** (`alpha_organization`, `bravo_organization`) - Organizational units
 
 ## Prerequisites
 
@@ -75,91 +86,109 @@ Restart your AI assistant and start asking questions about your PingOne AIC envi
 
 ## Available Tools
 
-### searchUsers
-Search for users in a specified realm.
+### searchManagedObjects
+Search for managed objects (users, roles, groups, organizations) using a query term.
 
 **Parameters:**
-- `realm`: Realm to search (e.g., 'alpha', 'bravo')
-- `queryTerm`: Search term to match against userName, givenName, sn, or mail
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `queryTerm`: Search term (minimum 3 characters)
+
+**Supported Object Types:**
+- `alpha_user`, `bravo_user` - Searches: userName, givenName, sn, mail
+- `alpha_role`, `bravo_role` - Searches: name, description
+- `alpha_group`, `bravo_group` - Searches: name, description
+- `alpha_organization`, `bravo_organization` - Searches: name, description
 
 **Required Scopes:** `fr:idm:*`
 
-**Example:**
+**Examples:**
 ```
-"Find users in the alpha realm with email starting with admin"
+"Find alpha_users with email starting with admin"
+"Search for bravo_roles with name containing manager"
+"Find alpha_groups with name starting with eng"
 ```
 
 ### getManagedObjectSchema
 Retrieve the schema definition for a managed object type to understand required and optional fields.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user', 'alpha_role')
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
 
 **Required Scopes:** `fr:idm:*`
 
 **Example:**
 ```
-"What fields are required to create an alpha_user?"
+"What fields are required to create an alpha_role?"
 ```
 
-### createUser
-Create a new user in a specified realm.
+### createManagedObject
+Create a new managed object (user, role, group, or organization).
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userData`: JSON object containing user properties (must include all required fields)
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectData`: JSON object containing object properties (must include all required fields)
+
+**Supported Object Types:**
+- `alpha_user`, `bravo_user`
+- `alpha_role`, `bravo_role`
+- `alpha_group`, `bravo_group`
+- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
-**Example:**
+**Examples:**
 ```
-"Create a new user in the alpha realm with username jsmith and email john.smith@example.com"
+"Create a new alpha_user with username jsmith and email john.smith@example.com"
+"Create a bravo_role called AdminRole with description Full system admin"
 ```
 
-### getUser
-Retrieve a user's complete profile by their unique identifier.
+### getManagedObject
+Retrieve a managed object's complete profile by its unique identifier.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userId`: The unique identifier (_id) of the user
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectId`: The unique identifier (_id) of the object
 
 **Required Scopes:** `fr:idm:*`
 
-**Example:**
+**Examples:**
 ```
-"Get the user details for ID abc123 in the alpha realm"
+"Get the alpha_user details for ID abc123"
+"Show me the bravo_role with ID xyz789"
 ```
 
-### patchUser
-Update specific fields of a user using JSON Patch operations.
+### patchManagedObject
+Update specific fields of a managed object using JSON Patch operations.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userId`: The unique identifier (_id) of the user
-- `revision`: The current revision (_rev) from getUser (ensures safe concurrent updates)
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectId`: The unique identifier (_id) of the object
+- `revision`: The current revision (_rev) from getManagedObject (ensures safe concurrent updates)
 - `operations`: Array of JSON Patch operations (add, remove, replace, etc.)
 
 **Required Scopes:** `fr:idm:*`
 
-**Important:** Always retrieve the user first with `getUser` to obtain the current `_rev` value.
+**Important:** Always retrieve the object first with `getManagedObject` to obtain the current `_rev` value.
 
-**Example:**
+**Examples:**
 ```
-"Update the email address for user abc123 to newemail@example.com"
+"Update the email address for alpha_user abc123 to newemail@example.com"
+"Change the description of bravo_role xyz789 to Updated admin role"
 ```
 
-### deleteUser
-Delete a user by their unique identifier.
+### deleteManagedObject
+Delete a managed object by its unique identifier.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_user')
-- `userId`: The unique identifier (_id) of the user
+- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectId`: The unique identifier (_id) of the object
 
 **Required Scopes:** `fr:idm:*`
 
-**Example:**
+**Examples:**
 ```
-"Delete the user with ID abc123 from the alpha realm"
+"Delete the alpha_user with ID abc123"
+"Remove the bravo_group with ID def456"
 ```
 
 ### getLogSources
@@ -290,3 +319,5 @@ npm run dev          # Watch mode for development
 - Fresh authentication required on server startup
 - Automatic token expiration and re-authentication
 - All actions traceable to authenticated users for audit compliance
+- Input validation with path traversal protection on all object IDs
+- Type validation ensures only supported object types are accessed
