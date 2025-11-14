@@ -43,16 +43,18 @@ The authentication system uses OAuth 2.0 Authorization Code with PKCE (Proof Key
 - Opens system browser for user login at PingOne AIC
 - Runs local HTTP server to receive OAuth redirect
 - Requests all tool scopes upfront during authentication
+- Uses RFC 8693 token exchange for scoped-down tokens
 - Stores tokens securely in system keychain under `user-token` account
 - Provides `getToken()` interface to all tools
 
 **Key Features:**
 - User-based authentication for full audit trail
+- Two-client architecture for enhanced security (PKCE auth + token exchange)
 - Token persistence across sessions via system keychain
 - Automatic token expiry checking and refresh
 - In-flight request deduplication to prevent concurrent auth flows
 - PKCE security to prevent authorization code interception
-- No client secrets required (public client configuration)
+- No client secrets required (both clients configured as public)
 
 ### Available Tools
 
@@ -217,7 +219,17 @@ Only one environment variable is required:
   - Do not include `https://` or path components
   - Server will exit on startup if not set
 
-The OAuth client configuration (client ID, realm, redirect port) is fixed as part of the AIC implementation and does not need to be configured.
+The server requires two OAuth clients to be configured in your PingOne AIC environment:
+
+- **`AICMCPClient`**: Used for OAuth 2.0 PKCE authentication flow
+  - Must be configured as a public client (no client secret)
+  - Requires scopes: `openid`, `fr:idm:*`, `fr:idc:monitoring:*`
+  - Redirect URI: `http://localhost:3000`
+
+- **`AICMCPExchangeClient`**: Used for RFC 8693 token exchange
+  - Must be configured as a public client (no client secret)
+  - Only requires token exchange grant type: `urn:ietf:params:oauth:grant-type:token-exchange`
+  - Requires same scopes as AICMCPClient
 
 ### Authentication Characteristics
 
@@ -490,18 +502,13 @@ To add support for a new managed object type (e.g., `device`, `application`):
 Set the `AIC_BASE_URL` environment variable to your PingOne AIC hostname.
 
 ### "Failed to exchange code for token: invalid_client"
-Contact your PingOne AIC administrator to verify the OAuth client configuration. The client ID is hardcoded as 'AICMCPClient' and must be properly configured in your environment.
+Raise a support ticket with Ping to request the required OAuth client configuration.
 
 ### "Port 3000 is already in use"
 Port 3000 is hardcoded for the OAuth redirect URI. Stop the service using port 3000 or contact your administrator to reconfigure the server with a different port (requires code changes in [src/services/authService.ts](src/services/authService.ts#L12)).
 
 ### "Unknown/invalid scope(s)"
-The OAuth client in PingOne AIC must have the following scopes configured:
-- `openid`
-- `fr:idm:*`
-- `fr:idc:monitoring:*`
-
-Contact your administrator if you encounter scope-related errors.
+Raise a support ticket with Ping if you encounter scope-related errors.
 
 ### Browser doesn't open during authentication
 Manually navigate to the URL shown in error logs, or check if the `open` package has permissions to open your browser.

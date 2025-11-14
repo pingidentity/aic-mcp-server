@@ -9,6 +9,7 @@ const AIC_BASE_URL = process.env.AIC_BASE_URL;
 
 // Fixed OAuth configuration
 const CLIENT_ID = 'AICMCPClient';
+const EXCHANGE_CLIENT_ID = 'AICMCPExchangeClient';
 const REDIRECT_URI_PORT = 3000;
 const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
@@ -102,7 +103,7 @@ class AuthService {
     params.append('subject_token_type', 'urn:ietf:params:oauth:token-type:access_token');
     params.append('requested_token_type', 'urn:ietf:params:oauth:token-type:access_token');
     params.append('scope', requestedScopes.join(' '));
-    params.append('client_id', CLIENT_ID);
+    params.append('client_id', EXCHANGE_CLIENT_ID);
 
     const response = await fetch(TOKEN_URL, {
       method: 'POST',
