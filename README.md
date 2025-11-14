@@ -268,9 +268,7 @@ The server uses OAuth 2.0 PKCE (Proof Key for Code Exchange) flow for secure use
 
 **Security Features:**
 - PKCE prevents authorization code interception attacks
-- Tokens stored in OS keychain (Keychain on macOS, Credential Manager on Windows, Secret Service on Linux)
-- No client secrets required (public client configuration)
-- All scopes requested upfront during authentication
+- Tokens stored securely in OS keychain (Keychain on macOS, Credential Manager on Windows, Secret Service on Linux)
 - User-based actions for complete audit trail
 - Fresh authentication required on each server startup
 
@@ -288,7 +286,7 @@ The server uses OAuth 2.0 PKCE (Proof Key for Code Exchange) flow for secure use
 Set the `AIC_BASE_URL` environment variable to your PingOne AIC hostname (without `https://`).
 
 ### "Failed to exchange code for token"
-Contact your PingOne AIC administrator to verify the OAuth client configuration for this MCP server.
+If you encounter this error, raise a support ticket with Ping to request the OAuth client configuration.
 
 ### "Port 3000 is already in use"
 Another service is using port 3000. Stop that service and try again.
