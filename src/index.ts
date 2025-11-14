@@ -12,6 +12,12 @@ import { deleteManagedObjectTool } from './tools/deleteManagedObject.js';
 import { patchManagedObjectTool } from './tools/patchManagedObject.js';
 import { getLogSourcesTool } from './tools/getLogSources.js';
 import { queryLogsTool } from './tools/queryLogs.js';
+import { getRealmThemesTool } from './tools/getRealmThemes.js';
+import { getThemeTool } from './tools/getTheme.js';
+import { createThemeTool } from './tools/createTheme.js';
+import { setDefaultThemeTool } from './tools/setDefaultTheme.js';
+import { updateThemeTool } from './tools/updateTheme.js';
+import { getThemeSchemaTool } from './tools/getThemeSchema.js';
 
 /**
  * Tool configuration structure for MCP tool registration
@@ -38,7 +44,13 @@ const allTools = [
   deleteManagedObjectTool,
   patchManagedObjectTool,
   getLogSourcesTool,
-  queryLogsTool
+  queryLogsTool,
+  getRealmThemesTool,
+  getThemeTool,
+  getThemeSchemaTool,
+  createThemeTool,
+  setDefaultThemeTool,
+  updateThemeTool
 ];
 
 // Extract unique scopes from all tools
