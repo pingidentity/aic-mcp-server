@@ -17,6 +17,7 @@ import { getThemeTool } from './tools/getTheme.js';
 import { createThemeTool } from './tools/createTheme.js';
 import { setDefaultThemeTool } from './tools/setDefaultTheme.js';
 import { updateThemeTool } from './tools/updateTheme.js';
+import { deleteThemeTool } from './tools/deleteTheme.js';
 import { getThemeSchemaTool } from './tools/getThemeSchema.js';
 
 /**
@@ -50,7 +51,8 @@ const allTools = [
   getThemeSchemaTool,
   createThemeTool,
   setDefaultThemeTool,
-  updateThemeTool
+  updateThemeTool,
+  deleteThemeTool
 ];
 
 // Extract unique scopes from all tools

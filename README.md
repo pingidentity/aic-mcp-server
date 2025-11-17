@@ -16,6 +16,9 @@ This server allows AI assistants like Claude to access your PingOne AIC environm
 - "Update the description of alpha_organization abc123"
 - "What log sources are available?"
 - "Show me all ERROR level logs from the am-authentication source in the last hour"
+- "Show me all themes for the alpha realm"
+- "Create a new theme called 'Corporate Brand' with primary color #0066cc"
+- "Delete the theme named 'Test Theme' from the bravo realm"
 
 ## Features
 
@@ -23,6 +26,7 @@ This server allows AI assistants like Claude to access your PingOne AIC environm
 - 🔍 **Generic Object Search**: Query users, roles, groups, and organizations with flexible search criteria
 - 👥 **Managed Object Operations**: Create, read, update, and delete users, roles, groups, and organizations
 - 📋 **Schema Discovery**: Retrieve managed object schemas to understand data structure
+- 🎨 **Theme Management**: Full CRUD operations for authentication journey and account page themes
 - 📊 **Advanced Log Querying**: Query logs with flexible filtering by time range, source, transaction ID, and payload content with pagination support
 - 🔒 **Secure Token Storage**: Tokens stored in system keychain with automatic expiration handling
 
@@ -254,6 +258,137 @@ Retrieve am-everything and idm-everything logs for a specific transaction ID.
 **Example:**
 ```
 "Show me the authentication logs for transaction a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+```
+
+## Theme Management Tools
+
+Customize the appearance of authentication journeys and account pages with comprehensive theme management.
+
+### getThemeSchema
+Get comprehensive schema documentation for PingOne AIC themes.
+
+**Parameters:** None
+
+**Required Scopes:** None (static documentation)
+
+**Returns:** Complete documentation of all available theme fields, types, enums, defaults, and requirements.
+
+**Important:** Call this before creating or updating themes to understand all available customization options.
+
+**Example:**
+```
+"Show me the theme schema to understand what fields I can customize"
+```
+
+### getRealmThemes
+List all themes available in a realm.
+
+**Parameters:**
+- `realm`: The realm to query ('alpha' or 'bravo')
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** List of themes with their names and default status.
+
+**Examples:**
+```
+"Show me all themes in the alpha realm"
+"List available themes for bravo"
+```
+
+### getTheme
+Retrieve a specific theme's complete configuration.
+
+**Parameters:**
+- `realm`: The realm containing the theme
+- `themeIdentifier`: Theme ID or name
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Complete theme configuration including all styling, logos, headers, footers, and page settings.
+
+**Examples:**
+```
+"Get the theme named 'Corporate Brand' from the alpha realm"
+"Show me the complete configuration for theme ID abc-123"
+```
+
+### createTheme
+Create a new theme for a realm.
+
+**Parameters:**
+- `realm`: The realm to create the theme in
+- `themeData`: Theme configuration object (must include `name` property)
+
+**Required Scopes:** `fr:idm:*`
+
+**Important:**
+- Only `name` is required - all other fields are optional
+- The AIC UI applies defaults as necessary for omitted fields
+- Theme is created with `isDefault: false` (use `setDefaultTheme` to change)
+- Call `getThemeSchema` first to see all available customization options
+
+**Examples:**
+```
+"Create a new theme called 'Corporate Brand' in the alpha realm"
+"Create a theme named 'Dark Mode' with primary color #1a1a1a and background color #000000"
+```
+
+### updateTheme
+Update an existing theme's properties.
+
+**Parameters:**
+- `realm`: The realm containing the theme
+- `themeIdentifier`: Theme ID or name to update
+- `updates`: Object containing fields to update
+
+**Required Scopes:** `fr:idm:*`
+
+**Important:**
+- Provide only the fields you want to change - all others are preserved
+- Cannot update `_id` (immutable) or `isDefault` (use `setDefaultTheme`)
+
+**Examples:**
+```
+"Update the 'Corporate Brand' theme to use primary color #0066cc"
+"Change the logo URL for theme 'Marketing Theme' to https://example.com/new-logo.svg"
+```
+
+### deleteTheme
+Delete a theme from a realm.
+
+**Parameters:**
+- `realm`: The realm containing the theme
+- `themeIdentifier`: Theme ID or name to delete
+
+**Required Scopes:** `fr:idm:*`
+
+**Important:**
+- Cannot delete the default theme
+- Must set another theme as default first using `setDefaultTheme`
+- Deletion is permanent and cannot be undone
+
+**Examples:**
+```
+"Delete the theme named 'Test Theme' from the alpha realm"
+"Remove the theme with ID abc-123 from bravo"
+```
+
+### setDefaultTheme
+Set a theme as the default for a realm.
+
+**Parameters:**
+- `realm`: The realm containing the theme
+- `themeIdentifier`: Theme ID or name to set as default
+
+**Required Scopes:** `fr:idm:*`
+
+**Note:** Automatically sets the current default theme to non-default. Only one theme can be default per realm.
+
+**Examples:**
+```
+"Set 'Corporate Brand' as the default theme for alpha realm"
+"Make the theme with ID xyz-789 the default for bravo"
 ```
 
 ## How Authentication Works

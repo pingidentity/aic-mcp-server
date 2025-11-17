@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
 import { formatSuccess } from '../utils/responseHelpers.js';
 import { REALMS } from '../config/managedObjectTypes.js';
-import { DEFAULT_THEME } from '../config/themeDefaults.js';
 import { randomUUID } from 'crypto';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
@@ -47,10 +46,8 @@ export const createThemeTool = {
       // Generate UUID for the new theme
       const themeId = randomUUID();
 
-      // Merge defaults with provided theme data, then add system-controlled fields
-      // This ensures: defaults < user data < system fields (in order of precedence)
+      // Add system-controlled fields to user-provided theme data
       const newTheme = {
-        ...DEFAULT_THEME,
         ...themeData,
         _id: themeId,
         isDefault: false

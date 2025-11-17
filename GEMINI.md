@@ -208,6 +208,148 @@ Deletes a managed object by its unique identifier.
 - Includes transaction ID in response for audit trail
 - Works for all supported object types
 
+### Theme Management Tools
+
+The server provides comprehensive theme management capabilities for customizing the appearance of authentication journeys and account pages in PingOne AIC.
+
+#### 8. `getThemeSchema`
+**File:** [src/tools/getThemeSchema.ts](src/tools/getThemeSchema.ts)
+
+Retrieve comprehensive schema documentation for PingOne AIC themes.
+
+**Parameters:** None
+
+**Required Scopes:** None (static documentation)
+
+**Returns:** Complete schema documentation including:
+- All available theme fields with types and descriptions
+- Enum values for layout and positioning fields
+- Default values for all optional fields
+- Localization support information
+- HTML/CSS field constraints
+- Color format requirements
+- Image field formats (URLs and data URIs)
+
+**Implementation Notes:**
+- Provides static documentation - no API call required
+- **Should be called before creating or updating themes** to understand available fields
+- Documents that only `name` field is required; all others are optional
+- The AIC server applies defaults for any omitted fields
+
+#### 9. `getRealmThemes`
+**File:** [src/tools/getRealmThemes.ts](src/tools/getRealmThemes.ts)
+
+Retrieve all themes for a specific realm.
+
+**Parameters:**
+- `realm` (string): The realm to query - validated enum ('alpha' or 'bravo')
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** List of themes with `name` and `isDefault` status
+
+**Implementation Notes:**
+- Use this to discover available themes before getting details or making updates
+- Returns minimal information (name and default status) for quick listing
+
+#### 10. `getTheme`
+**File:** [src/tools/getTheme.ts](src/tools/getTheme.ts)
+
+Retrieve a specific theme's complete configuration.
+
+**Parameters:**
+- `realm` (string): The realm containing the theme
+- `themeIdentifier` (string): Theme ID or name to retrieve
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Complete theme object including all styling properties, logos, headers, footers, and page settings
+
+**Implementation Notes:**
+- Can query by either `_id` or `name`
+- Useful for examining existing themes before creating new ones
+- Returns full theme configuration for reference or modification
+
+#### 11. `createTheme`
+**File:** [src/tools/createTheme.ts](src/tools/createTheme.ts)
+
+Create a new theme for a realm.
+
+**Parameters:**
+- `realm` (string): The realm to create the theme in
+- `themeData` (object): Theme configuration object (must include `name` property)
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Success message with created theme's `_id` and `name`
+
+**Implementation Notes:**
+- **Only `name` is required** - all other fields are optional
+- The AIC server automatically applies default values for omitted fields
+- System-controlled fields (`_id`, `isDefault`) are set automatically
+- `_id` is auto-generated as a UUID
+- `isDefault` is always set to `false` on creation (use `setDefaultTheme` to change)
+- Validates that theme name is unique within the realm
+- **Recommended: Call `getThemeSchema` first** to understand available customization options
+
+#### 12. `updateTheme`
+**File:** [src/tools/updateTheme.ts](src/tools/updateTheme.ts)
+
+Update an existing theme's properties.
+
+**Parameters:**
+- `realm` (string): The realm containing the theme
+- `themeIdentifier` (string): Theme ID or name to update
+- `updates` (object): Fields to update (partial theme object)
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Success message with updated theme's `_id` and `name`
+
+**Implementation Notes:**
+- Provide only the fields you want to change - all others are preserved
+- Cannot update `_id` (immutable) or `isDefault` (use `setDefaultTheme` instead)
+- Can query by either `_id` or `name`
+- Validates name uniqueness if renaming the theme
+
+#### 13. `deleteTheme`
+**File:** [src/tools/deleteTheme.ts](src/tools/deleteTheme.ts)
+
+Delete a theme from a realm.
+
+**Parameters:**
+- `realm` (string): The realm containing the theme
+- `themeIdentifier` (string): Theme ID or name to delete
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Success message with deleted theme's `_id` and `name`
+
+**Implementation Notes:**
+- **Cannot delete the default theme** - returns error if attempted
+- Must set another theme as default first using `setDefaultTheme`
+- Permanent deletion - cannot be undone
+- Can query by either `_id` or `name`
+
+#### 14. `setDefaultTheme`
+**File:** [src/tools/setDefaultTheme.ts](src/tools/setDefaultTheme.ts)
+
+Set a theme as the default for a realm.
+
+**Parameters:**
+- `realm` (string): The realm containing the theme
+- `themeIdentifier` (string): Theme ID or name to set as default
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** Success message confirming the theme is now default
+
+**Implementation Notes:**
+- Automatically sets the current default theme to non-default
+- Only one theme can be default per realm
+- Can query by either `_id` or `name`
+- Returns informational message if theme is already default
+
 ## Configuration
 
 ### Environment Variables
