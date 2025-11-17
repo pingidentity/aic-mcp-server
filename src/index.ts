@@ -3,21 +3,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { initAuthService } from './services/authService.js';
-import { searchManagedObjectsTool } from './tools/searchManagedObjects.js';
-import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
-import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
-import { createManagedObjectTool } from './tools/createManagedObject.js';
-import { getManagedObjectTool } from './tools/getManagedObject.js';
-import { deleteManagedObjectTool } from './tools/deleteManagedObject.js';
-import { patchManagedObjectTool } from './tools/patchManagedObject.js';
-import { getLogSourcesTool } from './tools/getLogSources.js';
-import { queryLogsTool } from './tools/queryLogs.js';
-import { getRealmThemesTool } from './tools/getRealmThemes.js';
-import { getThemeTool } from './tools/getTheme.js';
-import { createThemeTool } from './tools/createTheme.js';
-import { setDefaultThemeTool } from './tools/setDefaultTheme.js';
-import { updateThemeTool } from './tools/updateTheme.js';
-import { getThemeSchemaTool } from './tools/getThemeSchema.js';
+import * as managedObjectTools from './tools/managedObjects/index.js';
+import * as logTools from './tools/logs/index.js';
+import * as themeTools from './tools/themes/index.js';
 
 /**
  * Tool configuration structure for MCP tool registration
@@ -34,23 +22,11 @@ if (!process.env.AIC_BASE_URL) {
     process.exit(1);
 }
 
-// Collect all tool scopes
+// Collect all tools from each category
 const allTools = [
-  searchManagedObjectsTool,
-  queryAICLogsByTransactionIdTool,
-  getManagedObjectSchemaTool,
-  createManagedObjectTool,
-  getManagedObjectTool,
-  deleteManagedObjectTool,
-  patchManagedObjectTool,
-  getLogSourcesTool,
-  queryLogsTool,
-  getRealmThemesTool,
-  getThemeTool,
-  getThemeSchemaTool,
-  createThemeTool,
-  setDefaultThemeTool,
-  updateThemeTool
+  ...Object.values(managedObjectTools),
+  ...Object.values(logTools),
+  ...Object.values(themeTools)
 ];
 
 // Extract unique scopes from all tools

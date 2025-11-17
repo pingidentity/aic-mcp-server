@@ -1,4 +1,4 @@
-import { createToolResponse } from '../utils/apiHelpers.js';
+import { createToolResponse } from '../../utils/apiHelpers.js';
 
 const SCOPES: string[] = [];
 

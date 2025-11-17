@@ -1,15 +1,15 @@
-// src/tools/queryAICLogsByTransactionId.ts
+// src/tools/queryLogsByTransactionId.ts
 import { z } from 'zod';
-import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
-import { formatSuccess, MonitoringLogsApiResponse } from '../utils/responseHelpers.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
+import { formatSuccess, MonitoringLogsApiResponse } from '../../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
 const SCOPES = ['fr:idc:monitoring:*'];
 
-export const queryAICLogsByTransactionIdTool = {
-  name: 'queryAICLogsByTransactionId',
-  title: 'Query AIC Logs by Transaction ID',
+export const queryLogsByTransactionIdTool = {
+  name: 'queryLogsByTransactionId',
+  title: 'Query Logs by Transaction ID',
   description: 'Query am-everything and idm-everything logs in a PingOne Advanced Identity Cloud environment by transaction ID.',
   scopes: SCOPES,
   inputSchema: {

@@ -1,8 +1,8 @@
 // src/tools/createManagedObject.ts
 import { z } from 'zod';
-import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
-import { formatSuccess } from '../utils/responseHelpers.js';
-import { SUPPORTED_OBJECT_TYPES } from '../config/managedObjectTypes.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
+import { formatSuccess } from '../../utils/responseHelpers.js';
+import { SUPPORTED_OBJECT_TYPES } from '../../config/managedObjectTypes.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
-import { formatSuccess } from '../utils/responseHelpers.js';
-import { REALMS } from '../config/managedObjectTypes.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
+import { formatSuccess } from '../../utils/responseHelpers.js';
+import { REALMS } from '../../config/managedObjectTypes.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -15,16 +15,16 @@ export const updateThemeTool = {
   inputSchema: {
     realm: z.enum(REALMS).describe('The realm containing the theme (e.g., "alpha", "bravo")'),
     themeIdentifier: z.string().describe('The theme ID or name to update'),
-    updates: z.record(z.any()).describe('Object containing the fields to update. Cannot update _id or isDefault.')
+    themeUpdates: z.record(z.any()).describe('Object containing the fields to update. Cannot update _id or isDefault.')
   },
-  async toolFunction({ realm, themeIdentifier, updates }: { realm: string; themeIdentifier: string; updates: Record<string, any> }) {
+  async toolFunction({ realm, themeIdentifier, themeUpdates }: { realm: string; themeIdentifier: string; themeUpdates: Record<string, any> }) {
     try {
-      // Validate that updates don't contain protected fields
-      if ('_id' in updates) {
+      // Validate that themeUpdates don't contain protected fields
+      if ('_id' in themeUpdates) {
         return createToolResponse('Error: Cannot update the "_id" field. Theme IDs are immutable.');
       }
 
-      if ('isDefault' in updates) {
+      if ('isDefault' in themeUpdates) {
         return createToolResponse('Error: Cannot update "isDefault" directly. Use the setDefaultTheme tool to change the default theme.');
       }
 
@@ -53,17 +53,17 @@ export const updateThemeTool = {
       const originalName = existingTheme.name;
 
       // If updating the name, check for duplicates
-      if (updates.name && updates.name !== originalName) {
-        const duplicateTheme = realmThemes.find((t: any) => t.name === updates.name && t._id !== themeId);
+      if (themeUpdates.name && themeUpdates.name !== originalName) {
+        const duplicateTheme = realmThemes.find((t: any) => t.name === themeUpdates.name && t._id !== themeId);
         if (duplicateTheme) {
-          return createToolResponse(`Error: A theme with name "${updates.name}" already exists in realm "${realm}". Choose a different name.`);
+          return createToolResponse(`Error: A theme with name "${themeUpdates.name}" already exists in realm "${realm}". Choose a different name.`);
         }
       }
 
-      // Merge updates with existing theme, preserving _id and isDefault
+      // Merge themeUpdates with existing theme, preserving _id and isDefault
       const updatedTheme = {
         ...existingTheme,
-        ...updates,
+        ...themeUpdates,
         _id: themeId,  // Always preserve the ID
         isDefault: existingTheme.isDefault  // Always preserve isDefault
       };
