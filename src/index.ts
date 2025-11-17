@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { initAuthService } from './services/authService.js';
-import { searchManagedObjectsTool } from './tools/searchManagedObjects.js';
+import { queryManagedObjectsTool } from './tools/queryManagedObjects.js';
 import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
 import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
 import { createManagedObjectTool } from './tools/createManagedObject.js';
@@ -37,7 +37,7 @@ if (!process.env.AIC_BASE_URL) {
 
 // Collect all tool scopes
 const allTools = [
-  searchManagedObjectsTool,
+  queryManagedObjectsTool,
   queryAICLogsByTransactionIdTool,
   getManagedObjectSchemaTool,
   createManagedObjectTool,

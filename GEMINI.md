@@ -60,20 +60,20 @@ The authentication system uses OAuth 2.0 Authorization Code with PKCE (Proof Key
 
 All tools declare required OAuth scopes, which are requested upfront during user authentication.
 
-#### 1. `searchManagedObjects`
-**File:** [src/tools/searchManagedObjects.ts](src/tools/searchManagedObjects.ts)
+#### 1. `queryManagedObjects`
+**File:** [src/tools/queryManagedObjects.ts](src/tools/queryManagedObjects.ts)
 
-Searches for managed objects in PingOne AIC using a query term.
+Query managed objects in PingOne AIC using a query term.
 
 **Parameters:**
 - `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
-- `queryTerm` (string): Search term (minimum 3 characters)
+- `queryTerm` (string): Query term (minimum 3 characters)
 
 **Supported Object Types:**
-- `alpha_user`, `bravo_user` - Searches: userName, givenName, sn, mail
-- `alpha_role`, `bravo_role` - Searches: name, description
-- `alpha_group`, `bravo_group` - Searches: name, description
-- `alpha_organization`, `bravo_organization` - Searches: name, description
+- `alpha_user`, `bravo_user` - Queries: userName, givenName, sn, mail
+- `alpha_role`, `bravo_role` - Queries: name, description
+- `alpha_group`, `bravo_group` - Queries: name, description
+- `alpha_organization`, `bravo_organization` - Queries: name, description
 
 **Required Scopes:** `fr:idm:*`
 
@@ -81,10 +81,10 @@ Searches for managed objects in PingOne AIC using a query term.
 
 **Implementation Notes:**
 - Uses SCIM-style query filter with `sw` (starts with) operator
-- Configuration-driven search fields based on object type
+- Configuration-driven query fields based on object type
 - Validates object type using Zod enum
 - Enforces minimum query term length of 3 characters
-- Results sorted by first search field
+- Results sorted by first query field
 
 #### 2. `queryAICLogsByTransactionId`
 **File:** [src/tools/queryAICLogsByTransactionId.ts](src/tools/queryAICLogsByTransactionId.ts)
@@ -487,7 +487,7 @@ pingone_AIC_MCP/
 │   │   ├── apiHelpers.ts                   # Shared API request helpers
 │   │   └── responseHelpers.ts              # Response formatting utilities
 │   └── tools/
-│       ├── searchManagedObjects.ts         # Generic managed object search
+│       ├── queryManagedObjects.ts         # Generic managed object search
 │       ├── createManagedObject.ts          # Generic object creation
 │       ├── getManagedObject.ts             # Generic object retrieval
 │       ├── patchManagedObject.ts           # Generic object update (JSON Patch)
@@ -604,7 +604,7 @@ To add support for a new managed object type (e.g., `device`, `application`):
    export const BASE_OBJECT_TYPES = ['user', 'role', 'group', 'organization', 'device'] as const;
    ```
 
-2. **Add search field configuration** in `src/tools/searchManagedObjects.ts`:
+2. **Add query field configuration** in `src/tools/queryManagedObjects.ts`:
    ```typescript
    const SEARCH_FIELD_CONFIG: Record<string, string[]> = {
      user: ['userName', 'givenName', 'sn', 'mail'],
@@ -624,7 +624,7 @@ To add support for a new managed object type (e.g., `device`, `application`):
    ```
 
 3. **Update tool descriptions** to include the new object type in:
-   - `searchManagedObjects` - Add to description
+   - `queryManagedObjects` - Add to description
    - `createManagedObject` - Add to Supported Object Types section
    - Other tools will automatically support it via the enum validation
 

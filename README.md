@@ -8,7 +8,7 @@ This server allows AI assistants like Claude to access your PingOne AIC environm
 
 **Example queries:**
 - "Find all alpha_users with email starting with john@example.com"
-- "Search for bravo_roles with name containing admin"
+- "Query bravo_roles with name containing admin"
 - "Show me the authentication logs for transaction ID xyz123"
 - "Create a new alpha_user with username jsmith"
 - "Create a bravo_role called AdminRole"
@@ -90,26 +90,26 @@ Restart your AI assistant and start asking questions about your PingOne AIC envi
 
 ## Available Tools
 
-### searchManagedObjects
-Search for managed objects (users, roles, groups, organizations) using a query term.
+### queryManagedObjects
+Query managed objects (users, roles, groups, organizations) using a query term.
 
 **Parameters:**
 - `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
-- `queryTerm`: Search term (minimum 3 characters)
+- `queryTerm`: Query term (minimum 3 characters)
 
 **Supported Object Types:**
-- `alpha_user`, `bravo_user` - Searches: userName, givenName, sn, mail
-- `alpha_role`, `bravo_role` - Searches: name, description
-- `alpha_group`, `bravo_group` - Searches: name, description
-- `alpha_organization`, `bravo_organization` - Searches: name, description
+- `alpha_user`, `bravo_user` - Queries: userName, givenName, sn, mail
+- `alpha_role`, `bravo_role` - Queries: name, description
+- `alpha_group`, `bravo_group` - Queries: name, description
+- `alpha_organization`, `bravo_organization` - Queries: name, description
 
 **Required Scopes:** `fr:idm:*`
 
 **Examples:**
 ```
-"Find alpha_users with email starting with admin"
-"Search for bravo_roles with name containing manager"
-"Find alpha_groups with name starting with eng"
+"Query alpha_users with email starting with admin"
+"Query bravo_roles with name containing manager"
+"Query alpha_groups with name starting with eng"
 ```
 
 ### getManagedObjectSchema
