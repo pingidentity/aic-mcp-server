@@ -1,7 +1,7 @@
 // src/tools/queryLogsByTransactionId.ts
 import { z } from 'zod';
-import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
-import { formatSuccess, MonitoringLogsApiResponse } from '../utils/responseHelpers.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
+import { formatSuccess, MonitoringLogsApiResponse } from '../../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 

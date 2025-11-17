@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
-import { formatSuccess } from '../utils/responseHelpers.js';
-import { REALMS } from '../config/managedObjectTypes.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
+import { formatSuccess } from '../../utils/responseHelpers.js';
+import { REALMS } from '../../config/managedObjectTypes.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 

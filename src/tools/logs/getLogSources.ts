@@ -1,6 +1,6 @@
 // src/tools/getLogSources.ts
-import { makeAuthenticatedRequest, createToolResponse } from '../utils/apiHelpers.js';
-import { formatSuccess } from '../utils/responseHelpers.js';
+import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
+import { formatSuccess } from '../../utils/responseHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 

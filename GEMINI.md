@@ -61,7 +61,7 @@ The authentication system uses OAuth 2.0 Authorization Code with PKCE (Proof Key
 All tools declare required OAuth scopes, which are requested upfront during user authentication.
 
 #### 1. `queryManagedObjects`
-**File:** [src/tools/queryManagedObjects.ts](src/tools/queryManagedObjects.ts)
+**File:** [src/tools/managedObjects/queryManagedObjects.ts](src/tools/managedObjects/queryManagedObjects.ts)
 
 Query managed objects in PingOne AIC using a query term.
 
@@ -87,7 +87,7 @@ Query managed objects in PingOne AIC using a query term.
 - Results sorted by first query field
 
 #### 2. `queryLogsByTransactionId`
-**File:** [src/tools/queryLogsByTransactionId.ts](src/tools/queryLogsByTransactionId.ts)
+**File:** [src/tools/logs/queryLogsByTransactionId.ts](src/tools/logs/queryLogsByTransactionId.ts)
 
 Queries am-everything and idm-everything logs in PingOne AIC by transaction ID.
 
@@ -104,7 +104,7 @@ Queries am-everything and idm-everything logs in PingOne AIC by transaction ID.
 - Useful for debugging authentication flows and tracking user sessions
 
 #### 3. `getManagedObjectSchema`
-**File:** [src/tools/getManagedObjectSchema.ts](src/tools/getManagedObjectSchema.ts)
+**File:** [src/tools/managedObjects/getManagedObjectSchema.ts](src/tools/managedObjects/getManagedObjectSchema.ts)
 
 Retrieves the schema definition for a specific managed object type to understand its structure and requirements.
 
@@ -122,7 +122,7 @@ Retrieves the schema definition for a specific managed object type to understand
 - Works for all supported object types: user, role, group, organization
 
 #### 4. `createManagedObject`
-**File:** [src/tools/createManagedObject.ts](src/tools/createManagedObject.ts)
+**File:** [src/tools/managedObjects/createManagedObject.ts](src/tools/managedObjects/createManagedObject.ts)
 
 Creates a new managed object in PingOne AIC.
 
@@ -148,7 +148,7 @@ Creates a new managed object in PingOne AIC.
 - Use `getManagedObjectSchema` first to determine required fields
 
 #### 5. `getManagedObject`
-**File:** [src/tools/getManagedObject.ts](src/tools/getManagedObject.ts)
+**File:** [src/tools/managedObjects/getManagedObject.ts](src/tools/managedObjects/getManagedObject.ts)
 
 Retrieves a managed object's complete profile by its unique identifier.
 
@@ -167,7 +167,7 @@ Retrieves a managed object's complete profile by its unique identifier.
 - Works for all supported object types
 
 #### 6. `patchManagedObject`
-**File:** [src/tools/patchManagedObject.ts](src/tools/patchManagedObject.ts)
+**File:** [src/tools/managedObjects/patchManagedObject.ts](src/tools/managedObjects/patchManagedObject.ts)
 
 Updates specific fields of a managed object using JSON Patch operations (RFC 6902).
 
@@ -190,7 +190,7 @@ Updates specific fields of a managed object using JSON Patch operations (RFC 690
 - Works for all supported object types
 
 #### 7. `deleteManagedObject`
-**File:** [src/tools/deleteManagedObject.ts](src/tools/deleteManagedObject.ts)
+**File:** [src/tools/managedObjects/deleteManagedObject.ts](src/tools/managedObjects/deleteManagedObject.ts)
 
 Deletes a managed object by its unique identifier.
 
@@ -213,7 +213,7 @@ Deletes a managed object by its unique identifier.
 The server provides comprehensive theme management capabilities for customizing the appearance of authentication journeys and account pages in PingOne AIC.
 
 #### 8. `getThemeSchema`
-**File:** [src/tools/getThemeSchema.ts](src/tools/getThemeSchema.ts)
+**File:** [src/tools/themes/getThemeSchema.ts](src/tools/themes/getThemeSchema.ts)
 
 Retrieve comprehensive schema documentation for PingOne AIC themes.
 
@@ -237,7 +237,7 @@ Retrieve comprehensive schema documentation for PingOne AIC themes.
 - The AIC server applies defaults for any omitted fields
 
 #### 9. `getThemes`
-**File:** [src/tools/getThemes.ts](src/tools/getThemes.ts)
+**File:** [src/tools/themes/getThemes.ts](src/tools/themes/getThemes.ts)
 
 Retrieve all themes for a specific realm.
 
@@ -253,7 +253,7 @@ Retrieve all themes for a specific realm.
 - Returns minimal information (name and default status) for quick listing
 
 #### 10. `getTheme`
-**File:** [src/tools/getTheme.ts](src/tools/getTheme.ts)
+**File:** [src/tools/themes/getTheme.ts](src/tools/themes/getTheme.ts)
 
 Retrieve a specific theme's complete configuration.
 
@@ -271,7 +271,7 @@ Retrieve a specific theme's complete configuration.
 - Returns full theme configuration for reference or modification
 
 #### 11. `createTheme`
-**File:** [src/tools/createTheme.ts](src/tools/createTheme.ts)
+**File:** [src/tools/themes/createTheme.ts](src/tools/themes/createTheme.ts)
 
 Create a new theme for a realm.
 
@@ -293,7 +293,7 @@ Create a new theme for a realm.
 - **Recommended: Call `getThemeSchema` first** to understand available customization options
 
 #### 12. `updateTheme`
-**File:** [src/tools/updateTheme.ts](src/tools/updateTheme.ts)
+**File:** [src/tools/themes/updateTheme.ts](src/tools/themes/updateTheme.ts)
 
 Update an existing theme's properties.
 
@@ -313,7 +313,7 @@ Update an existing theme's properties.
 - Validates name uniqueness if renaming the theme
 
 #### 13. `deleteTheme`
-**File:** [src/tools/deleteTheme.ts](src/tools/deleteTheme.ts)
+**File:** [src/tools/themes/deleteTheme.ts](src/tools/themes/deleteTheme.ts)
 
 Delete a theme from a realm.
 
@@ -332,7 +332,7 @@ Delete a theme from a realm.
 - Can query by either `_id` or `name`
 
 #### 14. `setDefaultTheme`
-**File:** [src/tools/setDefaultTheme.ts](src/tools/setDefaultTheme.ts)
+**File:** [src/tools/themes/setDefaultTheme.ts](src/tools/themes/setDefaultTheme.ts)
 
 Set a theme as the default for a realm.
 
@@ -487,15 +487,28 @@ pingone_AIC_MCP/
 │   │   ├── apiHelpers.ts                   # Shared API request helpers
 │   │   └── responseHelpers.ts              # Response formatting utilities
 │   └── tools/
-│       ├── queryManagedObjects.ts         # Generic managed object search
-│       ├── createManagedObject.ts          # Generic object creation
-│       ├── getManagedObject.ts             # Generic object retrieval
-│       ├── patchManagedObject.ts           # Generic object update (JSON Patch)
-│       ├── deleteManagedObject.ts          # Generic object deletion
-│       ├── getManagedObjectSchema.ts       # Schema retrieval
-│       ├── queryLogsByTransactionId.ts     # Log query by transaction ID
-│       ├── getLogSources.ts                # Available log sources
-│       └── queryLogs.ts                    # Advanced log querying
+│       ├── managedObjects/                  # Managed object CRUD operations
+│       │   ├── index.ts                    # Re-exports all managed object tools
+│       │   ├── queryManagedObjects.ts      # Generic managed object search
+│       │   ├── getManagedObjectSchema.ts   # Schema retrieval
+│       │   ├── createManagedObject.ts      # Generic object creation
+│       │   ├── getManagedObject.ts         # Generic object retrieval
+│       │   ├── patchManagedObject.ts       # Generic object update (JSON Patch)
+│       │   └── deleteManagedObject.ts      # Generic object deletion
+│       ├── logs/                            # Log querying and monitoring
+│       │   ├── index.ts                    # Re-exports all log tools
+│       │   ├── getLogSources.ts            # Available log sources
+│       │   ├── queryLogs.ts                # Advanced log querying
+│       │   └── queryLogsByTransactionId.ts # Log query by transaction ID
+│       └── themes/                          # Theme management
+│           ├── index.ts                    # Re-exports all theme tools
+│           ├── getThemeSchema.ts           # Theme schema documentation
+│           ├── getThemes.ts                # List themes in a realm
+│           ├── getTheme.ts                 # Get specific theme
+│           ├── createTheme.ts              # Create new theme
+│           ├── updateTheme.ts              # Update existing theme
+│           ├── deleteTheme.ts              # Delete theme
+│           └── setDefaultTheme.ts          # Set default theme
 ├── dist/                                    # Compiled JavaScript (generated)
 ├── package.json                             # Dependencies and scripts
 ├── tsconfig.json                            # TypeScript configuration
@@ -509,12 +522,12 @@ pingone_AIC_MCP/
 
 To add a new tool:
 
-1. Create a new file in `src/tools/` (e.g., `myNewTool.ts`)
+1. Create a new file in the appropriate category directory (e.g., `src/tools/managedObjects/myNewTool.ts`, `src/tools/logs/myNewTool.ts`, or `src/tools/themes/myNewTool.ts`)
 2. Define the tool following this pattern:
 
 ```typescript
 import { z } from 'zod';
-import { getAuthService } from '../services/authService.js';
+import { getAuthService } from '../../services/authService.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -565,23 +578,15 @@ export const myNewTool = {
 };
 ```
 
-3. Register the tool in `src/index.ts`:
+3. Export the tool from the category's `index.ts` file (e.g., `src/tools/managedObjects/index.ts`):
 
 ```typescript
-import { myNewTool } from './tools/myNewTool.js';
-
-server.registerTool(
-  myNewTool.name,
-  {
-    title: myNewTool.title,
-    description: myNewTool.description,
-    inputSchema: myNewTool.inputSchema,
-  },
-  myNewTool.toolFunction
-);
+export { myNewToolTool } from './myNewTool.js';
 ```
 
-4. Rebuild: `npm run build`
+4. The tool will be automatically registered in `src/index.ts` via the category's module export using `Object.values()`
+
+5. Rebuild: `npm run build`
 
 ### OAuth Scope Requirements
 
@@ -604,7 +609,7 @@ To add support for a new managed object type (e.g., `device`, `application`):
    export const BASE_OBJECT_TYPES = ['user', 'role', 'group', 'organization', 'device'] as const;
    ```
 
-2. **Add query field configuration** in `src/tools/queryManagedObjects.ts`:
+2. **Add query field configuration** in `src/tools/managedObjects/queryManagedObjects.ts`:
    ```typescript
    const SEARCH_FIELD_CONFIG: Record<string, string[]> = {
      user: ['userName', 'givenName', 'sn', 'mail'],

@@ -436,6 +436,13 @@ The server detects tenant mismatches automatically. Simply re-authenticate when 
 
 See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation and development guides.
 
+**Tool Organization:** Tools are organized into three categories:
+- `src/tools/managedObjects/` - CRUD operations for users, roles, groups, and organizations
+- `src/tools/logs/` - Log querying and monitoring
+- `src/tools/themes/` - Theme management for authentication journeys
+
+Each category has an `index.ts` file that re-exports all tools, making it easy to enable/disable entire feature sets.
+
 ### Build & Run
 
 ```bash
