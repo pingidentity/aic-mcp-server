@@ -86,10 +86,10 @@ Query managed objects in PingOne AIC using a query term.
 - Enforces minimum query term length of 3 characters
 - Results sorted by first query field
 
-#### 2. `queryAICLogsByTransactionId`
-**File:** [src/tools/queryAICLogsByTransactionId.ts](src/tools/queryAICLogsByTransactionId.ts)
+#### 2. `queryLogsByTransactionId`
+**File:** [src/tools/queryLogsByTransactionId.ts](src/tools/queryLogsByTransactionId.ts)
 
-Queries am-authentication logs in PingOne AIC by transaction ID.
+Queries am-everything and idm-everything logs in PingOne AIC by transaction ID.
 
 **Parameters:**
 - `transactionId` (string): The transaction ID to query logs for
@@ -236,8 +236,8 @@ Retrieve comprehensive schema documentation for PingOne AIC themes.
 - Documents that only `name` field is required; all others are optional
 - The AIC server applies defaults for any omitted fields
 
-#### 9. `getRealmThemes`
-**File:** [src/tools/getRealmThemes.ts](src/tools/getRealmThemes.ts)
+#### 9. `getThemes`
+**File:** [src/tools/getThemes.ts](src/tools/getThemes.ts)
 
 Retrieve all themes for a specific realm.
 
@@ -300,7 +300,7 @@ Update an existing theme's properties.
 **Parameters:**
 - `realm` (string): The realm containing the theme
 - `themeIdentifier` (string): Theme ID or name to update
-- `updates` (object): Fields to update (partial theme object)
+- `themeUpdates` (object): Fields to update (partial theme object)
 
 **Required Scopes:** `fr:idm:*`
 
@@ -493,7 +493,7 @@ pingone_AIC_MCP/
 │       ├── patchManagedObject.ts           # Generic object update (JSON Patch)
 │       ├── deleteManagedObject.ts          # Generic object deletion
 │       ├── getManagedObjectSchema.ts       # Schema retrieval
-│       ├── queryAICLogsByTransactionId.ts  # Log query by transaction ID
+│       ├── queryLogsByTransactionId.ts     # Log query by transaction ID
 │       ├── getLogSources.ts                # Available log sources
 │       └── queryLogs.ts                    # Advanced log querying
 ├── dist/                                    # Compiled JavaScript (generated)

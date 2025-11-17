@@ -4,7 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { initAuthService } from './services/authService.js';
 import { queryManagedObjectsTool } from './tools/queryManagedObjects.js';
-import { queryAICLogsByTransactionIdTool } from './tools/queryAICLogsByTransactionId.js';
+import { queryLogsByTransactionIdTool } from './tools/queryLogsByTransactionId.js';
 import { getManagedObjectSchemaTool } from './tools/getManagedObjectSchema.js';
 import { createManagedObjectTool } from './tools/createManagedObject.js';
 import { getManagedObjectTool } from './tools/getManagedObject.js';
@@ -12,7 +12,7 @@ import { deleteManagedObjectTool } from './tools/deleteManagedObject.js';
 import { patchManagedObjectTool } from './tools/patchManagedObject.js';
 import { getLogSourcesTool } from './tools/getLogSources.js';
 import { queryLogsTool } from './tools/queryLogs.js';
-import { getRealmThemesTool } from './tools/getRealmThemes.js';
+import { getThemesTool } from './tools/getThemes.js';
 import { getThemeTool } from './tools/getTheme.js';
 import { createThemeTool } from './tools/createTheme.js';
 import { setDefaultThemeTool } from './tools/setDefaultTheme.js';
@@ -38,7 +38,7 @@ if (!process.env.AIC_BASE_URL) {
 // Collect all tool scopes
 const allTools = [
   queryManagedObjectsTool,
-  queryAICLogsByTransactionIdTool,
+  queryLogsByTransactionIdTool,
   getManagedObjectSchemaTool,
   createManagedObjectTool,
   getManagedObjectTool,
@@ -46,7 +46,7 @@ const allTools = [
   patchManagedObjectTool,
   getLogSourcesTool,
   queryLogsTool,
-  getRealmThemesTool,
+  getThemesTool,
   getThemeTool,
   getThemeSchemaTool,
   createThemeTool,

@@ -247,7 +247,7 @@ Query PingOne AIC logs with advanced filtering capabilities including time range
 "Show me the next page of results using this pagination token"
 ```
 
-### queryAICLogsByTransactionId
+### queryLogsByTransactionId
 Retrieve am-everything and idm-everything logs for a specific transaction ID.
 
 **Parameters:**
@@ -280,7 +280,7 @@ Get comprehensive schema documentation for PingOne AIC themes.
 "Show me the theme schema to understand what fields I can customize"
 ```
 
-### getRealmThemes
+### getThemes
 List all themes available in a realm.
 
 **Parameters:**
@@ -340,7 +340,7 @@ Update an existing theme's properties.
 **Parameters:**
 - `realm`: The realm containing the theme
 - `themeIdentifier`: Theme ID or name to update
-- `updates`: Object containing fields to update
+- `themeUpdates`: Object containing fields to update
 
 **Required Scopes:** `fr:idm:*`
 

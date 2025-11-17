@@ -7,9 +7,9 @@ const aicBaseUrl = process.env.AIC_BASE_URL;
 
 const SCOPES = ['fr:idm:*'];
 
-export const getRealmThemesTool = {
-  name: 'getRealmThemes',
-  title: 'Get Realm Themes',
+export const getThemesTool = {
+  name: 'getThemes',
+  title: 'Get Themes',
   description: 'Retrieve all themes for a specific realm in PingOne AIC. Returns theme names and default status. Use this to discover available themes before getting theme details or making updates.',
   scopes: SCOPES,
   inputSchema: {
