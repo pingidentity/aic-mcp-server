@@ -10,7 +10,7 @@ const SCOPES = ['fr:idc:monitoring:*'];
 export const queryLogsByTransactionIdTool = {
   name: 'queryLogsByTransactionId',
   title: 'Query Logs by Transaction ID',
-  description: 'Query am-everything and idm-everything logs in a PingOne Advanced Identity Cloud environment by transaction ID.',
+  description: 'Query am-everything and idm-everything logs in PingOne AIC by transaction ID',
   scopes: SCOPES,
   inputSchema: {
     transactionId: z.string().describe("The transaction ID to query the logs for."),
@@ -23,7 +23,7 @@ export const queryLogsByTransactionIdTool = {
       const logs = data as MonitoringLogsApiResponse;
       return createToolResponse(formatSuccess(logs, response));
     } catch (error: any) {
-      return createToolResponse(`Error querying logs by transaction ID: ${error.message}`);
+      return createToolResponse(`Failed to query logs by transaction ID: ${error.message}`);
     }
   }
 };

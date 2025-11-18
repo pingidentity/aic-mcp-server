@@ -10,11 +10,11 @@ const SCOPES = ['fr:idm:*'];
 export const setDefaultThemeTool = {
   name: 'setDefaultTheme',
   title: 'Set Default Theme',
-  description: 'Set a theme as the default for a realm in PingOne AIC. This will automatically set the current default theme to non-default and make the specified theme the new default.',
+  description: 'Set a theme as the default for a realm in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    realm: z.enum(REALMS).describe('The realm containing the theme (e.g., "alpha", "bravo")'),
-    themeIdentifier: z.string().describe('The theme ID or name to set as default')
+    realm: z.enum(REALMS).describe('Realm name'),
+    themeIdentifier: z.string().describe('Theme ID or name')
   },
   async toolFunction({ realm, themeIdentifier }: { realm: string; themeIdentifier: string }) {
     try {
@@ -24,7 +24,7 @@ export const setDefaultThemeTool = {
 
       // Validate config structure
       if (!config || !(config as any).realm || !(config as any).realm[realm]) {
-        return createToolResponse(`Error: Invalid theme configuration structure for realm "${realm}"`);
+        return createToolResponse(`Invalid theme configuration structure for realm "${realm}"`);
       }
 
       const realmThemes = (config as any).realm[realm];
@@ -35,7 +35,7 @@ export const setDefaultThemeTool = {
       );
 
       if (themeIndex === -1) {
-        return createToolResponse(`Error: No theme found with ID or name "${themeIdentifier}" in realm "${realm}"`);
+        return createToolResponse(`Theme not found: "${themeIdentifier}" in realm "${realm}"`);
       }
 
       const targetTheme = realmThemes[themeIndex];
@@ -72,10 +72,10 @@ export const setDefaultThemeTool = {
         }
       );
 
-      const successMessage = `Successfully set theme "${themeName}" (ID: ${themeId}) as the default for realm "${realm}"`;
+      const successMessage = `Set theme "${themeName}" (${themeId}) as default for realm "${realm}"`;
       return createToolResponse(formatSuccess({ _id: themeId, name: themeName, isDefault: true, message: successMessage }, response));
     } catch (error: any) {
-      return createToolResponse(`Error setting default theme in realm "${realm}": ${error.message}`);
+      return createToolResponse(`Failed to set default theme in realm "${realm}": ${error.message}`);
     }
   }
 };

@@ -32,19 +32,12 @@ const RETURN_FIELD_CONFIG: Record<string, string[]> = {
 export const queryManagedObjectsTool = {
   name: 'queryManagedObjects',
   title: 'Query Managed Objects',
-  description:
-    'Query managed objects in PingOne AIC using a query term. Supported object types:\n' +
-    '- alpha_user, bravo_user (queries: userName, givenName, sn, mail)\n' +
-    '- alpha_role, bravo_role (queries: name, description)\n' +
-    '- alpha_group, bravo_group (queries: name, description)\n' +
-    '- alpha_organization, bravo_organization (queries: name, description)',
+  description: 'Query managed objects in PingOne AIC by search term',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe(
-      "The managed object type to query (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')"
-    ),
+    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
     queryTerm: z.string().min(3).describe(
-      "The query term to match against the object's queryable fields (minimum 3 characters)"
+      "Query term to match against the object's queryable fields (minimum 3 characters)"
     ),
   },
   async toolFunction({ objectType, queryTerm }: { objectType: string; queryTerm: string }) {
@@ -70,7 +63,7 @@ export const queryManagedObjectsTool = {
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES);
       return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
-      return createToolResponse(`Error querying ${objectType}: ${error.message}`);
+      return createToolResponse(`Failed to query ${objectType}: ${error.message}`);
     }
   }
 };

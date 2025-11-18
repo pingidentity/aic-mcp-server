@@ -11,17 +11,17 @@ const SCOPES = ['fr:idm:*'];
 export const createThemeTool = {
   name: 'createTheme',
   title: 'Create Theme',
-  description: 'Create a new theme for a realm in PingOne AIC. IMPORTANT: Call getThemeSchema first to understand all available fields, their types, enum values, and requirements before creating a theme. While only "name" is required, you should provide meaningful customizations based on user requirements and schema documentation. All unprovided fields will use sensible defaults.',
+  description: 'Create a new theme for a realm in PingOne AIC. IMPORTANT: Call getThemeSchema first to understand all available fields, their types, enum values, and requirements before creating a theme.',
   scopes: SCOPES,
   inputSchema: {
-    realm: z.enum(REALMS).describe('The realm to create the theme in (e.g., "alpha", "bravo")'),
-    themeData: z.record(z.any()).describe('The theme configuration object. Must include a "name" property. Any fields not provided will use default values.')
+    realm: z.enum(REALMS).describe('Realm name'),
+    themeData: z.record(z.any()).describe('Theme configuration object (must include a "name" property)')
   },
   async toolFunction({ realm, themeData }: { realm: string; themeData: Record<string, any> }) {
     try {
       // Validate that theme has a name
       if (!themeData.name || typeof themeData.name !== 'string') {
-        return createToolResponse('Error: Theme data must include a "name" property');
+        return createToolResponse('Theme data must include a "name" property');
       }
 
       const themeName = themeData.name;
@@ -32,7 +32,7 @@ export const createThemeTool = {
 
       // Validate config structure
       if (!config || !(config as any).realm || !(config as any).realm[realm]) {
-        return createToolResponse(`Error: Invalid theme configuration structure for realm "${realm}"`);
+        return createToolResponse(`Invalid theme configuration structure for realm "${realm}"`);
       }
 
       const realmThemes = (config as any).realm[realm];
@@ -40,7 +40,7 @@ export const createThemeTool = {
       // Check if theme with this name already exists
       const existingTheme = realmThemes.find((t: any) => t.name === themeName);
       if (existingTheme) {
-        return createToolResponse(`Error: A theme with name "${themeName}" already exists in realm "${realm}". Use a different name or update the existing theme.`);
+        return createToolResponse(`Theme with name "${themeName}" already exists in realm "${realm}". Use a different name or update the existing theme.`);
       }
 
       // Generate UUID for the new theme
@@ -75,10 +75,10 @@ export const createThemeTool = {
         }
       );
 
-      const successMessage = `Successfully created theme "${themeName}" with ID "${themeId}" in realm "${realm}"`;
+      const successMessage = `Created theme "${themeName}" (${themeId}) in realm "${realm}"`;
       return createToolResponse(formatSuccess({ _id: themeId, name: themeName, message: successMessage }, response));
     } catch (error: any) {
-      return createToolResponse(`Error creating theme in realm "${realm}": ${error.message}`);
+      return createToolResponse(`Failed to create theme in realm "${realm}": ${error.message}`);
     }
   }
 };

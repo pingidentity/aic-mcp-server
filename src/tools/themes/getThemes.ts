@@ -10,10 +10,10 @@ const SCOPES = ['fr:idm:*'];
 export const getThemesTool = {
   name: 'getThemes',
   title: 'Get Themes',
-  description: 'Retrieve all themes for a specific realm in PingOne AIC. Returns theme names and default status. Use this to discover available themes before getting theme details or making updates.',
+  description: 'Retrieve all themes for a specific realm in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    realm: z.enum(REALMS).describe('The realm to get themes for (e.g., "alpha", "bravo")')
+    realm: z.enum(REALMS).describe('Realm name')
   },
   async toolFunction({ realm }: { realm: string }) {
     try {
@@ -27,7 +27,7 @@ export const getThemesTool = {
 
       return createToolResponse(formatSuccess(resultText, response));
     } catch (error: any) {
-      return createToolResponse(`Error retrieving themes for realm "${realm}": ${error.message}`);
+      return createToolResponse(`Failed to retrieve themes for realm "${realm}": ${error.message}`);
     }
   }
 };

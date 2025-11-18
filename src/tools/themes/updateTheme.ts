@@ -10,22 +10,22 @@ const SCOPES = ['fr:idm:*'];
 export const updateThemeTool = {
   name: 'updateTheme',
   title: 'Update Theme',
-  description: 'Update an existing theme in PingOne AIC. Provide only the fields you want to change - all other fields will be preserved. Use getThemeSchema to understand field requirements. Use setDefaultTheme to change the default status.',
+  description: 'Update an existing theme in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    realm: z.enum(REALMS).describe('The realm containing the theme (e.g., "alpha", "bravo")'),
-    themeIdentifier: z.string().describe('The theme ID or name to update'),
-    themeUpdates: z.record(z.any()).describe('Object containing the fields to update. Cannot update _id or isDefault.')
+    realm: z.enum(REALMS).describe('Realm name'),
+    themeIdentifier: z.string().describe('Theme ID or name'),
+    themeUpdates: z.record(z.any()).describe('Object containing the fields to update (cannot update _id or isDefault)')
   },
   async toolFunction({ realm, themeIdentifier, themeUpdates }: { realm: string; themeIdentifier: string; themeUpdates: Record<string, any> }) {
     try {
       // Validate that themeUpdates don't contain protected fields
       if ('_id' in themeUpdates) {
-        return createToolResponse('Error: Cannot update the "_id" field. Theme IDs are immutable.');
+        return createToolResponse('Cannot update the "_id" field. Theme IDs are immutable.');
       }
 
       if ('isDefault' in themeUpdates) {
-        return createToolResponse('Error: Cannot update "isDefault" directly. Use the setDefaultTheme tool to change the default theme.');
+        return createToolResponse('Cannot update "isDefault" directly. Use the setDefaultTheme tool to change the default theme.');
       }
 
       // Get the current theme configuration
@@ -34,7 +34,7 @@ export const updateThemeTool = {
 
       // Validate config structure
       if (!config || !(config as any).realm || !(config as any).realm[realm]) {
-        return createToolResponse(`Error: Invalid theme configuration structure for realm "${realm}"`);
+        return createToolResponse(`Invalid theme configuration structure for realm "${realm}"`);
       }
 
       const realmThemes = (config as any).realm[realm];
@@ -45,7 +45,7 @@ export const updateThemeTool = {
       );
 
       if (themeIndex === -1) {
-        return createToolResponse(`Error: No theme found with ID or name "${themeIdentifier}" in realm "${realm}"`);
+        return createToolResponse(`Theme not found: "${themeIdentifier}" in realm "${realm}"`);
       }
 
       const existingTheme = realmThemes[themeIndex];
@@ -56,7 +56,7 @@ export const updateThemeTool = {
       if (themeUpdates.name && themeUpdates.name !== originalName) {
         const duplicateTheme = realmThemes.find((t: any) => t.name === themeUpdates.name && t._id !== themeId);
         if (duplicateTheme) {
-          return createToolResponse(`Error: A theme with name "${themeUpdates.name}" already exists in realm "${realm}". Choose a different name.`);
+          return createToolResponse(`Theme with name "${themeUpdates.name}" already exists in realm "${realm}". Choose a different name.`);
         }
       }
 
@@ -92,10 +92,10 @@ export const updateThemeTool = {
       );
 
       const themeName = updatedTheme.name;
-      const successMessage = `Successfully updated theme "${themeName}" (ID: ${themeId}) in realm "${realm}"`;
+      const successMessage = `Updated theme "${themeName}" (${themeId}) in realm "${realm}"`;
       return createToolResponse(formatSuccess({ _id: themeId, name: themeName, message: successMessage }, response));
     } catch (error: any) {
-      return createToolResponse(`Error updating theme in realm "${realm}": ${error.message}`);
+      return createToolResponse(`Failed to update theme in realm "${realm}": ${error.message}`);
     }
   }
 };

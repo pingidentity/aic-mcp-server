@@ -18,13 +18,13 @@ const patchOperationSchema = z.object({
 export const patchManagedObjectTool = {
   name: 'patchManagedObject',
   title: 'Patch Managed Object',
-  description: 'Update specific fields of a managed object in PingOne AIC using JSON Patch operations. Supported types: alpha_user, bravo_user, alpha_role, bravo_role, alpha_group, bravo_group, alpha_organization, bravo_organization. IMPORTANT: You must first retrieve the object with getManagedObject to obtain the current _rev (revision) value and verify the current state before making changes. The revision ensures you are updating from a known state and prevents conflicting updates.',
+  description: 'Update specific fields of a managed object in PingOne AIC using JSON Patch operations',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe("The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')"),
-    objectId: objectIdSchema.describe("The unique identifier (_id) of the object to patch"),
-    revision: z.string().describe("The current revision (_rev) of the object, obtained from getManagedObject. This ensures the patch is applied to the expected version of the object."),
-    operations: z.array(patchOperationSchema).describe("Array of JSON Patch operations to apply to the object")
+    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
+    objectId: objectIdSchema.describe('The object\'s unique identifier (_id)'),
+    revision: z.string().describe('The current revision (_rev) of the object, obtained from getManagedObject'),
+    operations: z.array(patchOperationSchema).describe('Array of JSON Patch operations to apply to the object')
   },
   async toolFunction({ objectType, objectId, revision, operations }: {
     objectType: string;
@@ -44,11 +44,11 @@ export const patchManagedObjectTool = {
       });
 
       const patchedObject = data as any;
-      const successMessage = `Managed object with _id '${objectId}' successfully patched. New revision: ${patchedObject._rev}`;
+      const successMessage = `Patched managed object ${objectId}. New revision: ${patchedObject._rev}`;
 
       return createToolResponse(formatSuccess(successMessage, response));
     } catch (error: any) {
-      return createToolResponse(`Error patching managed object: ${error.message}`);
+      return createToolResponse(`Failed to patch managed object: ${error.message}`);
     }
   }
 };

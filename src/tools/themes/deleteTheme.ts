@@ -10,11 +10,11 @@ const SCOPES = ['fr:idm:*'];
 export const deleteThemeTool = {
   name: 'deleteTheme',
   title: 'Delete Theme',
-  description: 'Delete a theme from a realm in PingOne AIC. Cannot delete the default theme - you must set another theme as default first using the setDefaultTheme tool.',
+  description: 'Delete a theme from a realm in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    realm: z.enum(REALMS).describe('The realm containing the theme (e.g., "alpha", "bravo")'),
-    themeIdentifier: z.string().describe('The theme ID or name to delete')
+    realm: z.enum(REALMS).describe('Realm name'),
+    themeIdentifier: z.string().describe('Theme ID or name')
   },
   async toolFunction({ realm, themeIdentifier }: { realm: string; themeIdentifier: string }) {
     try {
@@ -24,7 +24,7 @@ export const deleteThemeTool = {
 
       // Validate config structure
       if (!config || !(config as any).realm || !(config as any).realm[realm]) {
-        return createToolResponse(`Error: Invalid theme configuration structure for realm "${realm}"`);
+        return createToolResponse(`Invalid theme configuration structure for realm "${realm}"`);
       }
 
       const realmThemes = (config as any).realm[realm];
@@ -35,7 +35,7 @@ export const deleteThemeTool = {
       );
 
       if (themeIndex === -1) {
-        return createToolResponse(`Error: No theme found with ID or name "${themeIdentifier}" in realm "${realm}"`);
+        return createToolResponse(`Theme not found: "${themeIdentifier}" in realm "${realm}"`);
       }
 
       const themeToDelete = realmThemes[themeIndex];
@@ -45,8 +45,8 @@ export const deleteThemeTool = {
       // Safeguard: Prevent deletion of default theme
       if (themeToDelete.isDefault === true) {
         return createToolResponse(
-          `Error: Cannot delete the default theme "${themeName}". ` +
-          `Please set another theme as default using the setDefaultTheme tool first, then delete this theme.`
+          `Cannot delete the default theme "${themeName}". ` +
+          `Set another theme as default using the setDefaultTheme tool first, then delete this theme.`
         );
       }
 
@@ -72,10 +72,10 @@ export const deleteThemeTool = {
         }
       );
 
-      const successMessage = `Successfully deleted theme "${themeName}" (ID: ${themeId}) from realm "${realm}"`;
+      const successMessage = `Deleted theme "${themeName}" (${themeId}) from realm "${realm}"`;
       return createToolResponse(formatSuccess({ _id: themeId, name: themeName, message: successMessage }, response));
     } catch (error: any) {
-      return createToolResponse(`Error deleting theme from realm "${realm}": ${error.message}`);
+      return createToolResponse(`Failed to delete theme from realm "${realm}": ${error.message}`);
     }
   }
 };

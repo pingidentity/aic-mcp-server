@@ -11,11 +11,11 @@ const SCOPES = ['fr:idm:*'];
 export const getManagedObjectTool = {
   name: 'getManagedObject',
   title: 'Get Managed Object',
-  description: 'Retrieve a managed object\'s complete profile by its unique identifier (_id) from PingOne AIC. Supported types: alpha_user, bravo_user, alpha_role, bravo_role, alpha_group, bravo_group, alpha_organization, bravo_organization. Returns the full object.',
+  description: 'Retrieve a managed object\'s complete profile by ID in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe("The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')"),
-    objectId: objectIdSchema.describe("The unique identifier (_id) of the object to retrieve"),
+    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
+    objectId: objectIdSchema.describe('The object\'s unique identifier (_id)'),
   },
   async toolFunction({ objectType, objectId }: { objectType: string; objectId: string }) {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${objectId}`;
@@ -24,7 +24,7 @@ export const getManagedObjectTool = {
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES);
       return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
-      return createToolResponse(`Error retrieving managed object: ${error.message}`);
+      return createToolResponse(`Failed to retrieve managed object: ${error.message}`);
     }
   }
 };

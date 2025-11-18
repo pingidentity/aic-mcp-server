@@ -11,10 +11,10 @@ const SCOPES = ['fr:idm:*'];
 export const getManagedObjectSchemaTool = {
   name: 'getManagedObjectSchema',
   title: 'Get Managed Object Schema',
-  description: 'Retrieve the schema definition for a specific managed object type from PingOne AIC. Supported types: alpha_user, bravo_user, alpha_role, bravo_role, alpha_group, bravo_group, alpha_organization, bravo_organization. Returns only the required properties and their formats to minimize context. Use this before creating objects to understand what fields are required.',
+  description: 'Retrieve schema definition for a managed object type in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe("The managed object type to get schema for (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')"),
+    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
   },
   async toolFunction({ objectType }: { objectType: string }) {
     const url = `https://${aicBaseUrl}/openidm/config/managed`;
@@ -42,7 +42,7 @@ export const getManagedObjectSchemaTool = {
 
       return createToolResponse(formatSuccess(schemaInfo, response));
     } catch (error: any) {
-      return createToolResponse(`Error retrieving managed object schema: ${error.message}`);
+      return createToolResponse(`Failed to retrieve managed object schema: ${error.message}`);
     }
   }
 };
