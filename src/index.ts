@@ -6,6 +6,7 @@ import { initAuthService } from './services/authService.js';
 import * as managedObjectTools from './tools/managedObjects/index.js';
 import * as logTools from './tools/logs/index.js';
 import * as themeTools from './tools/themes/index.js';
+import * as esvTools from './tools/esv/index.js';
 
 /**
  * Tool configuration structure for MCP tool registration
@@ -26,7 +27,8 @@ if (!process.env.AIC_BASE_URL) {
 const allTools = [
   ...Object.values(managedObjectTools),
   ...Object.values(logTools),
-  ...Object.values(themeTools)
+  ...Object.values(themeTools),
+  ...Object.values(esvTools)
 ];
 
 // Extract unique scopes from all tools
