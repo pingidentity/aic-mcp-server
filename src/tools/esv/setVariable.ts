@@ -12,14 +12,12 @@ const VARIABLE_ID_REGEX = /^esv-[a-z0-9_-]{1,120}$/;
 export const setVariableTool = {
   name: 'setVariable',
   title: 'Set Environment Variable (ESV)',
-  description: 'Create or update an environment variable (ESV) in PingOne AIC. WARNING: Do not store PII.',
+  description: 'Create or update an environment variable (ESV) in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    variableId: z.string().describe(
-      "The unique identifier of the variable. Must start with 'esv-' followed by lowercase a-z, 0-9, underscores and hyphens, max 124 characters total (e.g., 'esv-my-variable')"
-    ),
+    variableId: z.string().describe('Variable ID (format: esv-*)'),
     value: z.any().describe(
-      "Variable value. Format by type: string (text), array (JSON array), object (JSON object), bool (true/false), int (integer), number (decimal), list (comma-separated)."
+      "Variable value as native type (NOT JSON string). Examples: string: 'hello', array: ['a','b'], object: {\"key\":\"val\"}, bool: true, int: 42, number: 3.14, list: 'a,b,c'. The tool handles JSON serialization internally for array/object types."
     ),
     type: z.enum(['string', 'array', 'object', 'bool', 'int', 'number', 'list']).describe(
       "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Ping recommends using 'array' instead of 'list'."
@@ -43,7 +41,7 @@ export const setVariableTool = {
       // Validate variable ID format
       if (!VARIABLE_ID_REGEX.test(variableId)) {
         return createToolResponse(
-          `Error: Invalid variable ID '${variableId}'. Must start with 'esv-' followed by lowercase a-z, 0-9, underscores and hyphens, max 124 characters total.`
+          `Invalid variable ID '${variableId}'. Must start with 'esv-' followed by lowercase a-z, 0-9, underscores and hyphens, max 124 characters total.`
         );
       }
 
@@ -82,14 +80,14 @@ export const setVariableTool = {
         }
       );
 
-      const successMessage = `Variable '${variableId}' set successfully. Pod restart required for changes to take effect.`;
+      const successMessage = `Set variable '${variableId}'. Pod restart required for changes to take effect.`;
 
       return createToolResponse(formatSuccess({
         _id: variableId,
         message: successMessage
       }, response));
     } catch (error: any) {
-      return createToolResponse(`Error setting variable '${variableId}': ${error.message}`);
+      return createToolResponse(`Failed to set variable '${variableId}': ${error.message}`);
     }
   }
 };

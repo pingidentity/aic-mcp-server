@@ -10,11 +10,11 @@ const SCOPES = ['fr:idm:*'];
 export const getThemeTool = {
   name: 'getTheme',
   title: 'Get Theme',
-  description: 'Retrieve a specific theme by its ID or name from PingOne AIC. Returns the complete theme configuration including all styling properties, logos, headers, footers, and page settings.',
+  description: 'Retrieve a specific theme by ID or name from PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    realm: z.enum(REALMS).describe('The realm containing the theme (e.g., "alpha", "bravo")'),
-    themeIdentifier: z.string().describe('The theme ID or name to retrieve')
+    realm: z.enum(REALMS).describe('Realm name'),
+    themeIdentifier: z.string().describe('Theme ID or name')
   },
   async toolFunction({ realm, themeIdentifier }: { realm: string; themeIdentifier: string }) {
     try {
@@ -27,16 +27,16 @@ export const getThemeTool = {
       const results = (data as any)?.result || [];
 
       if (resultCount === 0) {
-        return createToolResponse(`Error: No theme found with ID or name "${themeIdentifier}" in realm "${realm}"`);
+        return createToolResponse(`Theme not found: "${themeIdentifier}" in realm "${realm}"`);
       }
 
       if (resultCount > 1) {
-        return createToolResponse(`Error: Multiple themes found matching "${themeIdentifier}" in realm "${realm}". This should not happen - please report this issue.`);
+        return createToolResponse(`Multiple themes found matching "${themeIdentifier}" in realm "${realm}". This should not happen - please report this issue.`);
       }
 
       return createToolResponse(formatSuccess(results[0], response));
     } catch (error: any) {
-      return createToolResponse(`Error retrieving theme "${themeIdentifier}" from realm "${realm}": ${error.message}`);
+      return createToolResponse(`Failed to retrieve theme "${themeIdentifier}" from realm "${realm}": ${error.message}`);
     }
   }
 };

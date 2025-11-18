@@ -9,18 +9,16 @@ const SCOPES = ['fr:idc:esv:update'];
 export const deleteVariableTool = {
   name: 'deleteVariable',
   title: 'Delete Environment Variable (ESV)',
-  description: 'Delete an environment variable (ESV) from PingOne AIC.',
+  description: 'Delete an environment variable (ESV) from PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    variableId: z.string().describe(
-      "The unique identifier of the variable to delete (e.g., 'esv-my-variable')"
-    ),
+    variableId: z.string().describe('Variable ID (format: esv-*)'),
   },
   async toolFunction({ variableId }: { variableId: string }) {
     try {
       const url = `https://${aicBaseUrl}/environment/variables/${variableId}`;
 
-      const { data, response } = await makeAuthenticatedRequest(
+      const { response } = await makeAuthenticatedRequest(
         url,
         SCOPES,
         {
@@ -31,14 +29,14 @@ export const deleteVariableTool = {
         }
       );
 
-      const successMessage = `Variable '${variableId}' deleted successfully. Pod restart required for changes to take effect.`;
+      const successMessage = `Deleted variable '${variableId}'. Pod restart required for changes to take effect.`;
 
       return createToolResponse(formatSuccess({
         _id: variableId,
         message: successMessage
       }, response));
     } catch (error: any) {
-      return createToolResponse(`Error deleting environment variable '${variableId}': ${error.message}`);
+      return createToolResponse(`Failed to delete variable '${variableId}': ${error.message}`);
     }
   }
 };

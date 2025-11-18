@@ -9,12 +9,10 @@ const SCOPES = ['fr:idc:esv:read'];
 export const queryVariablesTool = {
   name: 'queryVariables',
   title: 'Query Environment Variables (ESVs)',
-  description: 'Query environment variables (ESVs) in PingOne AIC by ID. Returns metadata only; use getVariable for actual values.',
+  description: 'Query environment variables (ESVs) in PingOne AIC by ID',
   scopes: SCOPES,
   inputSchema: {
-    queryTerm: z.string().describe(
-      "Search term to filter variables by ID"
-    ),
+    queryTerm: z.string().describe('Search term to filter variables by ID'),
   },
   async toolFunction({ queryTerm }: { queryTerm: string }) {
     try {
@@ -37,7 +35,7 @@ export const queryVariablesTool = {
 
       return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
-      return createToolResponse(`Error querying environment variables: ${error.message}`);
+      return createToolResponse(`Failed to query environment variables: ${error.message}`);
     }
   }
 };

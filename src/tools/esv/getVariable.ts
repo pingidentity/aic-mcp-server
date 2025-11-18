@@ -9,12 +9,10 @@ const SCOPES = ['fr:idc:esv:read'];
 export const getVariableTool = {
   name: 'getVariable',
   title: 'Get Environment Variable (ESV)',
-  description: "Retrieve a specific environment variable (ESV) by ID with decoded value.",
+  description: 'Retrieve a specific environment variable (ESV) by ID with decoded value',
   scopes: SCOPES,
   inputSchema: {
-    variableId: z.string().describe(
-      "The unique identifier of the variable (e.g., 'esv-my-variable')"
-    ),
+    variableId: z.string().describe('Variable ID (format: esv-*)'),
   },
   async toolFunction({ variableId }: { variableId: string }) {
     try {
@@ -40,7 +38,7 @@ export const getVariableTool = {
 
       return createToolResponse(formatSuccess(variableData, response));
     } catch (error: any) {
-      return createToolResponse(`Error getting environment variable '${variableId}': ${error.message}`);
+      return createToolResponse(`Failed to get variable '${variableId}': ${error.message}`);
     }
   }
 };

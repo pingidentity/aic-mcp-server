@@ -8,8 +8,8 @@ const SCOPES = ['fr:idc:monitoring:*'];
 
 export const getLogSourcesTool = {
   name: 'getLogSources',
-  title: 'Get Available Log Sources',
-  description: 'Retrieve the list of available log sources in PingOne AIC. Use this to discover what log sources exist before querying logs.',
+  title: 'Get Log Sources',
+  description: 'Retrieve the list of available log sources in PingOne AIC',
   scopes: SCOPES,
   async toolFunction() {
     const url = `https://${aicBaseUrl}/monitoring/logs/sources`;
@@ -18,7 +18,7 @@ export const getLogSourcesTool = {
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES);
       return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
-      return createToolResponse(`Error fetching log sources: ${error.message}`);
+      return createToolResponse(`Failed to fetch log sources: ${error.message}`);
     }
   }
 };

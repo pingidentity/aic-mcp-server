@@ -9,12 +9,10 @@ const SCOPES = ['fr:idc:esv:read'];
 export const querySecretsTool = {
   name: 'querySecrets',
   title: 'Query Environment Secrets (ESVs)',
-  description: 'Query environment secrets (ESVs) in PingOne AIC by ID. Secrets are versioned and encrypted. Returns metadata only; secret values are never exposed by the API.',
+  description: 'Query environment secrets (ESVs) in PingOne AIC by ID',
   scopes: SCOPES,
   inputSchema: {
-    queryTerm: z.string().describe(
-      "Search term to filter secrets by ID"
-    ),
+    queryTerm: z.string().describe('Search term to filter secrets by ID'),
   },
   async toolFunction({ queryTerm }: { queryTerm: string }) {
     try {
@@ -37,7 +35,7 @@ export const querySecretsTool = {
 
       return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
-      return createToolResponse(`Error querying environment secrets: ${error.message}`);
+      return createToolResponse(`Failed to query environment secrets: ${error.message}`);
     }
   }
 };

@@ -11,11 +11,11 @@ const SCOPES = ['fr:idm:*'];
 export const deleteManagedObjectTool = {
   name: 'deleteManagedObject',
   title: 'Delete Managed Object',
-  description: 'Delete a managed object by its unique identifier (_id) from PingOne AIC. Supported types: alpha_user, bravo_user, alpha_role, bravo_role, alpha_group, bravo_group, alpha_organization, bravo_organization. Returns confirmation of successful deletion.',
+  description: 'Delete a managed object by ID from PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe("The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')"),
-    objectId: objectIdSchema.describe("The unique identifier (_id) of the object to delete"),
+    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
+    objectId: objectIdSchema.describe('The object\'s unique identifier (_id)'),
   },
   async toolFunction({ objectType, objectId }: { objectType: string; objectId: string }) {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${objectId}`;
@@ -25,10 +25,10 @@ export const deleteManagedObjectTool = {
         method: 'DELETE'
       });
 
-      const successMessage = `Managed object with _id '${objectId}' successfully deleted from ${objectType}`;
+      const successMessage = `Deleted managed object ${objectId} from ${objectType}`;
       return createToolResponse(formatSuccess(successMessage, response));
     } catch (error: any) {
-      return createToolResponse(`Error deleting managed object: ${error.message}`);
+      return createToolResponse(`Failed to delete managed object: ${error.message}`);
     }
   }
 };

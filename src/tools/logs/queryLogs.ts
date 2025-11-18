@@ -9,15 +9,12 @@ const SCOPES = ['fr:idc:monitoring:*'];
 
 export const queryLogsTool = {
   name: 'queryLogs',
-  title: 'Query AIC Logs',
-  description:
-    'Query PingOne AIC logs with flexible filtering by time range, source, transaction ID, and payload content. ' +
-    'Supports complex queries with _queryFilter expressions. ' +
-    'Rate limit: 60 requests/min, max 1000 logs per request. Logs stored for 30 days.',
+  title: 'Query Logs',
+  description: 'Query PingOne AIC logs with flexible filtering by time range, source, transaction ID, and payload content',
   scopes: SCOPES,
   inputSchema: {
     sources: z.array(z.string())
-      .describe("Log sources to query (e.g., ['am-authentication', 'idm-activity']). Available sources can be retrieved using the getLogSources tool."),
+      .describe("Log sources to query (e.g., ['am-authentication', 'idm-activity']). IMPORTANT: use the getLogSources tool to determine available sources."),
     beginTime: z.string().optional()
       .describe("Start time in ISO 8601 format without milliseconds (e.g., '2025-01-11T10:00:00Z'). Filters logs after this time. Defaults to 24 hours before endTime if omitted. Must be within 24 hours of endTime."),
     endTime: z.string().optional()
@@ -94,7 +91,7 @@ export const queryLogsTool = {
       const logs = data as MonitoringLogsApiResponse;
       return createToolResponse(formatSuccess(logs, response));
     } catch (error: any) {
-      return createToolResponse(`Error querying logs: ${error.message}`);
+      return createToolResponse(`Failed to query logs: ${error.message}`);
     }
   }
 };
