@@ -11,7 +11,7 @@ const SCOPES = ['fr:idm:*'];
 // JSON Patch operation schema
 const patchOperationSchema = z.object({
   operation: z.enum(['add', 'remove', 'replace', 'move', 'copy', 'test']).describe("The patch operation type"),
-  field: z.string().describe("The field path to modify (e.g., '/name', '/description', '/mail')"),
+  field: z.string().describe("The field path to modify using JSON Pointer format (e.g., '/fieldName'). Call getManagedObjectSchema to discover available fields."),
   value: z.any().optional().describe("The value for the operation (required for add/replace/test operations)")
 });
 
