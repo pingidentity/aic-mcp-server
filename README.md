@@ -91,25 +91,38 @@ Restart your AI assistant and start asking questions about your PingOne AIC envi
 ## Available Tools
 
 ### queryManagedObjects
-Query managed objects (users, roles, groups, organizations) using a query term.
+Query managed objects (users, roles, groups, organizations) using powerful CREST query filter syntax with pagination, sorting, and field selection.
 
 **Parameters:**
 - `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
-- `queryTerm`: Query term (minimum 3 characters)
+- `queryFilter` (optional): CREST query filter expression. If omitted, returns all objects up to pageSize
+- `pageSize` (optional): Number of objects to return per page (default: 50, max: 250)
+- `pagedResultsCookie` (optional): Pagination cookie from previous response to retrieve next page
+- `sortKeys` (optional): Comma-separated field names to sort by (prefix with "-" for descending)
+- `fields` (optional): Comma-separated field names to return (returns all fields if omitted)
 
 **Supported Object Types:**
-- `alpha_user`, `bravo_user` - Queries: userName, givenName, sn, mail
-- `alpha_role`, `bravo_role` - Queries: name, description
-- `alpha_group`, `bravo_group` - Queries: name, description
-- `alpha_organization`, `bravo_organization` - Queries: name, description
+- `alpha_user`, `bravo_user`
+- `alpha_role`, `bravo_role`
+- `alpha_group`, `bravo_group`
+- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
+**Important:** Call `getManagedObjectSchema` first to discover available fields for your queries.
+
+**Query Filter Operators:**
+- `eq` (equals), `co` (contains), `sw` (starts with)
+- `gt`, `ge`, `lt`, `le` (comparison)
+- `pr` (present), `!` (NOT)
+- `and`, `or` (boolean logic)
+
 **Examples:**
 ```
-"Query alpha_users with email starting with admin"
-"Query bravo_roles with name containing manager"
-"Query alpha_groups with name starting with eng"
+"List all alpha_users"
+"Find alpha_users where userName starts with 'admin'"
+"Query bravo_roles where name contains 'manager' and return only name and description fields"
+"Get the first 10 alpha_groups sorted by name"
 ```
 
 ### getManagedObjectSchema
@@ -224,6 +237,7 @@ Query PingOne AIC logs with advanced filtering capabilities including time range
 **Required Scopes:** `fr:idc:monitoring:*`
 
 **Important:**
+- **CRITICAL**: All queryFilter field paths MUST start with `/` (e.g., `/payload/level`). Missing the leading slash causes 500 Internal Server Error.
 - Time range limited to 24 hours maximum
 - Logs stored for 30 days
 - Rate limit: 60 requests/min
@@ -245,19 +259,15 @@ Query PingOne AIC logs with advanced filtering capabilities including time range
 "Find all authentication logs where the user is john.doe"
 "Get logs from am-authentication source between 10am and 11am today"
 "Show me the next page of results using this pagination token"
+"Show me logs for transaction ID a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 ```
 
-### queryLogsByTransactionId
-Retrieve am-everything and idm-everything logs for a specific transaction ID.
-
-**Parameters:**
-- `transactionId`: The transaction ID to look up
-
-**Required Scopes:** `fr:idc:monitoring:*`
-
-**Example:**
+**Tip:** To query by transaction ID, simply include `transactionId` in your request to `queryLogs`:
 ```
-"Show me the authentication logs for transaction a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+queryLogs({
+  sources: ['am-everything', 'idm-everything'],
+  transactionId: 'your-transaction-id-here'
+})
 ```
 
 ## Theme Management Tools
@@ -391,6 +401,79 @@ Set a theme as the default for a realm.
 "Make the theme with ID xyz-789 the default for bravo"
 ```
 
+## Environment Secrets and Variables (ESV) Tools
+
+Manage environment secrets and variables used for configuration and credentials in PingOne AIC.
+
+### queryESVs
+Query environment secrets or variables by ID pattern with pagination and sorting.
+
+**Parameters:**
+- `type`: Type of ESV to query ('variable' or 'secret')
+- `queryTerm` (optional): Search term to filter by ID. If omitted, returns all ESVs up to pageSize
+- `pageSize` (optional): Number of results to return per page (default: 50, max: 100)
+- `pagedResultsCookie` (optional): Pagination cookie from previous response to retrieve next page
+- `sortKeys` (optional): Comma-separated field names to sort by (prefix with "-" for descending)
+
+**Required Scopes:** `fr:idc:esv:read`
+
+**Examples:**
+```
+"List all environment variables"
+"Find environment variables with ID starting with esv-prod"
+"Show me all environment secrets"
+"Get the next page of variables using this pagination cookie"
+```
+
+### getVariable
+Retrieve a specific environment variable by ID with decoded value.
+
+**Parameters:**
+- `variableId`: Variable ID (format: esv-*)
+
+**Required Scopes:** `fr:idc:esv:read`
+
+**Returns:** Variable configuration including decoded value.
+
+**Example:**
+```
+"Get the variable esv-database-url"
+```
+
+### setVariable
+Create or update an environment variable.
+
+**Parameters:**
+- `variableId`: Variable ID (format: esv-*)
+- `type`: Variable type ('string', 'array', 'object', 'bool', 'int', 'number')
+- `value`: Variable value (type must match declared type)
+- `description` (optional): Description of the variable's purpose
+
+**Required Scopes:** `fr:idc:esv:*`
+
+**Important:** Type cannot be changed after creation.
+
+**Examples:**
+```
+"Create an environment variable esv-api-key with value 'secret123'"
+"Update the variable esv-max-connections to 100"
+```
+
+### deleteVariable
+Delete an environment variable by ID.
+
+**Parameters:**
+- `variableId`: Variable ID (format: esv-*)
+
+**Required Scopes:** `fr:idc:esv:*`
+
+**Important:** Deletion is permanent and cannot be undone.
+
+**Example:**
+```
+"Delete the variable esv-old-config"
+```
+
 ## How Authentication Works
 
 The server uses OAuth 2.0 PKCE (Proof Key for Code Exchange) flow for secure user authentication:
@@ -436,10 +519,11 @@ The server detects tenant mismatches automatically. Simply re-authenticate when 
 
 See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation and development guides.
 
-**Tool Organization:** Tools are organized into three categories:
+**Tool Organization:** Tools are organized into four categories:
 - `src/tools/managedObjects/` - CRUD operations for users, roles, groups, and organizations
 - `src/tools/logs/` - Log querying and monitoring
 - `src/tools/themes/` - Theme management for authentication journeys
+- `src/tools/esv/` - Environment secrets and variables management
 
 Each category has an `index.ts` file that re-exports all tools, making it easy to enable/disable entire feature sets.
 

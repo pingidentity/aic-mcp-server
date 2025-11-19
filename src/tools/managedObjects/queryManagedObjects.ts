@@ -2,65 +2,84 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { SUPPORTED_OBJECT_TYPES, getBaseType } from '../../config/managedObjectTypes.js';
+import { SUPPORTED_OBJECT_TYPES } from '../../config/managedObjectTypes.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
 const SCOPES = ['fr:idm:*'];
 
-/**
- * Configuration mapping base object types to their queryable fields
- * This determines which fields are queried with the 'sw' (starts with) operator
- */
-const QUERY_FIELD_CONFIG: Record<string, string[]> = {
-  user: ['userName', 'givenName', 'sn', 'mail'],
-  role: ['name', 'description'],
-  group: ['name', 'description'],
-  organization: ['name', 'description'],
-};
-
-/**
- * Configuration mapping base object types to the fields returned in query results
- */
-const RETURN_FIELD_CONFIG: Record<string, string[]> = {
-  user: ['userName', 'givenName', 'sn', 'mail'],
-  role: ['name', 'description'],
-  group: ['name', 'description'],
-  organization: ['name', 'description'],
-};
-
 export const queryManagedObjectsTool = {
   name: 'queryManagedObjects',
   title: 'Query Managed Objects',
-  description: 'Query managed objects in PingOne AIC by search term',
+  description: 'Query managed objects in PingOne AIC using CREST query filter syntax',
   scopes: SCOPES,
   inputSchema: {
     objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
-    queryTerm: z.string().min(3).describe(
-      "Query term to match against the object's queryable fields (minimum 3 characters)"
+    queryFilter: z.string().max(1000).optional().describe(
+      'CREST query filter expression. IMPORTANT: Call getManagedObjectSchema first to discover available fields. ' +
+      'Operators: eq, co, sw, gt, ge, lt, le, pr (present), ! (NOT). Boolean: and, or. Quote strings. ' +
+      'If omitted, returns all objects up to pageSize. ' +
+      'Examples: FIELD eq "value" | FIELD sw "prefix" | (FIELD1 eq "a") and (FIELD2 co "b") | FIELD pr\n' +
+      'Docs: https://docs.pingidentity.com/pingoneaic/latest/developer-docs/crest/query.html#crest-query-queryFilter'
+    ),
+    pageSize: z.number().int().min(1).max(250).optional().describe(
+      'Number of objects to return per page (default: 50)'
+    ),
+    pagedResultsCookie: z.string().optional().describe(
+      'Pagination cookie from previous response to retrieve next page'
+    ),
+    sortKeys: z.string().max(500).optional().describe(
+      'Comma-separated field names to sort by. Prefix with "-" for descending. Example: "FIELD1,-FIELD2"'
+    ),
+    fields: z.string().max(500).optional().describe(
+      'Comma-separated field names to return. If omitted, returns all fields. Example: "FIELD1,FIELD2,_id"'
     ),
   },
-  async toolFunction({ objectType, queryTerm }: { objectType: string; queryTerm: string }) {
-    // Extract base type to determine query and return fields
-    const baseType = getBaseType(objectType);
-    const queryFields = QUERY_FIELD_CONFIG[baseType];
-    const returnFields = RETURN_FIELD_CONFIG[baseType];
-
-    // Build query filter: field1 sw "term" OR field2 sw "term" OR ...
-    const queryFilter = queryFields
-      .map(field => `${field} sw "${queryTerm}"`)
-      .join(' OR ');
-
-    const encodedQueryFilter = encodeURIComponent(queryFilter);
-    const fieldsParam = returnFields.join(',');
-
-    // Use first query field for sorting
-    const sortField = queryFields[0];
-
-    const url = `https://${aicBaseUrl}/openidm/managed/${objectType}?_queryFilter=${encodedQueryFilter}&_pageSize=10&_totalPagedResultsPolicy=EXACT&_sortKeys=${sortField}&_fields=${fieldsParam}`;
-
+  async toolFunction({
+    objectType,
+    queryFilter,
+    pageSize,
+    pagedResultsCookie,
+    sortKeys,
+    fields
+  }: {
+    objectType: string;
+    queryFilter?: string;
+    pageSize?: number;
+    pagedResultsCookie?: string;
+    sortKeys?: string;
+    fields?: string;
+  }) {
     try {
-      const { data, response } = await makeAuthenticatedRequest(url, SCOPES);
+      // Build query URL using URL constructor for proper encoding
+      const url = new URL(`https://${aicBaseUrl}/openidm/managed/${objectType}`);
+
+      // Query filter - default to 'true' to return all objects
+      url.searchParams.append('_queryFilter', queryFilter || 'true');
+
+      // Page size - default to 50, max 250
+      const effectivePageSize = Math.min(pageSize || 50, 250);
+      url.searchParams.append('_pageSize', effectivePageSize.toString());
+
+      // Total paged results policy - always use EXACT for accurate counts
+      url.searchParams.append('_totalPagedResultsPolicy', 'EXACT');
+
+      // Pagination cookie for subsequent pages
+      if (pagedResultsCookie) {
+        url.searchParams.append('_pagedResultsCookie', pagedResultsCookie);
+      }
+
+      // Sort keys
+      if (sortKeys) {
+        url.searchParams.append('_sortKeys', sortKeys);
+      }
+
+      // Field selection
+      if (fields) {
+        url.searchParams.append('_fields', fields);
+      }
+
+      const { data, response } = await makeAuthenticatedRequest(url.toString(), SCOPES);
       return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
       return createToolResponse(`Failed to query ${objectType}: ${error.message}`);

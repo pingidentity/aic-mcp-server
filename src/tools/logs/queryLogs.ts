@@ -21,21 +21,23 @@ export const queryLogsTool = {
       .describe("End time in ISO 8601 format without milliseconds (e.g., '2025-01-11T12:00:00Z'). Filters logs before this time. Defaults to current time if omitted. Must be within 24 hours of beginTime."),
     transactionId: z.string().optional()
       .describe("Filter by specific transaction ID to trace a request across the system."),
-    queryFilter: z.string().optional()
+    queryFilter: z.string().max(2000).optional()
       .describe(
-        "_queryFilter expression for payload content. " +
-        "Filter operators: eq (equals), co (contains), sw (starts with), lt (less than), le (less/equal), gt (greater than), ge (greater/equal), pr (present), ! (NOT). " +
-        "Boolean operators: and, or. String values must be quoted with double quotes. " +
-        "Example filters: /payload/level eq \"ERROR\" OR /payload/eventName eq \"AM-LOGIN-COMPLETED\" OR " +
-        "/payload/result eq \"SUCCESSFUL\" OR /payload/client/ip co \"10.104.1.5\" OR /payload/principal co \"bob\" OR " +
-        "/payload/response.statusCode ge 400 OR /payload/http.method eq \"POST\" OR " +
-        "/payload/timestamp sw \"2023-05-14T16:34:34\" OR /payload/entries/info/nodeType pr OR " +
-        "/payload/client/ip co \"10.x\" and /payload/level eq \"ERROR\" OR !(/payload/level eq \"DEBUG\")"
+        'CRITICAL: All field paths MUST start with / (e.g., /payload/level, /payload/principal). Missing the leading slash causes 500 Internal Server Error.\n\n' +
+        'Operators: eq, co, sw, lt, le, gt, ge, pr (present), ! (NOT). Boolean: and, or. Quote string values.\n' +
+        'Time filtering: Use beginTime/endTime parameters for time ranges. Use /payload/timestamp only for exact timestamp matches.\n\n' +
+        'Examples:\n' +
+        '  /payload/level eq "ERROR"\n' +
+        '  /payload/principal co "admin"\n' +
+        '  /payload/eventName eq "AM-LOGIN-COMPLETED"\n' +
+        '  (/payload/level eq "ERROR") and (/payload/http/request/path co "openidm")\n' +
+        '  /payload/response.statusCode ge 400\n\n' +
+        'Troubleshooting: If you receive a 500 error, verify all field paths begin with /'
       ),
     pagedResultsCookie: z.string().optional()
       .describe("Opaque pagination cookie from a previous response. Use this to retrieve the next page of results."),
     pageSize: z.number().int().min(1).max(1000).optional()
-      .describe("Maximum logs to return (max 1000, default 100). Use smaller values for faster responses."),
+      .describe("Maximum logs to return (default 100)."),
   },
   async toolFunction({
     sources,
@@ -81,9 +83,9 @@ export const queryLogsTool = {
       url.searchParams.append('_pagedResultsCookie', pagedResultsCookie);
     }
 
-    if (pageSize) {
-      url.searchParams.append('_pageSize', pageSize.toString());
-    }
+    // Page size - default to 100, max 1000
+    const effectivePageSize = Math.min(pageSize || 100, 1000);
+    url.searchParams.append('_pageSize', effectivePageSize.toString());
 
     try {
       const { data, response } = await makeAuthenticatedRequest(url.toString(), SCOPES);

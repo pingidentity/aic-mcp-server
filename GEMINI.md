@@ -63,47 +63,36 @@ All tools declare required OAuth scopes, which are requested upfront during user
 #### 1. `queryManagedObjects`
 **File:** [src/tools/managedObjects/queryManagedObjects.ts](src/tools/managedObjects/queryManagedObjects.ts)
 
-Query managed objects in PingOne AIC using a query term.
+Query managed objects in PingOne AIC using CREST query filter syntax with full pagination, sorting, and field selection capabilities.
 
 **Parameters:**
 - `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
-- `queryTerm` (string): Query term (minimum 3 characters)
+- `queryFilter` (string, optional): CREST query filter expression. If omitted, returns all objects up to pageSize (defaults to 'true')
+- `pageSize` (number, optional): Number of objects to return per page (default: 50, max: 250)
+- `pagedResultsCookie` (string, optional): Pagination cookie from previous response for next page
+- `sortKeys` (string, optional): Comma-separated field names to sort by. Prefix with "-" for descending
+- `fields` (string, optional): Comma-separated field names to return. If omitted, returns all fields
 
 **Supported Object Types:**
-- `alpha_user`, `bravo_user` - Queries: userName, givenName, sn, mail
-- `alpha_role`, `bravo_role` - Queries: name, description
-- `alpha_group`, `bravo_group` - Queries: name, description
-- `alpha_organization`, `bravo_organization` - Queries: name, description
+- `alpha_user`, `bravo_user`
+- `alpha_role`, `bravo_role`
+- `alpha_group`, `bravo_group`
+- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
-**Returns:** JSON array of matching objects (max 10 results)
+**Returns:** JSON response with results array and pagination metadata
 
 **Implementation Notes:**
-- Uses SCIM-style query filter with `sw` (starts with) operator
-- Configuration-driven query fields based on object type
-- Validates object type using Zod enum
-- Enforces minimum query term length of 3 characters
-- Results sorted by first query field
+- Exposes full CREST query filter syntax (eq, co, sw, gt, ge, lt, le, pr, !, and, or)
+- Uses `_totalPagedResultsPolicy=EXACT` for accurate result counts
+- Validates object type using Zod enum from shared configuration
+- Generic field placeholders in descriptions force AI to call `getManagedObjectSchema` first
+- Cookie-based pagination for efficiency
+- Default pageSize of 50, max 250
+- Works with any managed object type via dynamic endpoint construction
 
-#### 2. `queryLogsByTransactionId`
-**File:** [src/tools/logs/queryLogsByTransactionId.ts](src/tools/logs/queryLogsByTransactionId.ts)
-
-Queries am-everything and idm-everything logs in PingOne AIC by transaction ID.
-
-**Parameters:**
-- `transactionId` (string): The transaction ID to query logs for
-
-**Required Scopes:** `fr:idc:monitoring:*`
-
-**Returns:** JSON array of log entries matching the transaction ID
-
-**Implementation Notes:**
-- Queries the monitoring logs endpoint (`/monitoring/logs`)
-- Filters by source type: `am-authentication`
-- Useful for debugging authentication flows and tracking user sessions
-
-#### 3. `getManagedObjectSchema`
+#### 2. `getManagedObjectSchema`
 **File:** [src/tools/managedObjects/getManagedObjectSchema.ts](src/tools/managedObjects/getManagedObjectSchema.ts)
 
 Retrieves the schema definition for a specific managed object type to understand its structure and requirements.
@@ -121,7 +110,7 @@ Retrieves the schema definition for a specific managed object type to understand
 - Use before creating managed objects to understand what fields are necessary
 - Works for all supported object types: user, role, group, organization
 
-#### 4. `createManagedObject`
+#### 3. `createManagedObject`
 **File:** [src/tools/managedObjects/createManagedObject.ts](src/tools/managedObjects/createManagedObject.ts)
 
 Creates a new managed object in PingOne AIC.
@@ -147,7 +136,7 @@ Creates a new managed object in PingOne AIC.
 - Validates objectType using Zod enum
 - Use `getManagedObjectSchema` first to determine required fields
 
-#### 5. `getManagedObject`
+#### 4. `getManagedObject`
 **File:** [src/tools/managedObjects/getManagedObject.ts](src/tools/managedObjects/getManagedObject.ts)
 
 Retrieves a managed object's complete profile by its unique identifier.
@@ -166,7 +155,7 @@ Retrieves a managed object's complete profile by its unique identifier.
 - The `_rev` field is required for safe updates using `patchManagedObject`
 - Works for all supported object types
 
-#### 6. `patchManagedObject`
+#### 5. `patchManagedObject`
 **File:** [src/tools/managedObjects/patchManagedObject.ts](src/tools/managedObjects/patchManagedObject.ts)
 
 Updates specific fields of a managed object using JSON Patch operations (RFC 6902).
@@ -186,10 +175,11 @@ Updates specific fields of a managed object using JSON Patch operations (RFC 690
 - Requires current `_rev` value to prevent conflicting concurrent updates (optimistic locking)
 - Always call `getManagedObject` first to obtain the current `_rev`
 - Supports operations: add, remove, replace, move, copy, test
-- Field paths use JSON Pointer format (e.g., '/name', '/description', '/mail')
+- Field paths use JSON Pointer format (e.g., '/fieldName')
+- Generic field placeholders in descriptions force AI to call `getManagedObjectSchema` to discover available fields
 - Works for all supported object types
 
-#### 7. `deleteManagedObject`
+#### 6. `deleteManagedObject`
 **File:** [src/tools/managedObjects/deleteManagedObject.ts](src/tools/managedObjects/deleteManagedObject.ts)
 
 Deletes a managed object by its unique identifier.
@@ -212,7 +202,7 @@ Deletes a managed object by its unique identifier.
 
 The server provides comprehensive theme management capabilities for customizing the appearance of authentication journeys and account pages in PingOne AIC.
 
-#### 8. `getThemeSchema`
+#### 7. `getThemeSchema`
 **File:** [src/tools/themes/getThemeSchema.ts](src/tools/themes/getThemeSchema.ts)
 
 Retrieve comprehensive schema documentation for PingOne AIC themes.
@@ -236,7 +226,7 @@ Retrieve comprehensive schema documentation for PingOne AIC themes.
 - Documents that only `name` field is required; all others are optional
 - The AIC server applies defaults for any omitted fields
 
-#### 9. `getThemes`
+#### 8. `getThemes`
 **File:** [src/tools/themes/getThemes.ts](src/tools/themes/getThemes.ts)
 
 Retrieve all themes for a specific realm.
@@ -252,7 +242,7 @@ Retrieve all themes for a specific realm.
 - Use this to discover available themes before getting details or making updates
 - Returns minimal information (name and default status) for quick listing
 
-#### 10. `getTheme`
+#### 9. `getTheme`
 **File:** [src/tools/themes/getTheme.ts](src/tools/themes/getTheme.ts)
 
 Retrieve a specific theme's complete configuration.
@@ -270,7 +260,7 @@ Retrieve a specific theme's complete configuration.
 - Useful for examining existing themes before creating new ones
 - Returns full theme configuration for reference or modification
 
-#### 11. `createTheme`
+#### 10. `createTheme`
 **File:** [src/tools/themes/createTheme.ts](src/tools/themes/createTheme.ts)
 
 Create a new theme for a realm.
@@ -292,7 +282,7 @@ Create a new theme for a realm.
 - Validates that theme name is unique within the realm
 - **Recommended: Call `getThemeSchema` first** to understand available customization options
 
-#### 12. `updateTheme`
+#### 11. `updateTheme`
 **File:** [src/tools/themes/updateTheme.ts](src/tools/themes/updateTheme.ts)
 
 Update an existing theme's properties.
@@ -312,7 +302,7 @@ Update an existing theme's properties.
 - Can query by either `_id` or `name`
 - Validates name uniqueness if renaming the theme
 
-#### 13. `deleteTheme`
+#### 12. `deleteTheme`
 **File:** [src/tools/themes/deleteTheme.ts](src/tools/themes/deleteTheme.ts)
 
 Delete a theme from a realm.
@@ -331,7 +321,7 @@ Delete a theme from a realm.
 - Permanent deletion - cannot be undone
 - Can query by either `_id` or `name`
 
-#### 14. `setDefaultTheme`
+#### 13. `setDefaultTheme`
 **File:** [src/tools/themes/setDefaultTheme.ts](src/tools/themes/setDefaultTheme.ts)
 
 Set a theme as the default for a realm.
@@ -350,6 +340,93 @@ Set a theme as the default for a realm.
 - Can query by either `_id` or `name`
 - Returns informational message if theme is already default
 
+### Environment Secrets and Variables (ESV) Tools
+
+The server provides tools for managing environment secrets and variables (ESVs) used for configuration and credentials in PingOne AIC.
+
+#### 14. `queryESVs`
+**File:** [src/tools/esv/queryESVs.ts](src/tools/esv/queryESVs.ts)
+
+Query environment secrets or variables by ID pattern with pagination and sorting support.
+
+**Parameters:**
+- `type` (string): Type of ESV to query - validated enum ('variable' or 'secret')
+- `queryTerm` (string, optional): Search term to filter by ID. If omitted, returns all ESVs up to pageSize
+- `pageSize` (number, optional): Number of results to return per page (default: 50, max: 100)
+- `pagedResultsCookie` (string, optional): Pagination cookie from previous response to retrieve next page
+- `sortKeys` (string, optional): Comma-separated field names to sort by. Prefix with "-" for descending (e.g., "_id,-lastChangeDate")
+
+**Required Scopes:** `fr:idc:esv:read`
+
+**Returns:** JSON response with results array and pagination metadata
+
+**Implementation Notes:**
+- Unified tool replacing separate `queryVariables` and `querySecrets` tools
+- Uses `/_id co "queryTerm"` filter with double-quote escaping to prevent query injection
+- Defaults to `_queryFilter=true` when queryTerm omitted (returns all ESVs)
+- Dynamic endpoint selection: `/environment/variables` or `/environment/secrets` based on type
+- Requires `accept-api-version: resource=2.0` header
+- Cookie-based pagination for consistency with other query tools
+- Default pageSize of 50, max 100
+- Security: Escapes double quotes in queryTerm to prevent injection attacks
+
+#### 15. `getVariable`
+**File:** [src/tools/esv/getVariable.ts](src/tools/esv/getVariable.ts)
+
+Retrieve a specific environment variable by ID with decoded value.
+
+**Parameters:**
+- `variableId` (string): The unique identifier (_id) of the variable (format: esv-*)
+
+**Required Scopes:** `fr:idc:esv:read`
+
+**Returns:** Complete variable object including decoded value
+
+**Implementation Notes:**
+- Queries `/environment/variables/{variableId}` endpoint
+- Returns decoded value (secrets are write-only and cannot be retrieved)
+- Requires `accept-api-version: resource=2.0` header
+
+#### 16. `setVariable`
+**File:** [src/tools/esv/setVariable.ts](src/tools/esv/setVariable.ts)
+
+Create or update an environment variable.
+
+**Parameters:**
+- `variableId` (string): Variable ID (format: esv-*)
+- `type` (string): Variable type - validated enum ('string', 'array', 'object', 'bool', 'int', 'number')
+- `value` (any): Variable value (must match declared type)
+- `description` (string, optional): Description of the variable's purpose
+
+**Required Scopes:** `fr:idc:esv:*`
+
+**Returns:** Success message with variable ID
+
+**Implementation Notes:**
+- Uses PUT to `/environment/variables/{variableId}` for create/update
+- Type cannot be changed after initial creation
+- Value is serialized to JSON for array/object types
+- Requires `accept-api-version: resource=2.0` header
+- Validates value type matches declared type
+
+#### 17. `deleteVariable`
+**File:** [src/tools/esv/deleteVariable.ts](src/tools/esv/deleteVariable.ts)
+
+Delete an environment variable by ID.
+
+**Parameters:**
+- `variableId` (string): The unique identifier (_id) of the variable (format: esv-*)
+
+**Required Scopes:** `fr:idc:esv:*`
+
+**Returns:** Success message confirming deletion
+
+**Implementation Notes:**
+- Uses HTTP DELETE on `/environment/variables/{variableId}` endpoint
+- Permanent deletion - cannot be undone
+- Requires `accept-api-version: resource=2.0` header
+- No equivalent for secrets (secrets are managed through different mechanisms)
+
 ## Configuration
 
 ### Environment Variables
@@ -360,18 +437,6 @@ Only one environment variable is required:
   - Example: `openam-example.forgeblocks.com`
   - Do not include `https://` or path components
   - Server will exit on startup if not set
-
-The server requires two OAuth clients to be configured in your PingOne AIC environment:
-
-- **`AICMCPClient`**: Used for OAuth 2.0 PKCE authentication flow
-  - Must be configured as a public client (no client secret)
-  - Requires scopes: `openid`, `fr:idm:*`, `fr:idc:monitoring:*`
-  - Redirect URI: `http://localhost:3000`
-
-- **`AICMCPExchangeClient`**: Used for RFC 8693 token exchange
-  - Must be configured as a public client (no client secret)
-  - Only requires token exchange grant type: `urn:ietf:params:oauth:grant-type:token-exchange`
-  - Requires same scopes as AICMCPClient
 
 ### Authentication Characteristics
 
@@ -498,17 +563,22 @@ pingone_AIC_MCP/
 │       ├── logs/                            # Log querying and monitoring
 │       │   ├── index.ts                    # Re-exports all log tools
 │       │   ├── getLogSources.ts            # Available log sources
-│       │   ├── queryLogs.ts                # Advanced log querying
-│       │   └── queryLogsByTransactionId.ts # Log query by transaction ID
-│       └── themes/                          # Theme management
-│           ├── index.ts                    # Re-exports all theme tools
-│           ├── getThemeSchema.ts           # Theme schema documentation
-│           ├── getThemes.ts                # List themes in a realm
-│           ├── getTheme.ts                 # Get specific theme
-│           ├── createTheme.ts              # Create new theme
-│           ├── updateTheme.ts              # Update existing theme
-│           ├── deleteTheme.ts              # Delete theme
-│           └── setDefaultTheme.ts          # Set default theme
+│       │   └── queryLogs.ts                # Advanced log querying
+│       ├── themes/                          # Theme management
+│       │   ├── index.ts                    # Re-exports all theme tools
+│       │   ├── getThemeSchema.ts           # Theme schema documentation
+│       │   ├── getThemes.ts                # List themes in a realm
+│       │   ├── getTheme.ts                 # Get specific theme
+│       │   ├── createTheme.ts              # Create new theme
+│       │   ├── updateTheme.ts              # Update existing theme
+│       │   ├── deleteTheme.ts              # Delete theme
+│       │   └── setDefaultTheme.ts          # Set default theme
+│       └── esv/                             # Environment secrets and variables
+│           ├── index.ts                    # Re-exports all ESV tools
+│           ├── queryESVs.ts                # Query variables and secrets
+│           ├── getVariable.ts              # Get specific variable
+│           ├── setVariable.ts              # Create/update variable
+│           └── deleteVariable.ts           # Delete variable
 ├── dist/                                    # Compiled JavaScript (generated)
 ├── package.json                             # Dependencies and scripts
 ├── tsconfig.json                            # TypeScript configuration
@@ -609,33 +679,14 @@ To add support for a new managed object type (e.g., `device`, `application`):
    export const BASE_OBJECT_TYPES = ['user', 'role', 'group', 'organization', 'device'] as const;
    ```
 
-2. **Add query field configuration** in `src/tools/managedObjects/queryManagedObjects.ts`:
-   ```typescript
-   const SEARCH_FIELD_CONFIG: Record<string, string[]> = {
-     user: ['userName', 'givenName', 'sn', 'mail'],
-     role: ['name', 'description'],
-     group: ['name', 'description'],
-     organization: ['name', 'description'],
-     device: ['deviceId', 'deviceName', 'status'], // New object type
-   };
-
-   const RETURN_FIELD_CONFIG: Record<string, string[]> = {
-     user: ['userName', 'givenName', 'sn', 'mail'],
-     role: ['name', 'description'],
-     group: ['name', 'description'],
-     organization: ['name', 'description'],
-     device: ['deviceId', 'deviceName', 'status'], // New object type
-   };
-   ```
-
-3. **Update tool descriptions** to include the new object type in:
-   - `queryManagedObjects` - Add to description
+2. **Update tool descriptions** to include the new object type in:
+   - `queryManagedObjects` - Add to Supported Object Types section
    - `createManagedObject` - Add to Supported Object Types section
    - Other tools will automatically support it via the enum validation
 
-4. **Rebuild**: `npm run build`
+3. **Rebuild**: `npm run build`
 
-**No code changes needed** for createManagedObject, getManagedObject, patchManagedObject, deleteManagedObject, or getManagedObjectSchema - they work with any object type automatically!
+**No code changes needed** for any tool implementations - they all work with any object type automatically via dynamic endpoint construction! The queryManagedObjects tool exposes full CREST query filter syntax, so users can query any fields discovered through `getManagedObjectSchema`.
 
 ## Known Limitations
 
