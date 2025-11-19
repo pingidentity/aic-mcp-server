@@ -447,10 +447,33 @@ Each category has an `index.ts` file that re-exports all tools, making it easy t
 
 ```bash
 npm install          # Install dependencies
-npm run build        # Compile TypeScript
+npm run build        # Compile TypeScript (includes postbuild to make files executable)
 npm start            # Run the server
 npm run dev          # Watch mode for development
+npm run typecheck    # Type check without building
 ```
+
+### Testing with MCP Inspector
+
+Use the MCP Inspector to visually test your server's tools in a web interface.
+
+**For development (recommended - no build required):**
+```bash
+AIC_BASE_URL=your-tenant.forgeblocks.com npm run dev:inspect
+```
+
+**For production (requires build first):**
+```bash
+npm run build
+AIC_BASE_URL=your-tenant.forgeblocks.com npm run inspect
+```
+
+This will:
+1. Start the MCP Inspector with your server
+2. Pass the required `AIC_BASE_URL` environment variable
+3. Open a web interface (default: http://localhost:6274) for interactive testing
+
+The inspector lets you test all available tools, view their inputs/outputs, and debug the OAuth authentication flow. The `dev:inspect` script runs directly on TypeScript source files for faster iteration during development.
 
 ## Security
 
