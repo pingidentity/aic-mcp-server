@@ -1,39 +1,33 @@
 {
-  "name": "queryManagedObjects",
-  "title": "Query Managed Objects",
-  "description": "Query managed objects in PingOne AIC using CREST query filter syntax",
+  "name": "queryESVs",
+  "title": "Query Environment Secrets and Variables (ESVs)",
+  "description": "Query environment secrets or variables (ESVs) in PingOne AIC by ID",
   "scopes": [
-    "fr:idm:*"
+    "fr:idc:esv:read"
   ],
   "inputSchema": {
-    "objectType": {
+    "type": {
       "_def": {
         "values": [
-          "alpha_user",
-          "bravo_user",
-          "alpha_role",
-          "bravo_role",
-          "alpha_group",
-          "bravo_group",
-          "alpha_organization",
-          "bravo_organization"
+          "variable",
+          "secret"
         ],
         "typeName": "ZodEnum",
-        "description": "Managed object type"
+        "description": "Type of ESV to query"
       },
       "~standard": {
         "version": 1,
         "vendor": "zod"
       }
     },
-    "queryFilter": {
+    "queryTerm": {
       "_def": {
         "innerType": {
           "_def": {
             "checks": [
               {
                 "kind": "max",
-                "value": 1000
+                "value": 100
               }
             ],
             "typeName": "ZodString",
@@ -45,7 +39,7 @@
           }
         },
         "typeName": "ZodOptional",
-        "description": "CREST query filter expression. IMPORTANT: Call getManagedObjectSchema first to discover available fields. Operators: eq, co, sw, gt, ge, lt, le, pr (present), ! (NOT). Boolean: and, or. Quote strings. If omitted, returns all objects up to pageSize. Examples: FIELD eq \"value\" | FIELD sw \"prefix\" | (FIELD1 eq \"a\") and (FIELD2 co \"b\") | FIELD pr\nDocs: https://docs.pingidentity.com/pingoneaic/latest/developer-docs/crest/query.html#crest-query-queryFilter"
+        "description": "Search term to filter by ID. If omitted, returns all ESVs up to pageSize"
       },
       "~standard": {
         "version": 1,
@@ -67,7 +61,7 @@
               },
               {
                 "kind": "max",
-                "value": 250,
+                "value": 100,
                 "inclusive": true
               }
             ],
@@ -80,7 +74,7 @@
           }
         },
         "typeName": "ZodOptional",
-        "description": "Number of objects to return per page (default: 50)"
+        "description": "Number of results to return per page (default: 50)"
       },
       "~standard": {
         "version": 1,
@@ -115,7 +109,7 @@
             "checks": [
               {
                 "kind": "max",
-                "value": 500
+                "value": 200
               }
             ],
             "typeName": "ZodString",
@@ -127,33 +121,7 @@
           }
         },
         "typeName": "ZodOptional",
-        "description": "Comma-separated field names to sort by. Prefix with \"-\" for descending. Example: \"FIELD1,-FIELD2\""
-      },
-      "~standard": {
-        "version": 1,
-        "vendor": "zod"
-      }
-    },
-    "fields": {
-      "_def": {
-        "innerType": {
-          "_def": {
-            "checks": [
-              {
-                "kind": "max",
-                "value": 500
-              }
-            ],
-            "typeName": "ZodString",
-            "coerce": false
-          },
-          "~standard": {
-            "version": 1,
-            "vendor": "zod"
-          }
-        },
-        "typeName": "ZodOptional",
-        "description": "Comma-separated field names to return. If omitted, returns all fields. Example: \"FIELD1,FIELD2,_id\""
+        "description": "Comma-separated field names to sort by. Prefix with \"-\" for descending. Example: \"_id,-lastChangeDate\""
       },
       "~standard": {
         "version": 1,

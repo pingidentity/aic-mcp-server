@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { queryVariablesTool } from '../../../src/tools/esv/queryVariables.js';
+import { queryESVsTool } from '../../../src/tools/esv/queryESVs.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
 
-describe('queryVariables', () => {
+describe('queryESVs', () => {
   beforeEach(() => {
     process.env.AIC_BASE_URL = 'test.forgeblocks.com';
   });
 
   it('should match tool schema snapshot', async () => {
-    await snapshotTest('queryVariables', queryVariablesTool);
+    await snapshotTest('queryESVs', queryESVsTool);
   });
 
   it('should have correct tool name', () => {
-    expect(queryVariablesTool.name).toBe('queryVariables');
+    expect(queryESVsTool.name).toBe('queryESVs');
   });
 });
