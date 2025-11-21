@@ -1,0 +1,47 @@
+{
+  "name": "queryManagedObjects",
+  "title": "Query Managed Objects",
+  "description": "Query managed objects in PingOne AIC by search term",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectType": {
+      "_def": {
+        "values": [
+          "alpha_user",
+          "bravo_user",
+          "alpha_role",
+          "bravo_role",
+          "alpha_group",
+          "bravo_group",
+          "alpha_organization",
+          "bravo_organization"
+        ],
+        "typeName": "ZodEnum",
+        "description": "Managed object type"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "queryTerm": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "min",
+            "value": 3
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Query term to match against the object's queryable fields (minimum 3 characters)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

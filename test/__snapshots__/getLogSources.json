@@ -1,0 +1,8 @@
+{
+  "name": "getLogSources",
+  "title": "Get Log Sources",
+  "description": "Retrieve the list of available log sources in PingOne AIC",
+  "scopes": [
+    "fr:idc:monitoring:*"
+  ]
+}

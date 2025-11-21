@@ -3,10 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { initAuthService } from './services/authService.js';
-import * as managedObjectTools from './tools/managedObjects/index.js';
-import * as logTools from './tools/logs/index.js';
-import * as themeTools from './tools/themes/index.js';
-import * as esvTools from './tools/esv/index.js';
+import { getAllTools, getAllScopes } from './utils/toolHelpers.js';
 
 /**
  * Tool configuration structure for MCP tool registration
@@ -23,18 +20,9 @@ if (!process.env.AIC_BASE_URL) {
     process.exit(1);
 }
 
-// Collect all tools from each category
-const allTools = [
-  ...Object.values(managedObjectTools),
-  ...Object.values(logTools),
-  ...Object.values(themeTools),
-  ...Object.values(esvTools)
-];
-
-// Extract unique scopes from all tools
-const allScopes = Array.from(
-  new Set(allTools.flatMap(tool => tool.scopes))
-);
+// Collect all tools and scopes using shared utility
+const allTools = getAllTools();
+const allScopes = getAllScopes();
 
 // Initialize auth service with all scopes
 initAuthService(allScopes);

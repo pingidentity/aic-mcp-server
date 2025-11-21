@@ -29,6 +29,13 @@ interface TokenData {
 }
 
 /**
+ * Configuration for AuthService behavior
+ */
+export interface AuthServiceConfig {
+  allowCachedOnFirstRequest?: boolean;
+}
+
+/**
  * Authentication service using OAuth 2.0 PKCE flow
  * Handles user authentication and token management
  */
@@ -37,9 +44,11 @@ class AuthService {
   private redirectServer: http.Server | null = null;
   private allScopes: string[];
   private hasAuthenticatedThisSession: boolean = false;
+  private config: AuthServiceConfig;
 
-  constructor(allScopes: string[]) {
+  constructor(allScopes: string[], config: AuthServiceConfig = {}) {
     this.allScopes = allScopes;
+    this.config = config;
     console.error('Using user PKCE authentication');
   }
 
@@ -50,8 +59,8 @@ class AuthService {
    * @returns Primary access token with all scopes
    */
   private async getPrimaryToken(): Promise<string> {
-    // Always skip keychain check on first request to require fresh authentication
-    const shouldSkipCache = !this.hasAuthenticatedThisSession;
+    const shouldSkipCache = !this.hasAuthenticatedThisSession
+      && !this.config.allowCachedOnFirstRequest;
 
     if (!shouldSkipCache) {
       // Try to get token from keychain
@@ -318,9 +327,13 @@ let instance: AuthService;
 /**
  * Initialize the authentication service with required scopes
  * @param allScopes - All OAuth scopes needed by the application
+ * @param config - Optional configuration for AuthService behavior
  */
-export function initAuthService(allScopes: string[]): void {
-  instance = new AuthService(allScopes);
+export function initAuthService(
+  allScopes: string[],
+  config: AuthServiceConfig = {}
+): void {
+  instance = new AuthService(allScopes, config);
 }
 
 /**

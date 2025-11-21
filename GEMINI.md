@@ -668,7 +668,7 @@ All tools must declare their required scopes in the `scopes` property. When addi
 
 **Scope Behavior:**
 - All scopes from all tools are collected and requested upfront during user authentication
-- The scopes parameter in `getToken(scopes)` is kept for future token exchange support but currently unused
+- The scopes parameter in `getToken(scopes)` is used to scope down tokens via RFC 8693 token exchange
 
 ### Adding New Managed Object Types
 

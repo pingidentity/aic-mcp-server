@@ -9,3 +9,4 @@ npm-debug.log*
 
 # Test artifacts
 .playwright-mcp/
+/coverage
