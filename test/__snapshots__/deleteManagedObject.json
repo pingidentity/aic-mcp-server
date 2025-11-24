@@ -1,0 +1,72 @@
+{
+  "name": "deleteManagedObject",
+  "title": "Delete Managed Object",
+  "description": "Delete a managed object by ID from PingOne AIC",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectType": {
+      "_def": {
+        "values": [
+          "alpha_user",
+          "bravo_user",
+          "alpha_role",
+          "bravo_role",
+          "alpha_group",
+          "bravo_group",
+          "alpha_organization",
+          "bravo_organization"
+        ],
+        "typeName": "ZodEnum",
+        "description": "Managed object type"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "objectId": {
+      "_def": {
+        "schema": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "checks": [
+                  {
+                    "kind": "min",
+                    "value": 1,
+                    "message": "Object ID cannot be empty"
+                  }
+                ],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
+        "description": "The object's unique identifier (_id)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

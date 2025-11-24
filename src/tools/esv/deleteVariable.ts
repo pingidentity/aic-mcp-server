@@ -12,7 +12,7 @@ export const deleteVariableTool = {
   description: 'Delete an environment variable (ESV) from PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    variableId: z.string().describe('Variable ID (format: esv-*)'),
+    variableId: z.string().min(1).describe('Variable ID (format: esv-*)'),
   },
   async toolFunction({ variableId }: { variableId: string }) {
     try {

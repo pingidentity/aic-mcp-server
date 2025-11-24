@@ -30,11 +30,6 @@ export const SUPPORTED_OBJECT_TYPES = BASE_OBJECT_TYPES.flatMap(baseType =>
  * @returns true if safe, false otherwise
  */
 export function isValidObjectId(id: string): boolean {
-  // Reject empty strings
-  if (!id || id.trim().length === 0) {
-    return false;
-  }
-
   // Reject path traversal patterns
   const dangerousPatterns = [
     /\.\./,           // Parent directory (..)
@@ -53,6 +48,9 @@ export function isValidObjectId(id: string): boolean {
  */
 export const objectIdSchema = z.string()
   .min(1, "Object ID cannot be empty")
+  .refine(id => id.trim().length > 0, {
+    message: "Object ID cannot be empty or whitespace"
+  })
   .refine(isValidObjectId, {
     message: "Invalid object ID: must not contain path traversal characters (/, \\, ..) or URL-encoded equivalents"
   });

@@ -12,7 +12,11 @@
     "dev": "tsc -w",
     "dev:inspect": "npx @modelcontextprotocol/inspector -e AIC_BASE_URL=${AIC_BASE_URL} tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "inspect": "npx @modelcontextprotocol/inspector -e AIC_BASE_URL=${AIC_BASE_URL} node dist/index.js"
+    "inspect": "npx @modelcontextprotocol/inspector -e AIC_BASE_URL=${AIC_BASE_URL} node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:snapshots:update": "UPDATE_SNAPSHOTS=true vitest run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.2",
@@ -23,8 +27,11 @@
   "devDependencies": {
     "@types/node": "^24.1.0",
     "@types/open": "^6.0.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "msw": "^2.12.2",
     "shx": "^0.4.0",
     "tsx": "^4.20.6",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "vitest": "^2.1.9"
   }
 }

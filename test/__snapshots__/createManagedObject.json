@@ -1,0 +1,61 @@
+{
+  "name": "createManagedObject",
+  "title": "Create Managed Object",
+  "description": "Create a new managed object in PingOne AIC",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectType": {
+      "_def": {
+        "values": [
+          "alpha_user",
+          "bravo_user",
+          "alpha_role",
+          "bravo_role",
+          "alpha_group",
+          "bravo_group",
+          "alpha_organization",
+          "bravo_organization"
+        ],
+        "typeName": "ZodEnum",
+        "description": "Managed object type"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "objectData": {
+      "_def": {
+        "keyType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "valueType": {
+          "_def": {
+            "typeName": "ZodAny"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          },
+          "_any": true
+        },
+        "typeName": "ZodRecord",
+        "description": "JSON object containing object properties (must include all required fields from the schema)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

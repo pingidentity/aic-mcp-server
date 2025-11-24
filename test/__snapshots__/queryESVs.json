@@ -1,0 +1,132 @@
+{
+  "name": "queryESVs",
+  "title": "Query Environment Secrets and Variables (ESVs)",
+  "description": "Query environment secrets or variables (ESVs) in PingOne AIC by ID",
+  "scopes": [
+    "fr:idc:esv:read"
+  ],
+  "inputSchema": {
+    "type": {
+      "_def": {
+        "values": [
+          "variable",
+          "secret"
+        ],
+        "typeName": "ZodEnum",
+        "description": "Type of ESV to query"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "queryTerm": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "max",
+                "value": 100
+              }
+            ],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Search term to filter by ID. If omitted, returns all ESVs up to pageSize"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "pageSize": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "int"
+              },
+              {
+                "kind": "min",
+                "value": 1,
+                "inclusive": true
+              },
+              {
+                "kind": "max",
+                "value": 100,
+                "inclusive": true
+              }
+            ],
+            "typeName": "ZodNumber",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Number of results to return per page (default: 50)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "pagedResultsCookie": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Pagination cookie from previous response to retrieve next page"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "sortKeys": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "max",
+                "value": 200
+              }
+            ],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Comma-separated field names to sort by. Prefix with \"-\" for descending. Example: \"_id,-lastChangeDate\""
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

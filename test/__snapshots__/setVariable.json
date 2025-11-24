@@ -1,0 +1,73 @@
+{
+  "name": "setVariable",
+  "title": "Set Environment Variable (ESV)",
+  "description": "Create or update an environment variable (ESV) in PingOne AIC",
+  "scopes": [
+    "fr:idc:esv:update"
+  ],
+  "inputSchema": {
+    "variableId": {
+      "_def": {
+        "checks": [],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Variable ID (format: esv-*)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "value": {
+      "_def": {
+        "typeName": "ZodAny",
+        "description": "Variable value as native type (NOT JSON string). Examples: string: 'hello', array: ['a','b'], object: {\"key\":\"val\"}, bool: true, int: 42, number: 3.14, list: 'a,b,c'. The tool handles JSON serialization internally for array/object types."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      },
+      "_any": true
+    },
+    "type": {
+      "_def": {
+        "values": [
+          "string",
+          "array",
+          "object",
+          "bool",
+          "int",
+          "number",
+          "list"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Ping recommends using 'array' instead of 'list'."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "description": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Optional description of the variable's purpose"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

@@ -9,3 +9,7 @@ npm-debug.log*
 
 # Test artifacts
 .playwright-mcp/
+/coverage
+
+# OS files
+.DS_Store

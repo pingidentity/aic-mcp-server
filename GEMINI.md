@@ -668,7 +668,7 @@ All tools must declare their required scopes in the `scopes` property. When addi
 
 **Scope Behavior:**
 - All scopes from all tools are collected and requested upfront during user authentication
-- The scopes parameter in `getToken(scopes)` is kept for future token exchange support but currently unused
+- The scopes parameter in `getToken(scopes)` is used to scope down tokens via RFC 8693 token exchange
 
 ### Adding New Managed Object Types
 
@@ -710,6 +710,194 @@ Raise a support ticket with Ping if you encounter scope-related errors.
 
 ### Browser doesn't open during authentication
 Manually navigate to the URL shown in error logs, or check if the `open` package has permissions to open your browser.
+
+## Testing
+
+The project includes a comprehensive test suite with **345 tests** across all **19 tools** covering managed objects, themes, logs, and ESV operations.
+
+### Test Architecture
+
+**Framework and Tools:**
+- **Vitest:** Modern, fast test runner with native TypeScript support
+- **MSW (Mock Service Worker):** HTTP request interception for realistic API simulation
+- **Dependency Injection:** Uses `vi.spyOn()` to intercept `makeAuthenticatedRequest` calls
+
+**Testing Pattern:**
+Tests focus on **our application logic**, not the API behavior. We test:
+- Request construction (URL building, headers, query parameters, body formatting)
+- Response processing (field extraction, transformations, formatting)
+- Input validation (Zod schema validation)
+- Error handling (HTTP status codes, network failures)
+- Application-specific logic (multi-step orchestration, state management)
+
+### Test Organization
+
+Tests mirror the source structure:
+```
+test/
+├── helpers/
+│   └── snapshotTest.ts          # Snapshot testing utility
+├── mocks/
+│   ├── handlers.ts               # MSW request handlers
+│   └── mockData.ts               # Shared test data
+├── setup.ts                      # Global test setup
+├── __snapshots__/                # Tool schema snapshots (19 files)
+└── tools/
+    ├── managedObjects/           # 6 test files, 98 tests
+    ├── themes/                   # 7 test files, 135 tests
+    ├── logs/                     # 2 test files, 32 tests
+    └── esv/                      # 4 test files, 80 tests
+```
+
+**Test File Structure:**
+
+Simple tools use this ordering:
+1. Snapshot Test - Tool schema validation
+2. Request Construction - URL, headers, parameters
+3. Response Handling - Output formatting
+4. Input Validation - Zod schema tests
+5. Error Handling - HTTP errors, network failures
+
+Complex orchestration tools (createTheme, updateTheme, deleteTheme, setDefaultTheme) use:
+1. Snapshot Test
+2. **Application Logic** - Multi-step process validation
+3. Request Construction
+4. Response Handling
+5. Input Validation (if applicable)
+6. Error Handling
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode for development
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+
+# Update tool schema snapshots
+npm run test:snapshots:update
+```
+
+**Snapshot Testing:**
+Each tool has a snapshot test that validates the tool's schema structure. When tool schemas change:
+1. Review the changes carefully
+2. Run `UPDATE_SNAPSHOTS=true npm test` to update snapshots
+3. Commit the updated snapshot files with your changes
+
+### Test Coverage
+
+**What's Tested:**
+- ✅ All 19 tool schemas (snapshot tests)
+- ✅ Request construction for all API endpoints
+- ✅ Response processing and transformations
+  - Schema field extraction (getManagedObjectSchema)
+  - Base64 decoding (getVariable)
+  - Type-specific encoding (setVariable: String() vs JSON.stringify())
+  - Multi-step orchestration (theme tools: GET→modify→PUT)
+- ✅ Input validation (Zod schemas)
+- ✅ Security validations
+  - Path traversal prevention (objectId validation)
+  - Query injection prevention (queryESVs quote escaping)
+- ✅ Error handling
+  - HTTP status codes (401, 400, 404, 409, 403)
+  - Network failures
+  - Invalid configurations
+- ✅ Edge cases
+  - Empty results
+  - Missing fields
+  - Pagination
+  - Concurrent state changes (revision conflicts)
+
+**What's NOT Tested:**
+- ❌ Integration tests (actual API calls)
+- ❌ Authentication flow (authService is mocked)
+- ❌ MCP protocol integration (server initialization)
+
+### Writing New Tests
+
+When adding a new tool:
+
+1. **Create test file** in appropriate category:
+   ```typescript
+   import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+   import { yourNewTool } from '../../../src/tools/category/yourNewTool.js';
+   import { snapshotTest } from '../../helpers/snapshotTest.js';
+   import { server } from '../../setup.js';
+   import { http, HttpResponse } from 'msw';
+   import * as apiHelpers from '../../../src/utils/apiHelpers.js';
+
+   describe('yourNewTool', () => {
+     let makeAuthenticatedRequestSpy: any;
+
+     beforeEach(() => {
+       process.env.AIC_BASE_URL = 'test.forgeblocks.com';
+       makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
+     });
+
+     afterEach(() => {
+       makeAuthenticatedRequestSpy.mockRestore();
+     });
+
+     it('should match tool schema snapshot', async () => {
+       await snapshotTest('yourNewTool', yourNewTool);
+     });
+
+     // Add more tests following the patterns above
+   });
+   ```
+
+2. **Test request construction:**
+   - Verify URL is built correctly
+   - Check headers are set (Authorization, Content-Type, etc.)
+   - Validate query parameters
+   - Confirm request body structure
+   - Verify correct HTTP method
+
+3. **Test response processing:**
+   - If your tool transforms responses, test the transformation logic
+   - Verify only expected fields are returned
+   - Test edge cases (empty responses, missing fields)
+
+4. **Test input validation:**
+   - Validate Zod schema rejects invalid inputs
+   - Validate Zod schema accepts valid inputs
+
+5. **Test error handling:**
+   - Use `server.use()` to override default handlers
+   - Test common HTTP errors (401, 400, 404)
+   - Test network failures
+
+6. **Run tests:**
+   ```bash
+   npm test -- yourNewTool
+   ```
+
+### Key Testing Principles
+
+1. **Test OUR code, not the API:**
+   - Focus on request construction, response processing, validation
+   - Don't test what the API returns for specific inputs
+   - Use MSW to simulate realistic API responses
+
+2. **Use dependency injection:**
+   - Spy on `makeAuthenticatedRequest` to intercept API calls
+   - Inspect spy calls to verify request construction
+   - Don't mock at module level
+
+3. **Security-first testing:**
+   - Always test path traversal prevention for ID parameters
+   - Test query injection prevention for user-provided filters
+   - Validate enum constraints are enforced
+
+4. **Test edge cases:**
+   - Empty strings vs whitespace-only strings
+   - Missing optional fields
+   - Pagination boundaries
+   - State conflicts (revision mismatches)
 
 ## Contributing
 

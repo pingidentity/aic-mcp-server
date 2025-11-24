@@ -1,0 +1,164 @@
+{
+  "name": "queryManagedObjects",
+  "title": "Query Managed Objects",
+  "description": "Query managed objects in PingOne AIC using CREST query filter syntax",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectType": {
+      "_def": {
+        "values": [
+          "alpha_user",
+          "bravo_user",
+          "alpha_role",
+          "bravo_role",
+          "alpha_group",
+          "bravo_group",
+          "alpha_organization",
+          "bravo_organization"
+        ],
+        "typeName": "ZodEnum",
+        "description": "Managed object type"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "queryFilter": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "max",
+                "value": 1000
+              }
+            ],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "CREST query filter expression. IMPORTANT: Call getManagedObjectSchema first to discover available fields. Operators: eq, co, sw, gt, ge, lt, le, pr (present), ! (NOT). Boolean: and, or. Quote strings. If omitted, returns all objects up to pageSize. Examples: FIELD eq \"value\" | FIELD sw \"prefix\" | (FIELD1 eq \"a\") and (FIELD2 co \"b\") | FIELD pr\nDocs: https://docs.pingidentity.com/pingoneaic/latest/developer-docs/crest/query.html#crest-query-queryFilter"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "pageSize": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "int"
+              },
+              {
+                "kind": "min",
+                "value": 1,
+                "inclusive": true
+              },
+              {
+                "kind": "max",
+                "value": 250,
+                "inclusive": true
+              }
+            ],
+            "typeName": "ZodNumber",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Number of objects to return per page (default: 50)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "pagedResultsCookie": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Pagination cookie from previous response to retrieve next page"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "sortKeys": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "max",
+                "value": 500
+              }
+            ],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Comma-separated field names to sort by. Prefix with \"-\" for descending. Example: \"FIELD1,-FIELD2\""
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "fields": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "max",
+                "value": 500
+              }
+            ],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Comma-separated field names to return. If omitted, returns all fields. Example: \"FIELD1,FIELD2,_id\""
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}
