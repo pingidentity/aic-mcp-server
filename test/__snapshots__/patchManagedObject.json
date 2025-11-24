@@ -1,0 +1,117 @@
+{
+  "name": "patchManagedObject",
+  "title": "Patch Managed Object",
+  "description": "Update specific fields of a managed object in PingOne AIC using JSON Patch operations",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectType": {
+      "_def": {
+        "values": [
+          "alpha_user",
+          "bravo_user",
+          "alpha_role",
+          "bravo_role",
+          "alpha_group",
+          "bravo_group",
+          "alpha_organization",
+          "bravo_organization"
+        ],
+        "typeName": "ZodEnum",
+        "description": "Managed object type"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "objectId": {
+      "_def": {
+        "schema": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "checks": [
+                  {
+                    "kind": "min",
+                    "value": 1,
+                    "message": "Object ID cannot be empty"
+                  }
+                ],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
+        "description": "The object's unique identifier (_id)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "revision": {
+      "_def": {
+        "checks": [],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "The current revision (_rev) of the object, obtained from getManagedObject"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "operations": {
+      "_def": {
+        "type": {
+          "_def": {
+            "unknownKeys": "strip",
+            "catchall": {
+              "_def": {
+                "typeName": "ZodNever"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodObject"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          },
+          "_cached": null
+        },
+        "minLength": null,
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Array of JSON Patch operations to apply to the object"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

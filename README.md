@@ -537,6 +537,26 @@ npm run dev          # Watch mode for development
 npm run typecheck    # Type check without building
 ```
 
+### Testing
+
+The project includes a comprehensive test suite with 345 tests covering all 19 tools.
+
+**Run tests:**
+```bash
+npm test                        # Run all tests
+npm run test:watch              # Watch mode for development
+npm run test:coverage           # Run with coverage report
+npm run test:snapshots:update   # Update tool schema snapshots
+```
+
+**Test Infrastructure:**
+- **Framework:** Vitest for fast, modern testing
+- **HTTP Mocking:** MSW (Mock Service Worker) for realistic API simulation
+- **Pattern:** Dependency injection with `vi.spyOn()` to test application logic without API calls
+- **Coverage:** All tool functionality including request construction, response processing, input validation, and error handling
+
+Tests are organized by tool category in `test/tools/` mirroring the source structure.
+
 ### Testing with MCP Inspector
 
 Use the MCP Inspector to visually test your server's tools in a web interface.

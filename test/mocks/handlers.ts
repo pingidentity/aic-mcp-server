@@ -148,7 +148,18 @@ export const handlers = [
     return HttpResponse.json({ _id: params.objectId });
   }),
 
-  // Themes
+  // Themes - getThemes endpoint (query all themes)
+  http.get('https://*/openidm/ui/theme/', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      result: mockThemes,
+      resultCount: mockThemes.length,
+    });
+  }),
+
+  // Themes - config endpoint (used by other theme operations)
   http.get('https://*/openidm/config/ui/theming', ({ request }) => {
     const authError = validateAuthHeader(request);
     if (authError) return authError;

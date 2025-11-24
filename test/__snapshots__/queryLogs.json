@@ -1,0 +1,179 @@
+{
+  "name": "queryLogs",
+  "title": "Query Logs",
+  "description": "Query PingOne AIC logs with flexible filtering by time range, source, transaction ID, and payload content",
+  "scopes": [
+    "fr:idc:monitoring:*"
+  ],
+  "inputSchema": {
+    "sources": {
+      "_def": {
+        "type": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "minLength": null,
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Log sources to query (e.g., ['am-authentication', 'idm-activity']). IMPORTANT: use the getLogSources tool to determine available sources."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "beginTime": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Start time in ISO 8601 format without milliseconds (e.g., '2025-01-11T10:00:00Z'). Filters logs after this time. Defaults to 24 hours before endTime if omitted. Must be within 24 hours of endTime."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "endTime": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "End time in ISO 8601 format without milliseconds (e.g., '2025-01-11T12:00:00Z'). Filters logs before this time. Defaults to current time if omitted. Must be within 24 hours of beginTime."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "transactionId": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Filter by specific transaction ID to trace a request across the system."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "queryFilter": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "max",
+                "value": 2000
+              }
+            ],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "CRITICAL: All field paths MUST start with / (e.g., /payload/level, /payload/principal). Missing the leading slash causes 500 Internal Server Error.\n\nOperators: eq, co, sw, lt, le, gt, ge, pr (present), ! (NOT). Boolean: and, or. Quote string values.\nTime filtering: Use beginTime/endTime parameters for time ranges. Use /payload/timestamp only for exact timestamp matches.\n\nExamples:\n  /payload/level eq \"ERROR\"\n  /payload/principal co \"admin\"\n  /payload/eventName eq \"AM-LOGIN-COMPLETED\"\n  (/payload/level eq \"ERROR\") and (/payload/http/request/path co \"openidm\")\n  /payload/response.statusCode ge 400\n\nTroubleshooting: If you receive a 500 error, verify all field paths begin with /"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "pagedResultsCookie": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Opaque pagination cookie from a previous response. Use this to retrieve the next page of results."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "pageSize": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "int"
+              },
+              {
+                "kind": "min",
+                "value": 1,
+                "inclusive": true
+              },
+              {
+                "kind": "max",
+                "value": 1000,
+                "inclusive": true
+              }
+            ],
+            "typeName": "ZodNumber",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Maximum logs to return (default 100)."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

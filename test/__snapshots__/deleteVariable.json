@@ -1,0 +1,27 @@
+{
+  "name": "deleteVariable",
+  "title": "Delete Environment Variable (ESV)",
+  "description": "Delete an environment variable (ESV) from PingOne AIC",
+  "scopes": [
+    "fr:idc:esv:update"
+  ],
+  "inputSchema": {
+    "variableId": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "min",
+            "value": 1
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Variable ID (format: esv-*)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

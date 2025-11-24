@@ -1,0 +1,22 @@
+{
+  "name": "getVariable",
+  "title": "Get Environment Variable (ESV)",
+  "description": "Retrieve a specific environment variable (ESV) by ID with decoded value",
+  "scopes": [
+    "fr:idc:esv:read"
+  ],
+  "inputSchema": {
+    "variableId": {
+      "_def": {
+        "checks": [],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Variable ID (format: esv-*)"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

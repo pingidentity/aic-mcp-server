@@ -15,11 +15,14 @@ export const mockManagedObjects = [
 // Minimal theme data
 export const mockTheme = {
   _id: 'theme-123',
-  name: 'Test Theme',
+  name: 'Theme1',
   isDefault: false,
 };
 
-export const mockThemes = [mockTheme];
+export const mockThemes = [
+  mockTheme,
+  { _id: 'theme-456', name: 'Theme2', isDefault: true },
+];
 
 // Minimal ESV data
 export const mockVariable = {

@@ -1,0 +1,30 @@
+{
+  "name": "getManagedObjectSchema",
+  "title": "Get Managed Object Schema",
+  "description": "Retrieve schema definition for a managed object type in PingOne AIC",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectType": {
+      "_def": {
+        "values": [
+          "alpha_user",
+          "bravo_user",
+          "alpha_role",
+          "bravo_role",
+          "alpha_group",
+          "bravo_group",
+          "alpha_organization",
+          "bravo_organization"
+        ],
+        "typeName": "ZodEnum",
+        "description": "Managed object type"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}
