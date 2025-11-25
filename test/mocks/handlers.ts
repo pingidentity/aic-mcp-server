@@ -4,8 +4,10 @@ import { mockManagedObjects, mockManagedObjectConfig, mockThemes, mockVariables,
 /**
  * Helper to validate Authorization header is present and valid
  * Returns error response if invalid, null if valid
+ *
+ * Reusable in test-specific MSW handlers via server.use()
  */
-function validateAuthHeader(request: Request): HttpResponse<string> | null {
+export function validateAuthHeader(request: Request): HttpResponse<string> | null {
   const authHeader = request.headers.get('Authorization');
 
   if (!authHeader) {

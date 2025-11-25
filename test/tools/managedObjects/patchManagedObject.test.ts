@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { patchManagedObjectTool } from '../../../src/tools/managedObjects/patchManagedObject.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('patchManagedObject', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -32,7 +23,7 @@ describe('patchManagedObject', () => {
         operations: [],
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123',
         ['fr:idm:*'],
         expect.any(Object)
@@ -47,7 +38,7 @@ describe('patchManagedObject', () => {
         operations: [],
       });
 
-      const callArgs = makeAuthenticatedRequestSpy.mock.calls[0];
+      const callArgs = getSpy().mock.calls[0];
       const requestOptions = callArgs[2];
 
       expect(requestOptions.headers['If-Match']).toBe('2');
@@ -62,7 +53,7 @@ describe('patchManagedObject', () => {
         operations: [{ operation: 'replace', field: '/mail', value: 'new@test.com' }],
       });
 
-      const callArgs = makeAuthenticatedRequestSpy.mock.calls[0];
+      const callArgs = getSpy().mock.calls[0];
       const requestOptions = callArgs[2];
       const requestBody = JSON.parse(requestOptions.body);
 
@@ -88,7 +79,7 @@ describe('patchManagedObject', () => {
         ],
       });
 
-      const callArgs = makeAuthenticatedRequestSpy.mock.calls[0];
+      const callArgs = getSpy().mock.calls[0];
       const requestOptions = callArgs[2];
       const requestBody = JSON.parse(requestOptions.body);
 
@@ -107,7 +98,7 @@ describe('patchManagedObject', () => {
         operations: [{ operation: 'remove', field: '/description' }],
       });
 
-      const callArgs = makeAuthenticatedRequestSpy.mock.calls[0];
+      const callArgs = getSpy().mock.calls[0];
       const requestOptions = callArgs[2];
       const requestBody = JSON.parse(requestOptions.body);
 
@@ -126,7 +117,7 @@ describe('patchManagedObject', () => {
         operations: [],
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idm:*'],
         expect.any(Object)

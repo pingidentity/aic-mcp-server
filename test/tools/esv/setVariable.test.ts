@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { setVariableTool } from '../../../src/tools/esv/setVariable.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('setVariable', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -31,7 +22,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/environment/variables/esv-api-key',
         expect.any(Array),
         expect.any(Object)
@@ -45,7 +36,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
         expect.objectContaining({
@@ -61,7 +52,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
         expect.objectContaining({
@@ -79,7 +70,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idc:esv:update'],
         expect.any(Object)
@@ -96,7 +87,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
 
       // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
@@ -110,7 +101,7 @@ describe('setVariable', () => {
         type: 'list',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
 
       // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
@@ -124,7 +115,7 @@ describe('setVariable', () => {
         type: 'array',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
 
       // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
@@ -138,7 +129,7 @@ describe('setVariable', () => {
         type: 'object',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
 
       // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
@@ -152,7 +143,7 @@ describe('setVariable', () => {
         type: 'bool',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
 
       // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
@@ -166,7 +157,7 @@ describe('setVariable', () => {
         type: 'int',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
 
       // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
@@ -180,7 +171,7 @@ describe('setVariable', () => {
         type: 'number',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
 
       // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
@@ -197,7 +188,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
       expect(requestBody._id).toBe('esv-test');
     });
 
@@ -209,7 +200,7 @@ describe('setVariable', () => {
         description: 'Test var',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
       expect(requestBody.description).toBe('Test var');
     });
 
@@ -220,7 +211,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
       expect(requestBody.description).toBe('');
     });
 
@@ -231,7 +222,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      const requestBody = JSON.parse(makeAuthenticatedRequestSpy.mock.calls[0][2].body);
+      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
       expect(requestBody.expressionType).toBe('string');
     });
   });
@@ -311,7 +302,7 @@ describe('setVariable', () => {
       expect(responseText).toContain('Invalid variable ID');
       expect(responseText).toContain('invalid-id');
       expect(responseText).toContain("Must start with 'esv-'");
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should reject variableId missing esv- prefix', async () => {
@@ -324,7 +315,7 @@ describe('setVariable', () => {
       const responseText = result.content[0].text;
       expect(responseText).toContain('Invalid variable ID');
       expect(responseText).toContain("Must start with 'esv-'");
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should reject variableId with uppercase letters', async () => {
@@ -337,7 +328,7 @@ describe('setVariable', () => {
       const responseText = result.content[0].text;
       expect(responseText).toContain('Invalid variable ID');
       expect(responseText).toContain('lowercase');
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should reject variableId with invalid characters', async () => {
@@ -349,7 +340,7 @@ describe('setVariable', () => {
 
       const responseText = result.content[0].text;
       expect(responseText).toContain('Invalid variable ID');
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should reject variableId exceeding max length', async () => {
@@ -362,7 +353,7 @@ describe('setVariable', () => {
       const responseText = result.content[0].text;
       expect(responseText).toContain('Invalid variable ID');
       expect(responseText).toContain('max 124 characters');
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should accept minimum valid variableId', async () => {
@@ -372,7 +363,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalled();
+      expect(getSpy()).toHaveBeenCalled();
     });
 
     it('should accept maximum valid variableId', async () => {
@@ -382,7 +373,7 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalled();
+      expect(getSpy()).toHaveBeenCalled();
     });
 
     it('should accept variableId with hyphens and underscores', async () => {
@@ -392,8 +383,8 @@ describe('setVariable', () => {
         type: 'string',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalled();
-      const url = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      expect(getSpy()).toHaveBeenCalled();
+      const url = getSpy().mock.calls[0][0];
       expect(url).toContain('esv-test_var-123');
     });
   });

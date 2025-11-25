@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 import { deleteThemeTool } from '../../../src/tools/themes/deleteTheme.js';
 
 describe('deleteTheme', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -47,7 +38,7 @@ describe('deleteTheme', () => {
       });
 
       // Our code GETs config before deleting
-      const calls = makeAuthenticatedRequestSpy.mock.calls;
+      const calls = getSpy().mock.calls;
       expect(calls.length).toBeGreaterThanOrEqual(1);
       expect(calls[0][0]).toContain('/openidm/config/ui/themerealm');
       // First call should not have method specified (defaults to GET)
@@ -195,7 +186,7 @@ describe('deleteTheme', () => {
       expect(result.content[0].text).toContain('DefaultTheme');
       expect(result.content[0].text).toContain('setDefaultTheme');
       // Should not make PUT call
-      const putCalls = makeAuthenticatedRequestSpy.mock.calls.filter(
+      const putCalls = getSpy().mock.calls.filter(
         (call: any) => call[2] && call[2].method === 'PUT'
       );
       expect(putCalls.length).toBe(0);
@@ -334,7 +325,7 @@ describe('deleteTheme', () => {
       });
 
       // Our code GETs the entire config first
-      const getCalls = makeAuthenticatedRequestSpy.mock.calls.filter(
+      const getCalls = getSpy().mock.calls.filter(
         (call: any) => !call[2] || !call[2].method
       );
       expect(getCalls.length).toBeGreaterThanOrEqual(1);
@@ -363,7 +354,7 @@ describe('deleteTheme', () => {
         themeIdentifier: 'theme-123',
       });
 
-      const putCalls = makeAuthenticatedRequestSpy.mock.calls.filter(
+      const putCalls = getSpy().mock.calls.filter(
         (call: any) => call[2] && call[2].method === 'PUT'
       );
       expect(putCalls.length).toBeGreaterThanOrEqual(1);
@@ -392,8 +383,8 @@ describe('deleteTheme', () => {
         themeIdentifier: 'theme-123',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalled();
-      const calls = makeAuthenticatedRequestSpy.mock.calls;
+      expect(getSpy()).toHaveBeenCalled();
+      const calls = getSpy().mock.calls;
       calls.forEach((call: any) => {
         expect(call[1]).toEqual(['fr:idm:*']);
       });

@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { queryLogsTool } from '../../../src/tools/logs/queryLogs.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('queryLogs', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -29,7 +20,7 @@ describe('queryLogs', () => {
         sources: ['am-authentication', 'idm-activity']
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('source=am-authentication%2Cidm-activity');
     });
 
@@ -38,7 +29,7 @@ describe('queryLogs', () => {
         sources: ['am-authentication']
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('source=am-authentication');
       expect(callUrl).not.toContain(',');
     });
@@ -49,7 +40,7 @@ describe('queryLogs', () => {
         beginTime: '2025-01-11T10:00:00Z'
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('beginTime=2025-01-11T10%3A00%3A00Z');
     });
 
@@ -59,7 +50,7 @@ describe('queryLogs', () => {
         endTime: '2025-01-11T11:00:00Z'
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('endTime=2025-01-11T11%3A00%3A00Z');
     });
 
@@ -69,7 +60,7 @@ describe('queryLogs', () => {
         transactionId: 'txn-12345'
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('transactionId=txn-12345');
     });
 
@@ -79,7 +70,7 @@ describe('queryLogs', () => {
         queryFilter: '/payload/level eq "ERROR"'
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('_queryFilter=%2Fpayload%2Flevel+eq+%22ERROR%22');
     });
 
@@ -89,7 +80,7 @@ describe('queryLogs', () => {
         pagedResultsCookie: 'cookie-xyz'
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('_pagedResultsCookie=cookie-xyz');
     });
 
@@ -99,7 +90,7 @@ describe('queryLogs', () => {
         pageSize: 50
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('_pageSize=50');
     });
 
@@ -108,7 +99,7 @@ describe('queryLogs', () => {
         sources: ['am-authentication']
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('_pageSize=100');
     });
 
@@ -118,7 +109,7 @@ describe('queryLogs', () => {
         pageSize: 1500
       });
 
-      const callUrl = makeAuthenticatedRequestSpy.mock.calls[0][0];
+      const callUrl = getSpy().mock.calls[0][0];
       expect(callUrl).toContain('_pageSize=1000');
     });
 
@@ -128,7 +119,7 @@ describe('queryLogs', () => {
       });
 
       // makeAuthenticatedRequest is called without method option, which defaults to GET
-      const options = makeAuthenticatedRequestSpy.mock.calls[0][2];
+      const options = getSpy().mock.calls[0][2];
       expect(options?.method).toBeUndefined(); // No method specified means GET
     });
 
@@ -137,7 +128,7 @@ describe('queryLogs', () => {
         sources: ['am-authentication']
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idc:monitoring:*']
       );
