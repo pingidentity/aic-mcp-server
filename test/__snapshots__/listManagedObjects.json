@@ -1,0 +1,9 @@
+{
+  "name": "listManagedObjects",
+  "title": "List Managed Objects",
+  "description": "Retrieve the list of all managed object types available in PingOne AIC",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {}
+}

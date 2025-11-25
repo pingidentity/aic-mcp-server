@@ -87,18 +87,21 @@ describe('getManagedObject', () => {
 
   // ===== INPUT VALIDATION TESTS =====
   describe('Input Validation', () => {
-    it('should reject invalid objectType enum', () => {
+    it('should reject empty objectType string', () => {
       const schema = getManagedObjectTool.inputSchema.objectType;
-      expect(() => schema.parse('invalid_type')).toThrow();
+      expect(() => schema.parse('')).toThrow();
     });
 
-    it('should accept all valid objectType enum values', () => {
+    it('should accept standard object types', () => {
       const schema = getManagedObjectTool.inputSchema.objectType;
-
       expect(() => schema.parse('alpha_user')).not.toThrow();
       expect(() => schema.parse('bravo_role')).not.toThrow();
-      expect(() => schema.parse('alpha_group')).not.toThrow();
-      expect(() => schema.parse('bravo_organization')).not.toThrow();
+    });
+
+    it('should accept any non-empty object type string', () => {
+      const schema = getManagedObjectTool.inputSchema.objectType;
+      expect(() => schema.parse('alpha_device')).not.toThrow();
+      expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
     it('should reject objectId with path traversal', () => {

@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { SUPPORTED_OBJECT_TYPES } from '../../config/managedObjectTypes.js';
+import { EXAMPLE_TYPES_STRING } from '../../config/managedObjectUtils.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -14,7 +14,9 @@ export const queryManagedObjectsTool = {
   description: 'Query managed objects in PingOne AIC using CREST query filter syntax',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
+    objectType: z.string().min(1).describe(
+      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+    ),
     queryFilter: z.string().max(1000).optional().describe(
       'CREST query filter expression. IMPORTANT: Call getManagedObjectSchema first to discover available fields. ' +
       'Operators: eq, co, sw, gt, ge, lt, le, pr (present), ! (NOT). Boolean: and, or. Quote strings. ' +

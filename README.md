@@ -30,9 +30,11 @@ This server allows AI assistants like Claude to access your PingOne AIC environm
 - 📊 **Advanced Log Querying**: Query logs with flexible filtering by time range, source, transaction ID, and payload content with pagination support
 - 🔒 **Secure Token Storage**: Tokens stored in system keychain with automatic expiration handling
 
-### Supported Managed Object Types
+### Managed Object Support
 
-The server provides generic CRUD operations for the following object types across alpha and bravo realms:
+The server provides generic CRUD operations for **any managed object type** defined in your PingOne AIC environment - including users, roles, groups, organizations, and any custom managed objects you've configured. Use the `listManagedObjects` tool to discover all available types in your tenant.
+
+**Common Examples:**
 - **Users** (`alpha_user`, `bravo_user`) - Identity records with authentication credentials
 - **Roles** (`alpha_role`, `bravo_role`) - Collections of permissions and entitlements
 - **Groups** (`alpha_group`, `bravo_group`) - Collections of users or other objects
@@ -90,22 +92,32 @@ Restart your AI assistant and start asking questions about your PingOne AIC envi
 
 ## Available Tools
 
+### listManagedObjects
+Discover all managed object types available in your PingOne AIC environment.
+
+**Parameters:** None
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** List of all managed object type names (e.g., 'alpha_user', 'bravo_role', 'alpha_device').
+
+**Examples:**
+```
+"What managed object types are defined in this environment?"
+"List all available managed objects"
+"Show me what object types I can work with"
+```
+
 ### queryManagedObjects
 Query managed objects (users, roles, groups, organizations) using powerful CREST query filter syntax with pagination, sorting, and field selection.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType`: Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `queryFilter` (optional): CREST query filter expression. If omitted, returns all objects up to pageSize
 - `pageSize` (optional): Number of objects to return per page (default: 50, max: 250)
 - `pagedResultsCookie` (optional): Pagination cookie from previous response to retrieve next page
 - `sortKeys` (optional): Comma-separated field names to sort by (prefix with "-" for descending)
 - `fields` (optional): Comma-separated field names to return (returns all fields if omitted)
-
-**Supported Object Types:**
-- `alpha_user`, `bravo_user`
-- `alpha_role`, `bravo_role`
-- `alpha_group`, `bravo_group`
-- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
@@ -129,7 +141,7 @@ Query managed objects (users, roles, groups, organizations) using powerful CREST
 Retrieve the schema definition for a managed object type to understand required and optional fields.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType`: Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 
 **Required Scopes:** `fr:idm:*`
 
@@ -139,17 +151,11 @@ Retrieve the schema definition for a managed object type to understand required 
 ```
 
 ### createManagedObject
-Create a new managed object (user, role, group, or organization).
+Create a new managed object (user, role, group, organization, or any other managed object type).
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType`: Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectData`: JSON object containing object properties (must include all required fields)
-
-**Supported Object Types:**
-- `alpha_user`, `bravo_user`
-- `alpha_role`, `bravo_role`
-- `alpha_group`, `bravo_group`
-- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
@@ -163,7 +169,7 @@ Create a new managed object (user, role, group, or organization).
 Retrieve a managed object's complete profile by its unique identifier.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType`: Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectId`: The unique identifier (_id) of the object
 
 **Required Scopes:** `fr:idm:*`
@@ -178,7 +184,7 @@ Retrieve a managed object's complete profile by its unique identifier.
 Update specific fields of a managed object using JSON Patch operations.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType`: Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectId`: The unique identifier (_id) of the object
 - `revision`: The current revision (_rev) from getManagedObject (ensures safe concurrent updates)
 - `operations`: Array of JSON Patch operations (add, remove, replace, etc.)
@@ -197,7 +203,7 @@ Update specific fields of a managed object using JSON Patch operations.
 Delete a managed object by its unique identifier.
 
 **Parameters:**
-- `objectType`: The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType`: Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectId`: The unique identifier (_id) of the object
 
 **Required Scopes:** `fr:idm:*`
@@ -539,7 +545,7 @@ npm run typecheck    # Type check without building
 
 ### Testing
 
-The project includes a comprehensive test suite with 345 tests covering all 19 tools.
+The project includes a comprehensive test suite covering all server tools with both snapshot and unit tests.
 
 **Run tests:**
 ```bash
@@ -553,7 +559,10 @@ npm run test:snapshots:update   # Update tool schema snapshots
 - **Framework:** Vitest for fast, modern testing
 - **HTTP Mocking:** MSW (Mock Service Worker) for realistic API simulation
 - **Pattern:** Dependency injection with `vi.spyOn()` to test application logic without API calls
-- **Coverage:** All tool functionality including request construction, response processing, input validation, and error handling
+
+**Test Coverage:**
+- **Snapshot Tests:** All tool schemas are validated against snapshots to detect unintended changes
+- **Unit Tests:** Request construction, response processing, input validation, error handling, and security validations (path traversal, query injection prevention)
 
 Tests are organized by tool category in `test/tools/` mirroring the source structure.
 
@@ -587,4 +596,4 @@ The inspector lets you test all available tools, view their inputs/outputs, and 
 - Automatic token expiration and re-authentication
 - All actions traceable to authenticated users for audit compliance
 - Input validation with path traversal protection on all object IDs
-- Type validation ensures only supported object types are accessed
+- Flexible object type validation accepts any managed object type defined in your environment

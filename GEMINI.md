@@ -6,9 +6,11 @@ This document provides an overview of the PingOne AIC MCP Server, a TypeScript-b
 
 This server exposes tools that allow AI agents to interact with a PingOne Advanced Identity Cloud (AIC) environment. It provides programmatic access to managed object operations (create, read, update, delete, search) for users, roles, groups, and organizations, as well as monitoring capabilities through secure user-based authentication. The server uses OAuth 2.0 PKCE flow for interactive authentication, ensuring all actions are traceable to authenticated users for audit and security compliance.
 
-### Supported Managed Object Types
+### Managed Object Support
 
-The server provides generic CRUD operations for the following object types across alpha and bravo realms:
+The server provides generic CRUD operations for **any managed object type** defined in your PingOne AIC environment. This includes users, roles, groups, organizations, and any custom managed object types you've configured. Use the `listManagedObjects` tool to discover all available types in your tenant.
+
+**Common Examples:**
 - **Users** (`alpha_user`, `bravo_user`) - Identity records with authentication credentials
 - **Roles** (`alpha_role`, `bravo_role`) - Collections of permissions and entitlements
 - **Groups** (`alpha_group`, `bravo_group`) - Collections of users or other objects
@@ -60,24 +62,36 @@ The authentication system uses OAuth 2.0 Authorization Code with PKCE (Proof Key
 
 All tools declare required OAuth scopes, which are requested upfront during user authentication.
 
-#### 1. `queryManagedObjects`
+#### 1. `listManagedObjects`
+**File:** [src/tools/managedObjects/listManagedObjects.ts](src/tools/managedObjects/listManagedObjects.ts)
+
+Retrieve the list of all managed object types available in your PingOne AIC environment.
+
+**Parameters:** None
+
+**Required Scopes:** `fr:idm:*`
+
+**Returns:** JSON object containing an array of managed object type names
+
+**Implementation Notes:**
+- Discovery tool to list all available managed object types
+- Queries the IDM configuration endpoint (`/openidm/config/managed`)
+- Returns type names only (e.g., `alpha_user`, `bravo_role`, `alpha_device`)
+- Use this before querying or manipulating objects to discover what types exist
+- Supports both standard types (user, role, group, organization) and any types you've configured
+
+#### 2. `queryManagedObjects`
 **File:** [src/tools/managedObjects/queryManagedObjects.ts](src/tools/managedObjects/queryManagedObjects.ts)
 
 Query managed objects in PingOne AIC using CREST query filter syntax with full pagination, sorting, and field selection capabilities.
 
 **Parameters:**
-- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType` (string): Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `queryFilter` (string, optional): CREST query filter expression. If omitted, returns all objects up to pageSize (defaults to 'true')
 - `pageSize` (number, optional): Number of objects to return per page (default: 50, max: 250)
 - `pagedResultsCookie` (string, optional): Pagination cookie from previous response for next page
 - `sortKeys` (string, optional): Comma-separated field names to sort by. Prefix with "-" for descending
 - `fields` (string, optional): Comma-separated field names to return. If omitted, returns all fields
-
-**Supported Object Types:**
-- `alpha_user`, `bravo_user`
-- `alpha_role`, `bravo_role`
-- `alpha_group`, `bravo_group`
-- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
@@ -86,19 +100,19 @@ Query managed objects in PingOne AIC using CREST query filter syntax with full p
 **Implementation Notes:**
 - Exposes full CREST query filter syntax (eq, co, sw, gt, ge, lt, le, pr, !, and, or)
 - Uses `_totalPagedResultsPolicy=EXACT` for accurate result counts
-- Validates object type using Zod enum from shared configuration
+- Validates that objectType is a non-empty string
 - Generic field placeholders in descriptions force AI to call `getManagedObjectSchema` first
 - Cookie-based pagination for efficiency
 - Default pageSize of 50, max 250
 - Works with any managed object type via dynamic endpoint construction
 
-#### 2. `getManagedObjectSchema`
+#### 3. `getManagedObjectSchema`
 **File:** [src/tools/managedObjects/getManagedObjectSchema.ts](src/tools/managedObjects/getManagedObjectSchema.ts)
 
 Retrieves the schema definition for a specific managed object type to understand its structure and requirements.
 
 **Parameters:**
-- `objectType` (string): The managed object type (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType` (string): Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 
 **Required Scopes:** `fr:idm:*`
 
@@ -108,22 +122,16 @@ Retrieves the schema definition for a specific managed object type to understand
 - Queries the IDM configuration endpoint (`/openidm/config/managed`)
 - Returns only required properties to minimize context
 - Use before creating managed objects to understand what fields are necessary
-- Works for all supported object types: user, role, group, organization
+- Works with any managed object type defined in your environment
 
-#### 3. `createManagedObject`
+#### 4. `createManagedObject`
 **File:** [src/tools/managedObjects/createManagedObject.ts](src/tools/managedObjects/createManagedObject.ts)
 
 Creates a new managed object in PingOne AIC.
 
 **Parameters:**
-- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType` (string): Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectData` (object): JSON object containing object properties (must include all required fields)
-
-**Supported Object Types:**
-- `alpha_user`, `bravo_user`
-- `alpha_role`, `bravo_role`
-- `alpha_group`, `bravo_group`
-- `alpha_organization`, `bravo_organization`
 
 **Required Scopes:** `fr:idm:*`
 
@@ -133,16 +141,17 @@ Creates a new managed object in PingOne AIC.
 - Uses the IDM managed object creation endpoint (`/openidm/managed/{objectType}?_action=create`)
 - Returns only the `_id` to minimize context usage
 - Includes transaction ID in response for debugging
-- Validates objectType using Zod enum
+- Validates that objectType is a non-empty string
 - Use `getManagedObjectSchema` first to determine required fields
+- Works with any managed object type via dynamic endpoint construction
 
-#### 4. `getManagedObject`
+#### 5. `getManagedObject`
 **File:** [src/tools/managedObjects/getManagedObject.ts](src/tools/managedObjects/getManagedObject.ts)
 
 Retrieves a managed object's complete profile by its unique identifier.
 
 **Parameters:**
-- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType` (string): Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectId` (string): The unique identifier (`_id`) of the object
 
 **Required Scopes:** `fr:idm:*`
@@ -153,15 +162,16 @@ Retrieves a managed object's complete profile by its unique identifier.
 - Queries the IDM managed object endpoint (`/openidm/managed/{objectType}/{objectId}`)
 - Returns full object profile including `_rev` (revision) field
 - The `_rev` field is required for safe updates using `patchManagedObject`
-- Works for all supported object types
+- Validates objectId to prevent path traversal attacks
+- Works with any managed object type via dynamic endpoint construction
 
-#### 5. `patchManagedObject`
+#### 6. `patchManagedObject`
 **File:** [src/tools/managedObjects/patchManagedObject.ts](src/tools/managedObjects/patchManagedObject.ts)
 
 Updates specific fields of a managed object using JSON Patch operations (RFC 6902).
 
 **Parameters:**
-- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType` (string): Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectId` (string): The unique identifier (`_id`) of the object
 - `revision` (string): The current revision (`_rev`) from `getManagedObject`
 - `operations` (array): Array of JSON Patch operations
@@ -177,15 +187,16 @@ Updates specific fields of a managed object using JSON Patch operations (RFC 690
 - Supports operations: add, remove, replace, move, copy, test
 - Field paths use JSON Pointer format (e.g., '/fieldName')
 - Generic field placeholders in descriptions force AI to call `getManagedObjectSchema` to discover available fields
-- Works for all supported object types
+- Validates objectId to prevent path traversal attacks
+- Works with any managed object type via dynamic endpoint construction
 
-#### 6. `deleteManagedObject`
+#### 7. `deleteManagedObject`
 **File:** [src/tools/managedObjects/deleteManagedObject.ts](src/tools/managedObjects/deleteManagedObject.ts)
 
 Deletes a managed object by its unique identifier.
 
 **Parameters:**
-- `objectType` (string): The managed object type - validated enum (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization')
+- `objectType` (string): Any managed object type in your environment (e.g., 'alpha_user', 'bravo_role', 'alpha_group', 'bravo_organization'). Use `listManagedObjects` to discover available types.
 - `objectId` (string): The unique identifier (`_id`) of the object
 
 **Required Scopes:** `fr:idm:*`
@@ -196,13 +207,14 @@ Deletes a managed object by its unique identifier.
 - Uses HTTP DELETE on the IDM managed object endpoint
 - Permanent deletion - cannot be undone
 - Includes transaction ID in response for audit trail
-- Works for all supported object types
+- Validates objectId to prevent path traversal attacks
+- Works with any managed object type via dynamic endpoint construction
 
 ### Theme Management Tools
 
 The server provides comprehensive theme management capabilities for customizing the appearance of authentication journeys and account pages in PingOne AIC.
 
-#### 7. `getThemeSchema`
+#### 8. `getThemeSchema`
 **File:** [src/tools/themes/getThemeSchema.ts](src/tools/themes/getThemeSchema.ts)
 
 Retrieve comprehensive schema documentation for PingOne AIC themes.
@@ -226,7 +238,7 @@ Retrieve comprehensive schema documentation for PingOne AIC themes.
 - Documents that only `name` field is required; all others are optional
 - The AIC server applies defaults for any omitted fields
 
-#### 8. `getThemes`
+#### 9. `getThemes`
 **File:** [src/tools/themes/getThemes.ts](src/tools/themes/getThemes.ts)
 
 Retrieve all themes for a specific realm.
@@ -242,7 +254,7 @@ Retrieve all themes for a specific realm.
 - Use this to discover available themes before getting details or making updates
 - Returns minimal information (name and default status) for quick listing
 
-#### 9. `getTheme`
+#### 10. `getTheme`
 **File:** [src/tools/themes/getTheme.ts](src/tools/themes/getTheme.ts)
 
 Retrieve a specific theme's complete configuration.
@@ -260,7 +272,7 @@ Retrieve a specific theme's complete configuration.
 - Useful for examining existing themes before creating new ones
 - Returns full theme configuration for reference or modification
 
-#### 10. `createTheme`
+#### 11. `createTheme`
 **File:** [src/tools/themes/createTheme.ts](src/tools/themes/createTheme.ts)
 
 Create a new theme for a realm.
@@ -282,7 +294,7 @@ Create a new theme for a realm.
 - Validates that theme name is unique within the realm
 - **Recommended: Call `getThemeSchema` first** to understand available customization options
 
-#### 11. `updateTheme`
+#### 12. `updateTheme`
 **File:** [src/tools/themes/updateTheme.ts](src/tools/themes/updateTheme.ts)
 
 Update an existing theme's properties.
@@ -302,7 +314,7 @@ Update an existing theme's properties.
 - Can query by either `_id` or `name`
 - Validates name uniqueness if renaming the theme
 
-#### 12. `deleteTheme`
+#### 13. `deleteTheme`
 **File:** [src/tools/themes/deleteTheme.ts](src/tools/themes/deleteTheme.ts)
 
 Delete a theme from a realm.
@@ -321,7 +333,7 @@ Delete a theme from a realm.
 - Permanent deletion - cannot be undone
 - Can query by either `_id` or `name`
 
-#### 13. `setDefaultTheme`
+#### 14. `setDefaultTheme`
 **File:** [src/tools/themes/setDefaultTheme.ts](src/tools/themes/setDefaultTheme.ts)
 
 Set a theme as the default for a realm.
@@ -344,7 +356,7 @@ Set a theme as the default for a realm.
 
 The server provides tools for managing environment secrets and variables (ESVs) used for configuration and credentials in PingOne AIC.
 
-#### 14. `queryESVs`
+#### 15. `queryESVs`
 **File:** [src/tools/esv/queryESVs.ts](src/tools/esv/queryESVs.ts)
 
 Query environment secrets or variables by ID pattern with pagination and sorting support.
@@ -370,7 +382,7 @@ Query environment secrets or variables by ID pattern with pagination and sorting
 - Default pageSize of 50, max 100
 - Security: Escapes double quotes in queryTerm to prevent injection attacks
 
-#### 15. `getVariable`
+#### 16. `getVariable`
 **File:** [src/tools/esv/getVariable.ts](src/tools/esv/getVariable.ts)
 
 Retrieve a specific environment variable by ID with decoded value.
@@ -387,7 +399,7 @@ Retrieve a specific environment variable by ID with decoded value.
 - Returns decoded value (secrets are write-only and cannot be retrieved)
 - Requires `accept-api-version: resource=2.0` header
 
-#### 16. `setVariable`
+#### 17. `setVariable`
 **File:** [src/tools/esv/setVariable.ts](src/tools/esv/setVariable.ts)
 
 Create or update an environment variable.
@@ -409,7 +421,7 @@ Create or update an environment variable.
 - Requires `accept-api-version: resource=2.0` header
 - Validates value type matches declared type
 
-#### 17. `deleteVariable`
+#### 18. `deleteVariable`
 **File:** [src/tools/esv/deleteVariable.ts](src/tools/esv/deleteVariable.ts)
 
 Delete an environment variable by ID.
@@ -545,7 +557,7 @@ pingone_AIC_MCP/
 ├── src/
 │   ├── index.ts                            # Server entry point and tool registration
 │   ├── config/
-│   │   └── managedObjectTypes.ts           # Shared object type configuration and validation
+│   │   └── managedObjectUtils.ts           # Shared utilities, examples, and validation
 │   ├── services/
 │   │   └── authService.ts                  # OAuth 2.0 PKCE authentication
 │   ├── utils/
@@ -554,6 +566,7 @@ pingone_AIC_MCP/
 │   └── tools/
 │       ├── managedObjects/                  # Managed object CRUD operations
 │       │   ├── index.ts                    # Re-exports all managed object tools
+│       │   ├── listManagedObjects.ts       # Discover available managed object types
 │       │   ├── queryManagedObjects.ts      # Generic managed object search
 │       │   ├── getManagedObjectSchema.ts   # Schema retrieval
 │       │   ├── createManagedObject.ts      # Generic object creation
@@ -670,23 +683,35 @@ All tools must declare their required scopes in the `scopes` property. When addi
 - All scopes from all tools are collected and requested upfront during user authentication
 - The scopes parameter in `getToken(scopes)` is used to scope down tokens via RFC 8693 token exchange
 
-### Adding New Managed Object Types
+### Managed Object Type Support
 
-To add support for a new managed object type (e.g., `device`, `application`):
+The server supports **any managed object type** defined in your PingOne AIC environment without requiring code changes.
 
-1. **Update the shared configuration** in `src/config/managedObjectTypes.ts`:
-   ```typescript
-   export const BASE_OBJECT_TYPES = ['user', 'role', 'group', 'organization', 'device'] as const;
-   ```
+**How it works:**
+- All managed object tools accept any non-empty string for `objectType`
+- Tools use dynamic endpoint construction: `/openidm/managed/${objectType}`
+- The `listManagedObjects` tool discovers available types at runtime
+- Object type validation uses string validation (not enum) for maximum flexibility
 
-2. **Update tool descriptions** to include the new object type in:
-   - `queryManagedObjects` - Add to Supported Object Types section
-   - `createManagedObject` - Add to Supported Object Types section
-   - Other tools will automatically support it via the enum validation
+**Example Types:**
+The `src/config/managedObjectUtils.ts` file contains example types for documentation:
+```typescript
+export const EXAMPLE_MANAGED_OBJECT_TYPES = [
+  'alpha_user', 'bravo_user',
+  'alpha_role', 'bravo_role',
+  'alpha_group', 'bravo_group',
+  'alpha_organization', 'bravo_organization'
+];
+```
 
-3. **Rebuild**: `npm run build`
+These examples appear in tool descriptions to guide AI agents, but **all managed object types work automatically** - no configuration needed.
 
-**No code changes needed** for any tool implementations - they all work with any object type automatically via dynamic endpoint construction! The queryManagedObjects tool exposes full CREST query filter syntax, so users can query any fields discovered through `getManagedObjectSchema`.
+**Adding custom managed objects:**
+1. Define your managed object type in PingOne AIC (via IDM configuration)
+2. The type immediately becomes available to all managed object tools
+3. Use `listManagedObjects` to discover your new type
+4. Use `getManagedObjectSchema` to understand its required fields
+5. All CRUD operations work automatically via dynamic endpoints
 
 ## Known Limitations
 
@@ -713,7 +738,7 @@ Manually navigate to the URL shown in error logs, or check if the `open` package
 
 ## Testing
 
-The project includes a comprehensive test suite with **345 tests** across all **19 tools** covering managed objects, themes, logs, and ESV operations.
+The project includes a comprehensive test suite with **360 tests** across all **20 tools** covering managed objects, themes, logs, and ESV operations.
 
 ### Test Architecture
 
@@ -741,9 +766,9 @@ test/
 │   ├── handlers.ts               # MSW request handlers
 │   └── mockData.ts               # Shared test data
 ├── setup.ts                      # Global test setup
-├── __snapshots__/                # Tool schema snapshots (19 files)
+├── __snapshots__/                # Tool schema snapshots (20 files)
 └── tools/
-    ├── managedObjects/           # 6 test files, 98 tests
+    ├── managedObjects/           # 7 test files, 113 tests
     ├── themes/                   # 7 test files, 135 tests
     ├── logs/                     # 2 test files, 32 tests
     └── esv/                      # 4 test files, 80 tests
@@ -791,7 +816,7 @@ Each tool has a snapshot test that validates the tool's schema structure. When t
 ### Test Coverage
 
 **What's Tested:**
-- ✅ All 19 tool schemas (snapshot tests)
+- ✅ All 20 tool schemas (snapshot tests)
 - ✅ Request construction for all API endpoints
 - ✅ Response processing and transformations
   - Schema field extraction (getManagedObjectSchema)

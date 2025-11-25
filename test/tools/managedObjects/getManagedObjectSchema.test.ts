@@ -225,23 +225,21 @@ describe('getManagedObjectSchema', () => {
 
   // ===== INPUT VALIDATION TESTS =====
   describe('Input Validation', () => {
-    it('should reject invalid objectType enum', () => {
+    it('should reject empty objectType string', () => {
       const schema = getManagedObjectSchemaTool.inputSchema.objectType;
-      expect(() => schema.parse('invalid_type')).toThrow();
+      expect(() => schema.parse('')).toThrow();
     });
 
-    it('should accept all valid objectType enum values', async () => {
+    it('should accept standard object types', () => {
       const schema = getManagedObjectSchemaTool.inputSchema.objectType;
+      expect(() => schema.parse('alpha_user')).not.toThrow();
       expect(() => schema.parse('bravo_group')).not.toThrow();
+    });
 
-      await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'bravo_group',
-      });
-
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
-        expect.stringContaining('/openidm/config/managed'),
-        expect.any(Array)
-      );
+    it('should accept any non-empty object type string', () => {
+      const schema = getManagedObjectSchemaTool.inputSchema.objectType;
+      expect(() => schema.parse('alpha_device')).not.toThrow();
+      expect(() => schema.parse('custom_application')).not.toThrow();
     });
   });
 

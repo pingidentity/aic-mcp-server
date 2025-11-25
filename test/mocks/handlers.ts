@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { mockManagedObjects, mockThemes, mockVariables, mockLogSources } from './mockData.js';
+import { mockManagedObjects, mockManagedObjectConfig, mockThemes, mockVariables, mockLogSources } from './mockData.js';
 
 /**
  * Helper to validate Authorization header is present and valid
@@ -107,12 +107,7 @@ export const handlers = [
     const authError = validateAuthHeader(request);
     if (authError) return authError;
 
-    return HttpResponse.json({
-      objects: [{
-        name: 'alpha_user',
-        schema: { required: ['userName'], properties: { userName: { type: 'string' } } },
-      }],
-    });
+    return HttpResponse.json(mockManagedObjectConfig);
   }),
 
   // Create managed object

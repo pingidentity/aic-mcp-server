@@ -192,21 +192,30 @@ describe('queryManagedObjects', () => {
 
   // ===== INPUT VALIDATION TESTS =====
   describe('Input Validation', () => {
-    it('should reject invalid objectType enum', () => {
+    it('should reject empty objectType string', () => {
       const schema = queryManagedObjectsTool.inputSchema.objectType;
-      expect(() => schema.parse('invalid_type')).toThrow();
+      expect(() => schema.parse('')).toThrow();
     });
 
-    it('should accept valid objectType enum values', async () => {
+    it('should accept standard object types', () => {
       const schema = queryManagedObjectsTool.inputSchema.objectType;
+      expect(() => schema.parse('alpha_user')).not.toThrow();
       expect(() => schema.parse('bravo_role')).not.toThrow();
+    });
 
+    it('should accept any non-empty object type string', () => {
+      const schema = queryManagedObjectsTool.inputSchema.objectType;
+      expect(() => schema.parse('alpha_device')).not.toThrow();
+      expect(() => schema.parse('custom_application')).not.toThrow();
+    });
+
+    it('should work with any object type in tool function', async () => {
       await queryManagedObjectsTool.toolFunction({
-        objectType: 'bravo_role',
+        objectType: 'alpha_device',
       });
 
       expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
-        expect.stringContaining('/openidm/managed/bravo_role'),
+        expect.stringContaining('/openidm/managed/alpha_device'),
         expect.any(Array)
       );
     });
