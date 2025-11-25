@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { SUPPORTED_OBJECT_TYPES, objectIdSchema } from '../../config/managedObjectTypes.js';
+import { EXAMPLE_TYPES_STRING, objectIdSchema } from '../../config/managedObjectUtils.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -21,7 +21,9 @@ export const patchManagedObjectTool = {
   description: 'Update specific fields of a managed object in PingOne AIC using JSON Patch operations',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
+    objectType: z.string().min(1).describe(
+      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+    ),
     objectId: objectIdSchema.describe('The object\'s unique identifier (_id)'),
     revision: z.string().describe('The current revision (_rev) of the object, obtained from getManagedObject'),
     operations: z.array(patchOperationSchema).describe('Array of JSON Patch operations to apply to the object')

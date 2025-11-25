@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { getThemeTool } from '../../../src/tools/themes/getTheme.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('getTheme', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -31,15 +22,15 @@ describe('getTheme', () => {
       });
 
       // Our code builds OR query filter: _id eq "X" or name eq "X"
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('realm=alpha'),
         expect.any(Array)
       );
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_queryFilter='),
         expect.any(Array)
       );
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_id%20eq%20%22theme-123%22%20or%20name%20eq%20%22theme-123%22'),
         expect.any(Array)
       );
@@ -52,7 +43,7 @@ describe('getTheme', () => {
       });
 
       const encodedIdentifier = encodeURIComponent('Theme Name With Spaces');
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining(encodedIdentifier),
         expect.any(Array)
       );
@@ -65,7 +56,7 @@ describe('getTheme', () => {
       });
 
       // Double quote becomes %22 when URL-encoded
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('test%22quote'),
         expect.any(Array)
       );
@@ -77,7 +68,7 @@ describe('getTheme', () => {
         themeIdentifier: 'theme-123',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idm:*']
       );
@@ -209,7 +200,7 @@ describe('getTheme', () => {
         themeIdentifier: 'theme-456',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('realm=bravo'),
         expect.any(Array)
       );
@@ -227,7 +218,7 @@ describe('getTheme', () => {
         themeIdentifier: 'any-string-123_ABC',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('any-string-123_ABC'),
         expect.any(Array)
       );

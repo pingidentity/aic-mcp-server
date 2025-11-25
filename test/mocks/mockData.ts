@@ -12,6 +12,15 @@ export const mockManagedObjects = [
   { _id: 'obj-456', _rev: '1', name: 'Test Object 2', description: 'Test Description 2' },
 ];
 
+// Mock managed object configuration response
+export const mockManagedObjectConfig = {
+  objects: [
+    { name: 'alpha_user', schema: { required: ['userName'], properties: { userName: { type: 'string' } } } },
+    { name: 'bravo_role', schema: { required: ['name'], properties: { name: { type: 'string' } } } },
+    { name: 'alpha_device', schema: { required: ['deviceId'], properties: { deviceId: { type: 'string' } } } },
+  ],
+};
+
 // Minimal theme data
 export const mockTheme = {
   _id: 'theme-123',

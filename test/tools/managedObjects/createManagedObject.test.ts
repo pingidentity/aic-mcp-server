@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createManagedObjectTool } from '../../../src/tools/managedObjects/createManagedObject.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('createManagedObject', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -30,7 +21,7 @@ describe('createManagedObject', () => {
         objectData: { userName: 'test' },
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/openidm/managed/alpha_user?_action=create',
         expect.any(Array),
         expect.any(Object)
@@ -43,7 +34,7 @@ describe('createManagedObject', () => {
         objectData: { userName: 'test', mail: 'test@example.com' },
       });
 
-      const callArgs = makeAuthenticatedRequestSpy.mock.calls[0];
+      const callArgs = getSpy().mock.calls[0];
       const requestOptions = callArgs[2];
       const requestBody = JSON.parse(requestOptions.body);
 
@@ -59,7 +50,7 @@ describe('createManagedObject', () => {
         objectData: { userName: 'test' },
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idm:*'],
         expect.any(Object)
@@ -115,18 +106,21 @@ describe('createManagedObject', () => {
 
   // ===== INPUT VALIDATION TESTS =====
   describe('Input Validation', () => {
-    it('should reject invalid objectType enum', () => {
+    it('should reject empty objectType string', () => {
       const schema = createManagedObjectTool.inputSchema.objectType;
-      expect(() => schema.parse('invalid_type')).toThrow();
+      expect(() => schema.parse('')).toThrow();
     });
 
-    it('should accept all valid objectType enum values', async () => {
+    it('should accept standard object types', () => {
       const schema = createManagedObjectTool.inputSchema.objectType;
-
       expect(() => schema.parse('alpha_user')).not.toThrow();
       expect(() => schema.parse('bravo_role')).not.toThrow();
-      expect(() => schema.parse('alpha_group')).not.toThrow();
-      expect(() => schema.parse('bravo_organization')).not.toThrow();
+    });
+
+    it('should accept any non-empty object type string', () => {
+      const schema = createManagedObjectTool.inputSchema.objectType;
+      expect(() => schema.parse('alpha_device')).not.toThrow();
+      expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
     it('should accept objectData as any object', () => {

@@ -8,18 +8,15 @@
   "inputSchema": {
     "objectType": {
       "_def": {
-        "values": [
-          "alpha_user",
-          "bravo_user",
-          "alpha_role",
-          "bravo_role",
-          "alpha_group",
-          "bravo_group",
-          "alpha_organization",
-          "bravo_organization"
+        "checks": [
+          {
+            "kind": "min",
+            "value": 1
+          }
         ],
-        "typeName": "ZodEnum",
-        "description": "Managed object type"
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Managed object type (e.g., alpha_user, bravo_user, alpha_role, bravo_role, alpha_group, bravo_group, alpha_organization, bravo_organization). Use listManagedObjects to discover all available types."
       },
       "~standard": {
         "version": 1,

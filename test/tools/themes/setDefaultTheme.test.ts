@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 import { setDefaultThemeTool } from '../../../src/tools/themes/setDefaultTheme.js';
 
 describe('setDefaultTheme', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -470,7 +461,7 @@ describe('setDefaultTheme', () => {
       });
 
       // Our code GETs the entire config first
-      const getCalls = makeAuthenticatedRequestSpy.mock.calls.filter(
+      const getCalls = getSpy().mock.calls.filter(
         (call: any) => !call[2] || !call[2].method
       );
       expect(getCalls.length).toBeGreaterThanOrEqual(1);
@@ -500,7 +491,7 @@ describe('setDefaultTheme', () => {
         themeIdentifier: 'theme-123',
       });
 
-      const putCalls = makeAuthenticatedRequestSpy.mock.calls.filter(
+      const putCalls = getSpy().mock.calls.filter(
         (call: any) => call[2] && call[2].method === 'PUT'
       );
       expect(putCalls.length).toBeGreaterThanOrEqual(1);
@@ -530,7 +521,7 @@ describe('setDefaultTheme', () => {
         themeIdentifier: 'theme-123',
       });
 
-      const putCalls = makeAuthenticatedRequestSpy.mock.calls.filter(
+      const putCalls = getSpy().mock.calls.filter(
         (call: any) => call[2] && call[2].method === 'PUT'
       );
       expect(putCalls.length).toBeGreaterThanOrEqual(1);
@@ -561,9 +552,9 @@ describe('setDefaultTheme', () => {
       });
 
       // Both GET and PUT should use correct scopes
-      expect(makeAuthenticatedRequestSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
-      expect(makeAuthenticatedRequestSpy.mock.calls[0][1]).toEqual(['fr:idm:*']);
-      expect(makeAuthenticatedRequestSpy.mock.calls[1][1]).toEqual(['fr:idm:*']);
+      expect(getSpy().mock.calls.length).toBeGreaterThanOrEqual(2);
+      expect(getSpy().mock.calls[0][1]).toEqual(['fr:idm:*']);
+      expect(getSpy().mock.calls[1][1]).toEqual(['fr:idm:*']);
     });
   });
 
@@ -627,7 +618,7 @@ describe('setDefaultTheme', () => {
       expect(responseText).toContain('AlreadyDefault');
 
       // Should NOT have made a PUT request
-      const putCalls = makeAuthenticatedRequestSpy.mock.calls.filter(
+      const putCalls = getSpy().mock.calls.filter(
         (call: any) => call[2] && call[2].method === 'PUT'
       );
       expect(putCalls.length).toBe(0);

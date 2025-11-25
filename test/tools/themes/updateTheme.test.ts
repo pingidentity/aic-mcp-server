@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 import { updateThemeTool } from '../../../src/tools/themes/updateTheme.js';
 
 describe('updateTheme', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -34,7 +25,7 @@ describe('updateTheme', () => {
       // Our code pre-validates protected fields before API call
       expect(result.content[0].text).toContain('Cannot update the "_id" field');
       expect(result.content[0].text).toContain('immutable');
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should reject updates to isDefault field', async () => {
@@ -47,7 +38,7 @@ describe('updateTheme', () => {
       // Our code pre-validates protected fields before API call
       expect(result.content[0].text).toContain('Cannot update "isDefault" directly');
       expect(result.content[0].text).toContain('Use the setDefaultTheme tool');
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should fetch current theme config first', async () => {
@@ -74,7 +65,7 @@ describe('updateTheme', () => {
       });
 
       // Our code GET config before updating
-      const calls = makeAuthenticatedRequestSpy.mock.calls;
+      const calls = getSpy().mock.calls;
       expect(calls.length).toBeGreaterThanOrEqual(1);
       expect(calls[0][0]).toContain('/openidm/config/ui/themerealm');
       // First call should not have method specified (defaults to GET)
@@ -401,7 +392,7 @@ describe('updateTheme', () => {
       });
 
       // Our code PUTs config after GET
-      const calls = makeAuthenticatedRequestSpy.mock.calls;
+      const calls = getSpy().mock.calls;
       expect(calls.length).toBe(2);
       expect(calls[1][0]).toContain('/openidm/config/ui/themerealm');
       expect(calls[1][2]?.method).toBe('PUT');
@@ -434,7 +425,7 @@ describe('updateTheme', () => {
         themeUpdates: { name: 'UpdatedName' },
       });
 
-      expect(makeAuthenticatedRequestSpy.mock.calls[0][0]).toBe(
+      expect(getSpy().mock.calls[0][0]).toBe(
         'https://test.forgeblocks.com/openidm/config/ui/themerealm'
       );
     });
@@ -462,7 +453,7 @@ describe('updateTheme', () => {
         themeUpdates: { name: 'UpdatedName' },
       });
 
-      expect(makeAuthenticatedRequestSpy.mock.calls[1][0]).toBe(
+      expect(getSpy().mock.calls[1][0]).toBe(
         'https://test.forgeblocks.com/openidm/config/ui/themerealm'
       );
     });
@@ -490,7 +481,7 @@ describe('updateTheme', () => {
         themeUpdates: { name: 'UpdatedName' },
       });
 
-      expect(makeAuthenticatedRequestSpy.mock.calls[1][2]?.method).toBe('PUT');
+      expect(getSpy().mock.calls[1][2]?.method).toBe('PUT');
     });
 
     it('should pass correct scopes to auth', async () => {
@@ -516,8 +507,8 @@ describe('updateTheme', () => {
         themeUpdates: { name: 'UpdatedName' },
       });
 
-      expect(makeAuthenticatedRequestSpy.mock.calls[0][1]).toEqual(['fr:idm:*']);
-      expect(makeAuthenticatedRequestSpy.mock.calls[1][1]).toEqual(['fr:idm:*']);
+      expect(getSpy().mock.calls[0][1]).toEqual(['fr:idm:*']);
+      expect(getSpy().mock.calls[1][1]).toEqual(['fr:idm:*']);
     });
   });
 

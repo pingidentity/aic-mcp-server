@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { getManagedObjectTool } from '../../../src/tools/managedObjects/getManagedObject.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('getManagedObject', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -30,7 +21,7 @@ describe('getManagedObject', () => {
         objectId: 'obj-123',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123',
         ['fr:idm:*']
       );
@@ -42,7 +33,7 @@ describe('getManagedObject', () => {
         objectId: 'obj-123',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idm:*']
       );
@@ -87,18 +78,21 @@ describe('getManagedObject', () => {
 
   // ===== INPUT VALIDATION TESTS =====
   describe('Input Validation', () => {
-    it('should reject invalid objectType enum', () => {
+    it('should reject empty objectType string', () => {
       const schema = getManagedObjectTool.inputSchema.objectType;
-      expect(() => schema.parse('invalid_type')).toThrow();
+      expect(() => schema.parse('')).toThrow();
     });
 
-    it('should accept all valid objectType enum values', () => {
+    it('should accept standard object types', () => {
       const schema = getManagedObjectTool.inputSchema.objectType;
-
       expect(() => schema.parse('alpha_user')).not.toThrow();
       expect(() => schema.parse('bravo_role')).not.toThrow();
-      expect(() => schema.parse('alpha_group')).not.toThrow();
-      expect(() => schema.parse('bravo_organization')).not.toThrow();
+    });
+
+    it('should accept any non-empty object type string', () => {
+      const schema = getManagedObjectTool.inputSchema.objectType;
+      expect(() => schema.parse('alpha_device')).not.toThrow();
+      expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
     it('should reject objectId with path traversal', () => {

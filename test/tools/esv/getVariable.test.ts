@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { getVariableTool } from '../../../src/tools/esv/getVariable.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('getVariable', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -29,7 +20,7 @@ describe('getVariable', () => {
         variableId: 'esv-api-key',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/environment/variables/esv-api-key',
         expect.any(Array),
         expect.any(Object)
@@ -41,7 +32,7 @@ describe('getVariable', () => {
         variableId: 'esv-api-key',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
         expect.objectContaining({
@@ -57,7 +48,7 @@ describe('getVariable', () => {
         variableId: 'esv-api-key',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idc:esv:read'],
         expect.any(Object)

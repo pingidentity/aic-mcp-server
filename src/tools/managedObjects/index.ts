@@ -1,4 +1,5 @@
 // Managed Object Tools - CRUD operations for users, roles, groups, and organizations
+export { listManagedObjectsTool } from './listManagedObjects.js';
 export { queryManagedObjectsTool } from './queryManagedObjects.js';
 export { getManagedObjectSchemaTool } from './getManagedObjectSchema.js';
 export { createManagedObjectTool } from './createManagedObject.js';

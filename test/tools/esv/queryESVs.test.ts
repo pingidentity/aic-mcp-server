@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { queryESVsTool } from '../../../src/tools/esv/queryESVs.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 
 describe('queryESVs', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -29,7 +20,7 @@ describe('queryESVs', () => {
         type: 'variable',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('https://test.forgeblocks.com/environment/variables'),
         expect.any(Array),
         expect.any(Object)
@@ -59,7 +50,7 @@ describe('queryESVs', () => {
         type: 'secret',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('https://test.forgeblocks.com/environment/secrets'),
         expect.any(Array),
         expect.any(Object)
@@ -72,7 +63,7 @@ describe('queryESVs', () => {
         queryTerm: 'api-key',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_queryFilter=%2F_id+co+%22api-key%22'),
         expect.any(Array),
         expect.any(Object)
@@ -84,7 +75,7 @@ describe('queryESVs', () => {
         type: 'variable',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_queryFilter=true'),
         expect.any(Array),
         expect.any(Object)
@@ -98,7 +89,7 @@ describe('queryESVs', () => {
       });
 
       // The escaped quote should be \\" which URL-encodes to %5C%22
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_queryFilter=%2F_id+co+%22test%5C%22injection%22'),
         expect.any(Array),
         expect.any(Object)
@@ -111,7 +102,7 @@ describe('queryESVs', () => {
         pageSize: 25,
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_pageSize=25'),
         expect.any(Array),
         expect.any(Object)
@@ -123,7 +114,7 @@ describe('queryESVs', () => {
         type: 'variable',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_pageSize=50'),
         expect.any(Array),
         expect.any(Object)
@@ -136,7 +127,7 @@ describe('queryESVs', () => {
         pageSize: 150,
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_pageSize=100'),
         expect.any(Array),
         expect.any(Object)
@@ -149,7 +140,7 @@ describe('queryESVs', () => {
         pagedResultsCookie: 'cookie-abc',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_pagedResultsCookie=cookie-abc'),
         expect.any(Array),
         expect.any(Object)
@@ -162,7 +153,7 @@ describe('queryESVs', () => {
         sortKeys: '_id,-lastChangeDate',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_sortKeys=_id%2C-lastChangeDate'),
         expect.any(Array),
         expect.any(Object)
@@ -174,7 +165,7 @@ describe('queryESVs', () => {
         type: 'variable',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
         expect.objectContaining({
@@ -190,7 +181,7 @@ describe('queryESVs', () => {
         type: 'variable',
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idc:esv:read'],
         expect.any(Object)

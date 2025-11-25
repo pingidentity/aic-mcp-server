@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { SUPPORTED_OBJECT_TYPES } from '../../config/managedObjectTypes.js';
+import { EXAMPLE_TYPES_STRING } from '../../config/managedObjectUtils.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -14,7 +14,9 @@ export const createManagedObjectTool = {
   description: 'Create a new managed object in PingOne AIC',
   scopes: SCOPES,
   inputSchema: {
-    objectType: z.enum(SUPPORTED_OBJECT_TYPES).describe('Managed object type'),
+    objectType: z.string().min(1).describe(
+      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+    ),
     objectData: z.record(z.any()).describe('JSON object containing object properties (must include all required fields from the schema)'),
   },
   async toolFunction({ objectType, objectData }: { objectType: string; objectData: Record<string, any> }) {

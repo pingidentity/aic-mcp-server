@@ -1,21 +1,12 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
+import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import * as apiHelpers from '../../../src/utils/apiHelpers.js';
 import { createThemeTool } from '../../../src/tools/themes/createTheme.js';
 
 describe('createTheme', () => {
-  let makeAuthenticatedRequestSpy: any;
-
-  beforeEach(() => {
-    process.env.AIC_BASE_URL = 'test.forgeblocks.com';
-    makeAuthenticatedRequestSpy = vi.spyOn(apiHelpers, 'makeAuthenticatedRequest');
-  });
-
-  afterEach(() => {
-    makeAuthenticatedRequestSpy.mockRestore();
-  });
+  const getSpy = setupTestEnvironment();
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
@@ -32,7 +23,7 @@ describe('createTheme', () => {
 
       // Our code pre-validates themeData before API call
       expect(result.content[0].text).toContain('Theme data must include a "name" property');
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should validate theme name is string type', async () => {
@@ -42,7 +33,7 @@ describe('createTheme', () => {
       });
 
       expect(result.content[0].text).toContain('Theme data must include a "name" property');
-      expect(makeAuthenticatedRequestSpy).not.toHaveBeenCalled();
+      expect(getSpy()).not.toHaveBeenCalled();
     });
 
     it('should fetch current theme config first', async () => {
@@ -66,7 +57,7 @@ describe('createTheme', () => {
       });
 
       // Our code GET config before creating
-      const calls = makeAuthenticatedRequestSpy.mock.calls;
+      const calls = getSpy().mock.calls;
       expect(calls.length).toBeGreaterThanOrEqual(1);
       expect(calls[0][0]).toContain('/openidm/config/ui/themerealm');
       // First call should not have method specified (defaults to GET)
@@ -340,7 +331,7 @@ describe('createTheme', () => {
       });
 
       // Our code sends full config back
-      const calls = makeAuthenticatedRequestSpy.mock.calls;
+      const calls = getSpy().mock.calls;
       // Should have 2 calls: GET then PUT
       expect(calls.length).toBe(2);
       // Second call should be PUT
@@ -375,7 +366,7 @@ describe('createTheme', () => {
         themeData: { name: 'NewTheme' },
       });
 
-      const calls = makeAuthenticatedRequestSpy.mock.calls;
+      const calls = getSpy().mock.calls;
       const putCall = calls.find((call: any) => call[2]?.method === 'PUT');
       expect(putCall).toBeDefined();
       expect(putCall[2].method).toBe('PUT');
@@ -387,7 +378,7 @@ describe('createTheme', () => {
         themeData: { name: 'NewTheme' },
       });
 
-      expect(makeAuthenticatedRequestSpy).toHaveBeenCalledWith(
+      expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idm:*'],
         expect.anything()
