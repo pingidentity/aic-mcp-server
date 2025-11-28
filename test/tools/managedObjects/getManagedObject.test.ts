@@ -15,28 +15,27 @@ describe('getManagedObject', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with objectType and objectId', async () => {
-      await getManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-      });
+    const requestCases = [
+      {
+        name: 'constructs URL with objectType and objectId',
+        input: { objectType: 'alpha_user', objectId: 'obj-123' },
+        assert: ({ url, scopes }: any) => {
+          expect(url).toBe('https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123');
+          expect(scopes).toEqual(['fr:idm:*']);
+        },
+      },
+      {
+        name: 'passes correct scopes to auth',
+        input: { objectType: 'alpha_user', objectId: 'obj-123' },
+        assert: ({ scopes }: any) => expect(scopes).toEqual(['fr:idm:*']),
+      },
+    ];
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        'https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123',
-        ['fr:idm:*']
-      );
-    });
+    it.each(requestCases)('$name', async ({ input, assert }) => {
+      await getManagedObjectTool.toolFunction(input as any);
 
-    it('should pass correct scopes to auth', async () => {
-      await getManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idm:*']
-      );
+      const [url, scopes] = getSpy().mock.calls.at(-1)!;
+      assert({ url, scopes });
     });
   });
 
@@ -95,48 +94,25 @@ describe('getManagedObject', () => {
       expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
-    it('should reject objectId with path traversal', () => {
+    it.each([
+      { name: 'rejects path traversal ../../../etc/passwd', value: '../../../etc/passwd', matcher: /path traversal/ },
+      { name: 'rejects path traversal ../../admin', value: '../../admin', matcher: /path traversal/ },
+      { name: 'rejects path traversal obj/../admin', value: 'obj/../admin', matcher: /path traversal/ },
+      { name: 'rejects forward slash obj/123', value: 'obj/123', matcher: /path traversal/ },
+      { name: 'rejects absolute path /etc/passwd', value: '/etc/passwd', matcher: /path traversal/ },
+      { name: 'rejects forward traversal obj/../../admin', value: 'obj/../../admin', matcher: /path traversal/ },
+      { name: 'rejects backslash obj\\123', value: 'obj\\123', matcher: /path traversal/ },
+      { name: 'rejects backslash obj\\..\\admin', value: 'obj\\..\\admin', matcher: /path traversal/ },
+      { name: 'rejects backslash ..\\..\\admin', value: '..\\..\\admin', matcher: /path traversal/ },
+      { name: 'rejects URL-encoded obj%2e%2e', value: 'obj%2e%2e', matcher: /path traversal/ },
+      { name: 'rejects URL-encoded %2e%2e%2fadmin', value: '%2e%2e%2fadmin', matcher: /path traversal/ },
+      { name: 'rejects URL-encoded obj%2f123', value: 'obj%2f123', matcher: /path traversal/ },
+      { name: 'rejects URL-encoded obj%5c123', value: 'obj%5c123', matcher: /path traversal/ },
+      { name: 'rejects empty objectId', value: '', matcher: /cannot be empty/ },
+      { name: 'rejects whitespace objectId', value: '   ', matcher: /cannot be empty or whitespace/ },
+    ])('$name', ({ value, matcher }) => {
       const schema = getManagedObjectTool.inputSchema.objectId;
-
-      // Test various path traversal patterns
-      expect(() => schema.parse('../../../etc/passwd')).toThrow(/path traversal/);
-      expect(() => schema.parse('../../admin')).toThrow(/path traversal/);
-      expect(() => schema.parse('obj/../admin')).toThrow(/path traversal/);
-    });
-
-    it('should reject objectId with forward slash', () => {
-      const schema = getManagedObjectTool.inputSchema.objectId;
-
-      // Forward slash can be used for path traversal
-      expect(() => schema.parse('obj/123')).toThrow(/path traversal/);
-      expect(() => schema.parse('/etc/passwd')).toThrow(/path traversal/);
-      expect(() => schema.parse('obj/../../admin')).toThrow(/path traversal/);
-    });
-
-    it('should reject objectId with backslash', () => {
-      const schema = getManagedObjectTool.inputSchema.objectId;
-
-      // Backslash can be used for path traversal on Windows
-      expect(() => schema.parse('obj\\123')).toThrow(/path traversal/);
-      expect(() => schema.parse('obj\\..\\admin')).toThrow(/path traversal/);
-      expect(() => schema.parse('..\\..\\admin')).toThrow(/path traversal/);
-    });
-
-    it('should reject URL-encoded path traversal', () => {
-      const schema = getManagedObjectTool.inputSchema.objectId;
-
-      // URL-encoded variants should also be rejected
-      expect(() => schema.parse('obj%2e%2e')).toThrow(/path traversal/);
-      expect(() => schema.parse('%2e%2e%2fadmin')).toThrow(/path traversal/);
-      expect(() => schema.parse('obj%2f123')).toThrow(/path traversal/);
-      expect(() => schema.parse('obj%5c123')).toThrow(/path traversal/);
-    });
-
-    it('should reject empty objectId', () => {
-      const schema = getManagedObjectTool.inputSchema.objectId;
-
-      expect(() => schema.parse('')).toThrow(/cannot be empty/);
-      expect(() => schema.parse('   ')).toThrow(/cannot be empty or whitespace/);
+      expect(() => schema.parse(value)).toThrow(matcher);
     });
 
     it('should accept valid objectId', () => {
@@ -151,42 +127,33 @@ describe('getManagedObject', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'handles 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Invalid token' },
+        matcher: /401|[Uu]nauthorized/,
+      },
+      {
+        name: 'handles 404 Not Found error',
+        status: 404,
+        body: { error: 'not_found', message: 'Object does not exist' },
+        matcher: /404|[Nn]ot [Ff]ound/,
+      },
+    ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.get('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid token' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
       const result = await getManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectId: 'obj-123',
+        objectId: status === 404 ? 'nonexistent' : 'obj-123',
       });
 
       expect(result.content[0].text).toContain('Failed to retrieve managed object');
-      expect(result.content[0].text).toMatch(/401|[Uu]nauthorized/);
-    });
-
-    it('should handle 404 Not Found error', async () => {
-      server.use(
-        http.get('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'not_found', message: 'Object does not exist' }),
-            { status: 404 }
-          );
-        })
-      );
-
-      const result = await getManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'nonexistent',
-      });
-
-      expect(result.content[0].text).toContain('Failed to retrieve managed object');
-      expect(result.content[0].text).toMatch(/404|[Nn]ot [Ff]ound/);
+      expect(result.content[0].text).toMatch(matcher);
     });
   });
 });

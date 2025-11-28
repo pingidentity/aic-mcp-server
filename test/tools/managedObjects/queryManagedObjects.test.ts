@@ -15,130 +15,72 @@ describe('queryManagedObjects', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with objectType in path', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-      });
+    it.each([
+      {
+        name: 'should include objectType in URL path',
+        input: { objectType: 'alpha_user' },
+        expected: '/openidm/managed/alpha_user',
+      },
+      {
+        name: 'should encode queryFilter parameter',
+        input: { objectType: 'alpha_user', queryFilter: 'userName sw "test"' },
+        expected: '_queryFilter=userName+sw+%22test%22',
+      },
+      {
+        name: 'should default queryFilter to "true"',
+        input: { objectType: 'alpha_user' },
+        expected: '_queryFilter=true',
+      },
+      {
+        name: 'should use provided pageSize',
+        input: { objectType: 'alpha_user', pageSize: 10 },
+        expected: '_pageSize=10',
+      },
+      {
+        name: 'should default pageSize to 50',
+        input: { objectType: 'alpha_user' },
+        expected: '_pageSize=50',
+      },
+      {
+        name: 'should clamp pageSize to maximum 250',
+        input: { objectType: 'alpha_user', pageSize: 500 },
+        expected: '_pageSize=250',
+      },
+      {
+        name: 'should include pagedResultsCookie',
+        input: { objectType: 'alpha_user', pagedResultsCookie: 'cookie123' },
+        expected: '_pagedResultsCookie=cookie123',
+      },
+      {
+        name: 'should encode sortKeys',
+        input: { objectType: 'alpha_user', sortKeys: 'userName,-givenName' },
+        expected: '_sortKeys=userName%2C-givenName',
+      },
+      {
+        name: 'should encode fields',
+        input: { objectType: 'alpha_user', fields: 'userName,mail' },
+        expected: '_fields=userName%2Cmail',
+      },
+      {
+        name: 'should always include totalPagedResultsPolicy',
+        input: { objectType: 'alpha_user' },
+        expected: '_totalPagedResultsPolicy=EXACT',
+      },
+    ])('$name', async ({ input, expected }) => {
+      await queryManagedObjectsTool.toolFunction(input as any);
 
       expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('/openidm/managed/alpha_user'),
-        expect.any(Array)
-      );
-    });
-
-    it('should construct URL with queryFilter parameter', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-        queryFilter: 'userName sw "test"',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_queryFilter=userName+sw+%22test%22'),
-        expect.any(Array)
-      );
-    });
-
-    it('should default queryFilter to "true" when omitted', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_queryFilter=true'),
-        expect.any(Array)
-      );
-    });
-
-    it('should construct URL with pageSize parameter', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-        pageSize: 10,
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pageSize=10'),
-        expect.any(Array)
-      );
-    });
-
-    it('should default pageSize to 50 when omitted', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pageSize=50'),
-        expect.any(Array)
-      );
-    });
-
-    it('should clamp pageSize to maximum 250', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-        pageSize: 500,
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pageSize=250'),
-        expect.any(Array)
-      );
-    });
-
-    it('should construct URL with pagedResultsCookie', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-        pagedResultsCookie: 'cookie123',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pagedResultsCookie=cookie123'),
-        expect.any(Array)
-      );
-    });
-
-    it('should construct URL with sortKeys', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-        sortKeys: 'userName,-givenName',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_sortKeys=userName%2C-givenName'),
-        expect.any(Array)
-      );
-    });
-
-    it('should construct URL with fields', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-        fields: 'userName,mail',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_fields=userName%2Cmail'),
-        expect.any(Array)
-      );
-    });
-
-    it('should always add totalPagedResultsPolicy', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_totalPagedResultsPolicy=EXACT'),
+        expect.stringContaining(expected),
         expect.any(Array)
       );
     });
 
     it('should pass correct scopes to auth', async () => {
-      await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-      });
+      await queryManagedObjectsTool.toolFunction({ objectType: 'alpha_user' });
 
       expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
-        ['fr:idm:*'],
+        ['fr:idm:*']
       );
     });
   });
@@ -239,13 +181,29 @@ describe('queryManagedObjects', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'should handle 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Invalid credentials' },
+        matcher: /401/,
+      },
+      {
+        name: 'should handle 400 Bad Request error',
+        status: 400,
+        body: { error: 'bad_request', message: 'Invalid query filter syntax' },
+        matcher: /Invalid query filter syntax/,
+      },
+      {
+        name: 'should handle 500 Internal Server Error',
+        status: 500,
+        body: { error: 'internal_error' },
+        matcher: /alpha_user/,
+      },
+    ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.get('https://*/openidm/managed/:objectType', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
@@ -253,25 +211,7 @@ describe('queryManagedObjects', () => {
         objectType: 'alpha_user',
       });
 
-      expect(result.content[0].text).toContain('401');
-    });
-
-    it('should handle 400 Bad Request error', async () => {
-      server.use(
-        http.get('https://*/openidm/managed/:objectType', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'bad_request', message: 'Invalid query filter syntax' }),
-            { status: 400 }
-          );
-        })
-      );
-
-      const result = await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-        queryFilter: 'invalid syntax',
-      });
-
-      expect(result.content[0].text).toContain('Invalid query filter syntax');
+      expect(result.content[0].text).toMatch(matcher);
     });
 
     it('should handle network/fetch error', async () => {
@@ -286,23 +226,6 @@ describe('queryManagedObjects', () => {
       });
 
       expect(result.content[0].text).toMatch(/Failed to query alpha_user/i);
-    });
-
-    it('should include objectType in error message for context', async () => {
-      server.use(
-        http.get('https://*/openidm/managed/:objectType', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'internal_error' }),
-            { status: 500 }
-          );
-        })
-      );
-
-      const result = await queryManagedObjectsTool.toolFunction({
-        objectType: 'alpha_user',
-      });
-
-      expect(result.content[0].text).toContain('alpha_user');
     });
   });
 });

@@ -15,20 +15,11 @@ describe('getLogSources', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct correct URL', async () => {
+    it('should build request with URL and scopes', async () => {
       await getLogSourcesTool.toolFunction();
 
       expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/monitoring/logs/sources',
-        expect.any(Array)
-      );
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await getLogSourcesTool.toolFunction();
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
         ['fr:idc:monitoring:*']
       );
     });
@@ -69,28 +60,21 @@ describe('getLogSources', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'should handle 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Invalid credentials' },
+      },
+      {
+        name: 'should handle 500 Internal Server Error',
+        status: 500,
+        body: { error: 'internal_error', message: 'Server error' },
+      },
+    ])('$name', async ({ status, body }) => {
       server.use(
         http.get('https://*/monitoring/logs/sources', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }),
-            { status: 401 }
-          );
-        })
-      );
-
-      const result = await getLogSourcesTool.toolFunction();
-
-      expect(result.content[0].text).toContain('Failed to fetch log sources');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      server.use(
-        http.get('https://*/monitoring/logs/sources', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'internal_error', message: 'Server error' }),
-            { status: 500 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 

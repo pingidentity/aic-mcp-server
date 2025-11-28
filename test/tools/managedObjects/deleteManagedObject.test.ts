@@ -15,43 +15,31 @@ describe('deleteManagedObject', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with objectType and objectId', async () => {
-      await deleteManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-      });
+    const requestCases = [
+      {
+        name: 'constructs URL with objectType and objectId',
+        input: { objectType: 'alpha_user', objectId: 'obj-123' },
+        assert: ({ url, scopes, options }: any) => {
+          expect(url).toBe('https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123');
+          expect(scopes).toEqual(['fr:idm:*']);
+          expect(options).toEqual(expect.objectContaining({ method: 'DELETE' }));
+        },
+      },
+      {
+        name: 'uses DELETE method and scopes',
+        input: { objectType: 'alpha_user', objectId: 'obj-123' },
+        assert: ({ scopes, options }: any) => {
+          expect(scopes).toEqual(['fr:idm:*']);
+          expect(options).toEqual(expect.objectContaining({ method: 'DELETE' }));
+        },
+      },
+    ];
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        'https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123',
-        ['fr:idm:*'],
-        expect.objectContaining({ method: 'DELETE' })
-      );
-    });
+    it.each(requestCases)('$name', async ({ input, assert }) => {
+      await deleteManagedObjectTool.toolFunction(input as any);
 
-    it('should use DELETE method', async () => {
-      await deleteManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
-        expect.objectContaining({ method: 'DELETE' })
-      );
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await deleteManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idm:*'],
-        expect.any(Object)
-      );
+      const [url, scopes, options] = getSpy().mock.calls.at(-1)!;
+      assert({ url, scopes, options });
     });
   });
 
@@ -106,32 +94,43 @@ describe('deleteManagedObject', () => {
       expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
-    it('should reject objectId with path traversal', () => {
+    it.each([
+      { name: 'rejects path traversal ../../etc/passwd', value: '../../etc/passwd', matcher: /path traversal/ },
+      { name: 'rejects path traversal ../../../admin', value: '../../../admin', matcher: /path traversal/ },
+      { name: 'rejects path traversal obj/../admin', value: 'obj/../admin', matcher: /path traversal/ },
+      { name: 'rejects empty objectId', value: '', matcher: /cannot be empty/ },
+      { name: 'rejects whitespace objectId', value: '   ', matcher: /cannot be empty or whitespace/ },
+    ])('$name', ({ value, matcher }) => {
       const schema = deleteManagedObjectTool.inputSchema.objectId;
-
-      // Test various path traversal patterns
-      expect(() => schema.parse('../../etc/passwd')).toThrow(/path traversal/);
-      expect(() => schema.parse('../../../admin')).toThrow(/path traversal/);
-      expect(() => schema.parse('obj/../admin')).toThrow(/path traversal/);
-    });
-
-    it('should reject empty objectId', () => {
-      const schema = deleteManagedObjectTool.inputSchema.objectId;
-
-      expect(() => schema.parse('')).toThrow(/cannot be empty/);
-      expect(() => schema.parse('   ')).toThrow(/cannot be empty or whitespace/);
+      expect(() => schema.parse(value)).toThrow(matcher);
     });
   });
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'handles 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Invalid token' },
+        matcher: /401|[Uu]nauthorized/,
+      },
+      {
+        name: 'handles 404 Not Found error',
+        status: 404,
+        body: { error: 'not_found', message: 'Object does not exist' },
+        matcher: /404|[Nn]ot [Ff]ound/,
+      },
+      {
+        name: 'handles 403 Forbidden error',
+        status: 403,
+        body: { error: 'forbidden', message: 'Insufficient permissions' },
+        matcher: /403|[Ff]orbidden/,
+      },
+    ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.delete('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid token' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
@@ -141,45 +140,7 @@ describe('deleteManagedObject', () => {
       });
 
       expect(result.content[0].text).toContain('Failed to delete managed object');
-      expect(result.content[0].text).toMatch(/401|[Uu]nauthorized/);
-    });
-
-    it('should handle 404 Not Found error', async () => {
-      server.use(
-        http.delete('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'not_found', message: 'Object does not exist' }),
-            { status: 404 }
-          );
-        })
-      );
-
-      const result = await deleteManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'nonexistent',
-      });
-
-      expect(result.content[0].text).toContain('Failed to delete managed object');
-      expect(result.content[0].text).toMatch(/404|[Nn]ot [Ff]ound/);
-    });
-
-    it('should handle 403 Forbidden error', async () => {
-      server.use(
-        http.delete('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'forbidden', message: 'Insufficient permissions' }),
-            { status: 403 }
-          );
-        })
-      );
-
-      const result = await deleteManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-      });
-
-      expect(result.content[0].text).toContain('Failed to delete managed object');
-      expect(result.content[0].text).toMatch(/403|[Ff]orbidden/);
+      expect(result.content[0].text).toMatch(matcher);
     });
   });
 });

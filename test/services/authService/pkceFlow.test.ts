@@ -5,42 +5,20 @@ import {
   setupAuthServiceTest,
   MOCK_TOKEN_RESPONSE,
 } from '../../helpers/authServiceTestHelper.js';
+import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
 // Track mock storage instance
 let mockStorage: any;
+const getStorage = () => {
+  const storage = getMockStorage();
+  if (!storage) {
+    throw new Error('MockStorage instance not initialized');
+  }
+  return storage;
+};
 
 // Use vi.hoisted() to ensure mocks are created before imports
-const { MockStorage } = vi.hoisted(() => {
-  class MockStorage {
-    private mockGetToken = vi.fn();
-    private mockSetToken = vi.fn();
-    private mockDeleteToken = vi.fn();
-
-    constructor() {
-      // Store reference to instance so tests can configure it
-      mockStorage = this;
-    }
-
-    async getToken() {
-      return this.mockGetToken();
-    }
-
-    async setToken(tokenData: any) {
-      return this.mockSetToken(tokenData);
-    }
-
-    async deleteToken() {
-      return this.mockDeleteToken();
-    }
-
-    // Test helper methods
-    _mockGetToken() { return this.mockGetToken; }
-    _mockSetToken() { return this.mockSetToken; }
-    _mockDeleteToken() { return this.mockDeleteToken; }
-  }
-
-  return { MockStorage };
-});
+const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi);
 
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
@@ -92,6 +70,7 @@ describe('AuthService PKCE Flow', () => {
     vi.resetModules();
 
     // Mock storage to return null (no cached token)
+    mockStorage = getMockStorage();
     if (mockStorage) {
       // Reset spy calls between tests
       mockStorage._mockGetToken().mockReset();
@@ -419,7 +398,8 @@ describe('AuthService PKCE Flow', () => {
       await tokenPromise;
 
       // Verify token was stored with correct values
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith(
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
           accessToken: 'custom-access-token',
         })
@@ -469,7 +449,8 @@ describe('AuthService PKCE Flow', () => {
 
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledTimes(1);
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledTimes(1);
     });
 
     it('should store token with accessToken, expiresAt, and aicBaseUrl', async () => {
@@ -494,7 +475,8 @@ describe('AuthService PKCE Flow', () => {
 
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith({
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith({
         accessToken: MOCK_TOKEN_RESPONSE.access_token,
         expiresAt: mockNow + (MOCK_TOKEN_RESPONSE.expires_in * 1000),
         aicBaseUrl: 'test.forgeblocks.com',
@@ -529,7 +511,8 @@ describe('AuthService PKCE Flow', () => {
 
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith(
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
           expiresAt: mockNow + 7200000, // 2 hours in milliseconds
         })
@@ -639,43 +622,59 @@ describe('AuthService PKCE Flow', () => {
       expect(mockServerInstance.close).toHaveBeenCalled();
     });
 
-    it('should close server on error (no code parameter)', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      // Simulate redirect without code parameter
-      const mockReq = { url: 'http://localhost:3000?error=access_denied' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
-      await expect(tokenPromise).rejects.toThrow('Authorization code not found in redirect.');
-      expect(mockServerInstance.close).toHaveBeenCalled();
-    });
-
-    it('should close server on server error', async () => {
+    it.each([
+      {
+        name: 'should close server on error (no code parameter)',
+        trigger: async (tokenPromise: Promise<any>) => {
+          const mockReq = { url: 'http://localhost:3000?error=access_denied' };
+          const mockRes = { end: vi.fn() };
+          mockRequestHandler(mockReq, mockRes);
+          await expect(tokenPromise).rejects.toThrow('Authorization code not found in redirect.');
+        },
+        expectClose: true,
+      },
+      {
+        name: 'should close server on server error',
+        setupErrorHandler: true,
+        trigger: async (_: Promise<any>, errorHandler: any) => {
+          errorHandler(new Error('Port already in use'));
+        },
+        expectedMessage: 'Port already in use',
+        expectClose: true,
+      },
+      {
+        name: 'should propagate server errors',
+        setupErrorHandler: true,
+        trigger: async (_: Promise<any>, errorHandler: any) => {
+          errorHandler(new Error('Server startup failed'));
+        },
+        expectedMessage: 'Server startup failed',
+        expectClose: false,
+      },
+    ])('$name', async ({ setupErrorHandler, trigger, expectedMessage, expectClose }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});
 
       let errorHandler: any = null;
-
-      mockServerInstance.on.mockImplementation((event: string, handler: any) => {
-        if (event === 'error') {
-          errorHandler = handler;
-        }
-      });
+      if (setupErrorHandler) {
+        mockServerInstance.on.mockImplementation((event: string, handler: any) => {
+          if (event === 'error') {
+            errorHandler = handler;
+          }
+        });
+      }
 
       const tokenPromise = getAuthService().getToken(['fr:idm:*']);
       await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
 
-      // Trigger server error
-      expect(errorHandler).toBeDefined();
-      errorHandler(new Error('Port already in use'));
+      await trigger(tokenPromise, errorHandler);
 
-      await expect(tokenPromise).rejects.toThrow('Port already in use');
-      expect(mockServerInstance.close).toHaveBeenCalled();
+      if (expectedMessage) {
+        await expect(tokenPromise).rejects.toThrow(expectedMessage);
+      }
+      if (expectClose) {
+        expect(mockServerInstance.close).toHaveBeenCalled();
+      }
     });
 
     it('should clear redirectServer reference after completion', async () => {
@@ -704,26 +703,6 @@ describe('AuthService PKCE Flow', () => {
   });
 
   describe('Error Handling', () => {
-    it('should propagate server errors', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
-      let errorHandler: any = null;
-
-      mockServerInstance.on.mockImplementation((event: string, handler: any) => {
-        if (event === 'error') {
-          errorHandler = handler;
-        }
-      });
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      errorHandler(new Error('Server startup failed'));
-
-      await expect(tokenPromise).rejects.toThrow('Server startup failed');
-    });
-
     it('should propagate token exchange errors', async () => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});

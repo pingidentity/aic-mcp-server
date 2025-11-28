@@ -15,24 +15,13 @@ describe('getManagedObjectSchema', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct correct URL', async () => {
+    it('should build request with URL and scopes', async () => {
       await getManagedObjectSchemaTool.toolFunction({
         objectType: 'alpha_user',
       });
 
       expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/openidm/config/managed',
-        expect.any(Array)
-      );
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
         ['fr:idm:*']
       );
     });
@@ -236,13 +225,23 @@ describe('getManagedObjectSchema', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'should handle 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Token expired' },
+        matcher: /401|unauthorized/i,
+      },
+      {
+        name: 'should handle 500 Internal Server Error',
+        status: 500,
+        body: { error: 'internal_error', message: 'Server error' },
+        matcher: /500|internal_error/i,
+      },
+    ])('$name', async ({ status, body, matcher }) => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Token expired' }),
-            { status: 401 }
-          );
+        http.get('https://*/openidm/config/managed', () => {
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
@@ -252,26 +251,7 @@ describe('getManagedObjectSchema', () => {
 
       const resultText = result.content[0].text;
       expect(resultText).toContain('Failed to retrieve managed object schema');
-      expect(resultText).toMatch(/401|unauthorized/i);
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'internal_error', message: 'Server error' }),
-            { status: 500 }
-          );
-        })
-      );
-
-      const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
-      });
-
-      const resultText = result.content[0].text;
-      expect(resultText).toContain('Failed to retrieve managed object schema');
-      expect(resultText).toMatch(/500|internal_error/i);
+      expect(resultText).toMatch(matcher);
     });
   });
 });

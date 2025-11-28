@@ -15,46 +15,33 @@ describe('createManagedObject', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with objectType and action', async () => {
-      await createManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectData: { userName: 'test' },
-      });
+    const requestCases = [
+      {
+        name: 'constructs URL with objectType and action',
+        input: { objectType: 'alpha_user', objectData: { userName: 'test' } },
+        assert: ({ url }: any) =>
+          expect(url).toBe('https://test.forgeblocks.com/openidm/managed/alpha_user?_action=create'),
+      },
+      {
+        name: 'sends objectData in request body',
+        input: { objectType: 'alpha_user', objectData: { userName: 'test', mail: 'test@example.com' } },
+        assert: ({ options }: any) => {
+          const requestBody = JSON.parse(options.body);
+          expect(requestBody).toEqual({ userName: 'test', mail: 'test@example.com' });
+        },
+      },
+      {
+        name: 'passes correct scopes to auth',
+        input: { objectType: 'alpha_user', objectData: { userName: 'test' } },
+        assert: ({ scopes }: any) => expect(scopes).toEqual(['fr:idm:*']),
+      },
+    ];
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        'https://test.forgeblocks.com/openidm/managed/alpha_user?_action=create',
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
+    it.each(requestCases)('$name', async ({ input, assert }) => {
+      await createManagedObjectTool.toolFunction(input as any);
 
-    it('should send objectData in request body', async () => {
-      await createManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectData: { userName: 'test', mail: 'test@example.com' },
-      });
-
-      const callArgs = getSpy().mock.calls[0];
-      const requestOptions = callArgs[2];
-      const requestBody = JSON.parse(requestOptions.body);
-
-      expect(requestBody).toEqual({
-        userName: 'test',
-        mail: 'test@example.com',
-      });
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await createManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectData: { userName: 'test' },
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idm:*'],
-        expect.any(Object)
-      );
+      const [url, scopes, options] = getSpy().mock.calls.at(-1)!;
+      assert({ url, scopes, options });
     });
   });
 
@@ -135,13 +122,29 @@ describe('createManagedObject', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'handles 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Invalid token' },
+        matcher: /401|[Uu]nauthorized/,
+      },
+      {
+        name: 'handles 400 Bad Request error',
+        status: 400,
+        body: { error: 'bad_request', message: 'Missing required field: userName' },
+        matcher: /400|[Bb]ad [Rr]equest|Missing required field/,
+      },
+      {
+        name: 'handles 409 Conflict error',
+        status: 409,
+        body: { error: 'conflict', message: 'Object with userName "existing" already exists' },
+        matcher: /409|[Cc]onflict/,
+      },
+    ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.post('https://*/openidm/managed/:objectType', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid token' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
@@ -151,51 +154,7 @@ describe('createManagedObject', () => {
       });
 
       expect(result.content[0].text).toContain('Failed to create managed object');
-      expect(result.content[0].text).toMatch(/401|[Uu]nauthorized/);
-    });
-
-    it('should handle 400 Bad Request error', async () => {
-      server.use(
-        http.post('https://*/openidm/managed/:objectType', () => {
-          return new HttpResponse(
-            JSON.stringify({
-              error: 'bad_request',
-              message: 'Missing required field: userName'
-            }),
-            { status: 400 }
-          );
-        })
-      );
-
-      const result = await createManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectData: {}, // Missing required userName
-      });
-
-      expect(result.content[0].text).toContain('Failed to create managed object');
-      expect(result.content[0].text).toMatch(/400|[Bb]ad [Rr]equest|Missing required field/);
-    });
-
-    it('should handle 409 Conflict error', async () => {
-      server.use(
-        http.post('https://*/openidm/managed/:objectType', () => {
-          return new HttpResponse(
-            JSON.stringify({
-              error: 'conflict',
-              message: 'Object with userName "existing" already exists'
-            }),
-            { status: 409 }
-          );
-        })
-      );
-
-      const result = await createManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectData: { userName: 'existing' },
-      });
-
-      expect(result.content[0].text).toContain('Failed to create managed object');
-      expect(result.content[0].text).toMatch(/409|[Cc]onflict/);
+      expect(result.content[0].text).toMatch(matcher);
     });
   });
 });
