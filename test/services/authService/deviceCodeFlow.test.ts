@@ -1,0 +1,874 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { server } from '../../setup.js';
+import { http, HttpResponse } from 'msw';
+import {
+  createMockMcpServer,
+  setupAuthServiceTest,
+  MOCK_DEVICE_CODE_RESPONSE,
+  MOCK_TOKEN_RESPONSE,
+} from '../../helpers/authServiceTestHelper.js';
+
+// Track mock storage instance
+let mockStorage: any;
+
+// Use vi.hoisted() to ensure mocks are created before imports
+const { MockStorage } = vi.hoisted(() => {
+  class MockStorage {
+    private mockGetToken = vi.fn();
+    private mockSetToken = vi.fn();
+    private mockDeleteToken = vi.fn();
+
+    constructor() {
+      // Store reference to instance so tests can configure it
+      mockStorage = this;
+    }
+
+    async getToken() {
+      return this.mockGetToken();
+    }
+
+    async setToken(tokenData: any) {
+      return this.mockSetToken(tokenData);
+    }
+
+    async deleteToken() {
+      return this.mockDeleteToken();
+    }
+
+    // Test helper methods
+    _mockGetToken() { return this.mockGetToken; }
+    _mockSetToken() { return this.mockSetToken; }
+    _mockDeleteToken() { return this.mockDeleteToken; }
+  }
+
+  return { MockStorage };
+});
+
+// Mock tokenStorage module to use our mock implementation
+vi.mock('../../../src/services/tokenStorage.js', () => ({
+  FileStorage: MockStorage,
+  KeychainStorage: MockStorage,
+}));
+
+// Mock 'open' to prevent browser launching during tests
+vi.mock('open', () => ({
+  default: vi.fn().mockResolvedValue(undefined),
+}));
+
+/**
+ * Tests for AuthService OAuth 2.0 Device Code Flow (RFC 8628)
+ *
+ * Tests the device code flow implementation in executeDeviceFlow(), including:
+ * - Device code request with PKCE
+ * - MCP form elicitation
+ * - User cancellation handling
+ * - Token polling logic
+ * - Token storage after successful authentication
+ * - Completion notification
+ */
+describe('AuthService Device Code Flow', () => {
+  setupAuthServiceTest();
+
+  let mockMcpServer: ReturnType<typeof createMockMcpServer>;
+
+  beforeEach(async () => {
+    // Set container mode
+    process.env.DOCKER_CONTAINER = 'true';
+
+    // Reset modules to clear singleton instance
+    vi.resetModules();
+
+    // Create fresh mock MCP server
+    mockMcpServer = createMockMcpServer();
+
+    // Mock storage to return null (no cached token)
+    if (mockStorage) {
+      // Reset spy calls between tests
+      mockStorage._mockGetToken().mockReset();
+      mockStorage._mockSetToken().mockReset();
+      mockStorage._mockDeleteToken().mockReset();
+
+      mockStorage._mockGetToken().mockResolvedValue(null);
+      mockStorage._mockSetToken().mockResolvedValue(undefined);
+    }
+
+    // Use fake timers for polling intervals
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  describe('Device Code Request', () => {
+    it('should POST to /am/oauth2/device/code with correct parameters and PKCE challenge', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      let capturedRequest: Request | undefined;
+      let codeChallenge: string | null = null;
+
+      // Mock device code endpoint
+      server.use(
+        http.post('https://*/am/oauth2/device/code', async ({ request }) => {
+          capturedRequest = request.clone();
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+          codeChallenge = params.get('code_challenge');
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      // Start the flow (don't await yet - we need to advance timers)
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+
+      // Wait for elicitation to complete
+      await vi.waitFor(() => {
+        expect(mockMcpServer.server.elicitInput).toHaveBeenCalled();
+      });
+
+      // Advance timer for polling interval
+      await vi.advanceTimersByTimeAsync(5000);
+
+      // Wait for completion
+      await tokenPromise;
+
+      // Verify request was made
+      expect(capturedRequest).toBeDefined();
+
+      // Parse request body
+      const body = await capturedRequest!.text();
+      const params = new URLSearchParams(body);
+
+      // Verify parameters
+      expect(params.get('client_id')).toBe('AICMCPClient');
+      expect(params.get('scope')).toBe('fr:idm:*');
+      expect(params.get('code_challenge')).toBeTruthy();
+      expect(params.get('code_challenge_method')).toBe('S256');
+      // PKCE challenge should be a non-empty base64url string
+      expect(codeChallenge).toBeTruthy();
+      expect(typeof codeChallenge).toBe('string');
+      expect(codeChallenge!.length).toBeGreaterThan(0);
+    });
+
+    it('should throw error when device code request fails', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      // Mock device code endpoint to return error
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return new HttpResponse('Invalid client', { status: 400 });
+        })
+      );
+
+      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(
+        'Device code request failed (400 Bad Request): Invalid client'
+      );
+    });
+  });
+
+  describe('MCP Form Elicitation', () => {
+    it('should call mcpServer.server.elicitInput() with expected payload', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      expect(mockMcpServer.server.elicitInput).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mode: 'form',
+          message: expect.stringContaining(MOCK_DEVICE_CODE_RESPONSE.verification_uri_complete),
+          requestedSchema: {
+            type: 'object',
+            properties: {},
+            required: []
+          },
+          elicitationId: expect.stringMatching(/^[0-9a-f-]{36}$/i) // UUID format
+        })
+      );
+    });
+
+    it('should throw error when mcpServer is not provided', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      // Initialize without mcpServer
+      initAuthService(['fr:idm:*'], {});
+
+      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(
+        'MCP server reference required for device code flow. Pass mcpServer in AuthServiceConfig.'
+      );
+    });
+  });
+
+  describe('User Cancellation', () => {
+    it('should throw error when user cancels (action !== "accept")', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+
+      // Mock elicitInput to return cancel action
+      const cancelMcpServer = createMockMcpServer();
+      cancelMcpServer.server.elicitInput.mockResolvedValue({ action: 'cancel' });
+
+      initAuthService(['fr:idm:*'], { mcpServer: cancelMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        })
+      );
+
+      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(
+        'User cancelled authentication (action: cancel)'
+      );
+    });
+
+    it('should not start polling when user cancels', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+
+      const cancelMcpServer = createMockMcpServer();
+      cancelMcpServer.server.elicitInput.mockResolvedValue({ action: 'cancel' });
+
+      initAuthService(['fr:idm:*'], { mcpServer: cancelMcpServer });
+
+      let pollingAttempted = false;
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          pollingAttempted = true;
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      try {
+        await getAuthService().getToken(['fr:idm:*']);
+      } catch {
+        // Expected to throw
+      }
+
+      // Token endpoint should NOT have been called
+      expect(pollingAttempted).toBe(false);
+    });
+  });
+
+  describe('Token Polling', () => {
+    it('should wait for interval before first poll', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      let pollAttempted = false;
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          pollAttempted = true;
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+
+      // Wait for elicitation
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+
+      // Poll should NOT have happened yet
+      expect(pollAttempted).toBe(false);
+
+      // Advance by the interval
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      // Now poll should have happened
+      expect(pollAttempted).toBe(true);
+    });
+
+    it('should include device_code, client_id, and code_verifier in poll request', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      let capturedParams: URLSearchParams | undefined;
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const bodyText = await request.text();
+          const params = new URLSearchParams(bodyText);
+
+          // Only capture device code grant requests (not token exchange)
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            capturedParams = params;
+            return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+          }
+
+          // Token exchange
+          return HttpResponse.json({
+            access_token: 'mock-scoped-token',
+            expires_in: 3600,
+            token_type: 'Bearer',
+          });
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      expect(capturedParams).toBeDefined();
+
+      expect(capturedParams!.get('grant_type')).toBe('urn:ietf:params:oauth:grant-type:device_code');
+      expect(capturedParams!.get('device_code')).toBe(MOCK_DEVICE_CODE_RESPONSE.device_code);
+      expect(capturedParams!.get('client_id')).toBe('AICMCPClient');
+      expect(capturedParams!.get('code_verifier')).toBeTruthy(); // PKCE verifier should be present
+    });
+
+    it('should continue polling when receiving authorization_pending error', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      let pollCount = 0;
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+
+          // Only count device code polls
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            pollCount++;
+
+            // First poll returns pending
+            if (pollCount === 1) {
+              return HttpResponse.json(
+                { error: 'authorization_pending', error_description: 'User has not completed authentication' },
+                { status: 400 }
+              );
+            }
+
+            // Second poll succeeds
+            return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+          }
+
+          // Token exchange
+          return HttpResponse.json({
+            access_token: 'mock-scoped-token',
+            expires_in: 3600,
+            token_type: 'Bearer',
+          });
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+
+      // First poll (pending)
+      await vi.advanceTimersByTimeAsync(5000);
+
+      // Second poll (success)
+      await vi.advanceTimersByTimeAsync(5000);
+
+      await tokenPromise;
+
+      // Should have polled twice
+      expect(pollCount).toBe(2);
+    });
+
+    it('should throw error for non-pending errors', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            return HttpResponse.json(
+              { error: 'access_denied', error_description: 'User denied authorization' },
+              { status: 400 }
+            );
+          }
+
+          return HttpResponse.json({
+            access_token: 'mock-scoped-token',
+            expires_in: 3600,
+            token_type: 'Bearer',
+          });
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+
+      // Advance timers and verify rejection simultaneously to prevent unhandled rejection
+      await Promise.all([
+        vi.advanceTimersByTimeAsync(5000),
+        expect(tokenPromise).rejects.toThrow('Device code polling failed: access_denied')
+      ]);
+    });
+
+    it('should timeout after device code expires', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      // Use a shorter expiry for testing
+      const shortExpiryResponse = {
+        ...MOCK_DEVICE_CODE_RESPONSE,
+        expires_in: 10, // 10 seconds
+        interval: 2 // 2 second polling interval
+      };
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(shortExpiryResponse);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            // Always return pending
+            return HttpResponse.json(
+              { error: 'authorization_pending' },
+              { status: 400 }
+            );
+          }
+
+          return HttpResponse.json({
+            access_token: 'mock-scoped-token',
+            expires_in: 3600,
+            token_type: 'Bearer',
+          });
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+
+      // Advance past expiry (10 seconds) and verify rejection simultaneously
+      await Promise.all([
+        vi.advanceTimersByTimeAsync(12000),
+        expect(tokenPromise).rejects.toThrow('Device code expired - authentication timed out')
+      ]);
+    });
+  });
+
+  describe('PKCE Integration', () => {
+    it('should use same verifier in token poll that was generated during device code request', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      let codeChallenge: string | null = null;
+      let codeVerifier: string | null = null;
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', async ({ request }) => {
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+          codeChallenge = params.get('code_challenge');
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            codeVerifier = params.get('code_verifier');
+          }
+
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      // Both should be present
+      expect(codeChallenge).toBeTruthy();
+      expect(codeVerifier).toBeTruthy();
+
+      // Verifier should be a base64url string
+      expect(codeVerifier).toMatch(/^[A-Za-z0-9_-]+$/);
+    });
+
+    it('should clear verifier after flow completes successfully', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      // Access the internal state (testing implementation detail for security)
+      const authService = getAuthService() as any;
+      expect(authService.deviceCodeVerifier).toBeUndefined();
+    });
+
+    it('should clear verifier after flow fails', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            return HttpResponse.json(
+              { error: 'access_denied' },
+              { status: 400 }
+            );
+          }
+
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+
+      // Advance timers and verify rejection simultaneously to prevent unhandled rejection
+      await Promise.all([
+        vi.advanceTimersByTimeAsync(5000),
+        expect(tokenPromise).rejects.toThrow()
+      ]);
+
+      // Verifier should be cleared even on error
+      const authService = getAuthService() as any;
+      expect(authService.deviceCodeVerifier).toBeUndefined();
+    });
+  });
+
+  describe('Token Storage', () => {
+    it('should call storage.setToken() after successful authentication', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      expect(mockStorage._mockSetToken()).toHaveBeenCalledTimes(1);
+    });
+
+    it('should store token with accessToken, expiresAt, and aicBaseUrl', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      const mockNow = 1000000000;
+      vi.spyOn(Date, 'now').mockReturnValue(mockNow);
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith({
+        accessToken: MOCK_TOKEN_RESPONSE.access_token,
+        expiresAt: mockNow + (MOCK_TOKEN_RESPONSE.expires_in * 1000),
+        aicBaseUrl: 'test.forgeblocks.com',
+      });
+    });
+
+    it('should calculate expiresAt from expires_in', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      const mockNow = 1000000000;
+      vi.spyOn(Date, 'now').mockReturnValue(mockNow);
+
+      const customTokenResponse = {
+        ...MOCK_TOKEN_RESPONSE,
+        expires_in: 7200, // 2 hours
+      };
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(customTokenResponse);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith(
+        expect.objectContaining({
+          expiresAt: mockNow + 7200000, // 2 hours in milliseconds
+        })
+      );
+    });
+
+    it('should set hasAuthenticatedThisSession to true', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      // Access internal state
+      const authService = getAuthService() as any;
+      expect(authService.hasAuthenticatedThisSession).toBe(true);
+    });
+  });
+
+  describe('Completion Notification', () => {
+    it('should send notifications/elicitation/complete after success', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      expect(mockMcpServer.server.notification).toHaveBeenCalledWith({
+        method: 'notifications/elicitation/complete',
+        params: { elicitationId: expect.stringMatching(/^[0-9a-f-]{36}$/i) }
+      });
+    });
+
+    it('should include same elicitationId from elicitInput call', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+      await tokenPromise;
+
+      const elicitCall = mockMcpServer.server.elicitInput.mock.calls[0][0];
+      const notificationCall = mockMcpServer.server.notification.mock.calls[0][0];
+
+      expect(notificationCall.params.elicitationId).toBe(elicitCall.elicitationId);
+    });
+
+    it('should not fail flow if notification fails', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+
+      const failingMcpServer = createMockMcpServer();
+      failingMcpServer.server.notification.mockRejectedValue(new Error('Notification not supported'));
+
+      initAuthService(['fr:idm:*'], { mcpServer: failingMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const bodyText = await request.text();
+          const params = new URLSearchParams(bodyText);
+
+          // Device code grant
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+          }
+
+          // Token exchange
+          return HttpResponse.json({
+            access_token: 'mock-scoped-token',
+            expires_in: 3600,
+            token_type: 'Bearer',
+          });
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(failingMcpServer.server.elicitInput).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(5000);
+
+      // Should complete successfully despite notification failure
+      const token = await tokenPromise;
+      expect(token).toBe('mock-scoped-token');
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should propagate device code request errors', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return new HttpResponse('Server error', { status: 500 });
+        })
+      );
+
+      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(
+        'Device code request failed (500 Internal Server Error): Server error'
+      );
+    });
+
+    it('should propagate polling errors', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const body = await request.text();
+          const params = new URLSearchParams(body);
+
+          if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
+            return HttpResponse.json(
+              { error: 'invalid_grant', error_description: 'Device code is invalid' },
+              { status: 400 }
+            );
+          }
+
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+
+      // Advance timers and verify rejection simultaneously to prevent unhandled rejection
+      await Promise.all([
+        vi.advanceTimersByTimeAsync(5000),
+        expect(tokenPromise).rejects.toThrow('Device code polling failed: invalid_grant')
+      ]);
+    });
+
+    it('should propagate storage errors', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      // Mock storage to throw error on setToken
+      mockStorage._mockSetToken().mockRejectedValue(new Error('Disk full'));
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return HttpResponse.json(MOCK_DEVICE_CODE_RESPONSE);
+        }),
+        http.post('https://*/am/oauth2/access_token', () => {
+          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
+        })
+      );
+
+      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
+      await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
+
+      // Advance timers and verify rejection simultaneously to prevent unhandled rejection
+      await Promise.all([
+        vi.advanceTimersByTimeAsync(5000),
+        expect(tokenPromise).rejects.toThrow('Disk full')
+      ]);
+    });
+
+    it('should log errors to console', async () => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      server.use(
+        http.post('https://*/am/oauth2/device/code', () => {
+          return new HttpResponse('Error', { status: 500 });
+        })
+      );
+
+      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Device code authentication failed:',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+});

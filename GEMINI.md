@@ -4,7 +4,7 @@ This document provides an overview of the PingOne AIC MCP Server, a TypeScript-b
 
 ## Project Overview
 
-This server exposes tools that allow AI agents to interact with a PingOne Advanced Identity Cloud (AIC) environment. It provides programmatic access to managed object operations (create, read, update, delete, search) for users, roles, groups, and organizations, as well as monitoring capabilities through secure user-based authentication. The server uses OAuth 2.0 PKCE flow for interactive authentication, ensuring all actions are traceable to authenticated users for audit and security compliance.
+This server exposes tools that allow AI agents to interact with a PingOne Advanced Identity Cloud (AIC) environment. It provides programmatic access to managed object operations (create, read, update, delete, search) for users, roles, groups, and organizations, as well as monitoring capabilities through secure user-based authentication. The server supports OAuth 2.0 PKCE flow for local deployment and OAuth 2.0 Device Code Flow for containerized deployment, ensuring all actions are traceable to authenticated users for audit and security compliance.
 
 ### Managed Object Support
 
@@ -37,26 +37,67 @@ The server is initialized in [src/index.ts](src/index.ts), which:
 
 ### Authentication Architecture
 
-The authentication system uses OAuth 2.0 Authorization Code with PKCE (Proof Key for Code Exchange) flow.
+The authentication system supports two OAuth 2.0 flows depending on deployment mode:
+- **Local deployment**: OAuth 2.0 Authorization Code with PKCE (Proof Key for Code Exchange)
+- **Container deployment**: OAuth 2.0 Device Code Flow (RFC 8628) with MCP form elicitation
 
 #### Authentication Service
 [src/services/authService.ts](src/services/authService.ts) - Handles all authentication:
-- Implements OAuth 2.0 PKCE flow for secure user authentication
-- Opens system browser for user login at PingOne AIC
-- Runs local HTTP server to receive OAuth redirect
+- Implements both OAuth 2.0 PKCE and Device Code flows
+- Mode selection based on `DOCKER_CONTAINER` environment variable
 - Requests all tool scopes upfront during authentication
 - Uses RFC 8693 token exchange for scoped-down tokens
-- Stores tokens securely in system keychain under `user-token` account
 - Provides `getToken()` interface to all tools
+
+**Token Storage:**
+- **Local mode**: Tokens stored in OS keychain (Keychain on macOS, Credential Manager on Windows, Secret Service on Linux)
+- **Container mode**: Tokens stored in ephemeral container filesystem at `/app/tokens/token.json` (deleted on container restart)
 
 **Key Features:**
 - User-based authentication for full audit trail
-- Two-client architecture for enhanced security (PKCE auth + token exchange)
-- Token persistence across sessions via system keychain
+- Two-client architecture for enhanced security (PKCE/Device Code auth + token exchange)
 - Automatic token expiry checking and refresh
 - In-flight request deduplication to prevent concurrent auth flows
-- PKCE security to prevent authorization code interception
+- PKCE/Device Code security to prevent authorization code interception
 - No client secrets required (both clients configured as public)
+- Automatic mode detection for containerized environments
+
+### Deployment Modes
+
+The server automatically selects the appropriate authentication flow based on the `DOCKER_CONTAINER` environment variable.
+
+#### Local Mode
+**Detection:** `DOCKER_CONTAINER` not set or not equal to `'true'`
+
+**Authentication:** OAuth 2.0 PKCE flow
+- Opens system browser for user login
+- Runs local HTTP server on port 3000 to receive OAuth redirect
+
+**Token Storage:** System keychain via [KeychainStorage](src/services/tokenStorage.ts)
+- macOS: Keychain
+- Windows: Credential Manager
+- Linux: Secret Service
+- Tokens persist across server restarts
+
+#### Container Mode (Experimental)
+**Detection:** `DOCKER_CONTAINER=true` (set by [Dockerfile](Dockerfile) at build time)
+
+**Authentication:** OAuth 2.0 Device Code Flow (RFC 8628) with MCP form elicitation
+- Requests MCP client to display authentication URL
+- User authenticates in browser
+- User confirms in MCP client after completing authentication
+- **Note:** Requires MCP client support for form elicitation (limited as of November 2025)
+
+**Token Storage:** File-based via [FileStorage](src/services/tokenStorage.ts)
+- Stored at `/app/tokens/token.json`
+- Ephemeral (deleted when container stops)
+- Fresh authentication required on each container start
+
+**Dockerfile Configuration:**
+- Sets `ENV DOCKER_CONTAINER=true`
+- Creates `/app/tokens` directory with proper ownership
+- Multi-stage build for minimal production image
+- Runs as non-root `node` user
 
 ### Available Tools
 
@@ -519,15 +560,19 @@ Any MCP client that supports STDIO transport can use this server. Simply configu
 
 ## Authentication Flow
 
-### OAuth 2.0 PKCE Flow
+The server uses different authentication flows based on deployment mode.
+
+### OAuth 2.0 PKCE Flow (Local Mode)
+
+Used when `DOCKER_CONTAINER` is not set or not equal to `'true'`.
 
 1. Tool calls `authService.getToken(scopes)`
 2. Server checks keychain for valid cached token
 3. If no valid token exists or token has expired:
-   - Server starts local HTTP server on `REDIRECT_URI_PORT`
+   - Server starts local HTTP server on port 3000
    - Opens system browser to PingOne AIC authorization page
    - User authenticates and grants consent for all tool scopes
-   - Browser redirects to `http://localhost:{port}` with authorization code
+   - Browser redirects to `http://localhost:3000` with authorization code
    - Server exchanges authorization code for access token using PKCE verifier
    - Token is stored in keychain under `user-token` account
 4. Access token is used for API calls until expiration
@@ -535,10 +580,47 @@ Any MCP client that supports STDIO transport can use this server. Simply configu
 
 **Security Features:**
 - PKCE prevents authorization code interception attacks
-- Tokens stored in OS keychain (Keychain on macOS, Credential Manager on Windows, Secret Service on Linux)
+- Tokens stored in OS keychain
 - No client secrets required (public client configuration)
 - All scopes requested upfront during authentication
 - User-based actions for complete audit trail
+
+### OAuth 2.0 Device Code Flow (Container Mode)
+
+Used when `DOCKER_CONTAINER=true` (set by Dockerfile).
+
+1. Tool calls `authService.getToken(scopes)`
+2. Server checks file storage for valid cached token at `/app/tokens/token.json`
+3. If no valid token exists or token has expired:
+   - Server requests device code from PingOne AIC with PKCE challenge
+   - Server requests MCP client to display authentication URL via form elicitation
+   - User sees authentication URL in MCP client
+   - User clicks URL to authenticate in browser
+   - User completes authentication at PingOne AIC
+   - User returns to MCP client and accepts the authentication prompt
+   - Server polls token endpoint with device code and PKCE verifier
+   - Token is stored in `/app/tokens/token.json`
+4. Access token is used for API calls until expiration
+5. When container restarts, tokens are deleted and flow repeats
+
+**MCP Elicitation Details:**
+- Uses MCP SDK's `server.elicitInput()` with `mode: 'form'`
+- Sends `verification_uri_complete` (URL with embedded user code)
+- Waits for user to accept the form
+- If user cancels (`action !== 'accept'`), authentication fails
+- Sends optional `notifications/elicitation/complete` when successful
+
+**Security Features:**
+- Device Code Flow with PKCE prevents code interception
+- Tokens stored in ephemeral container filesystem (deleted on restart)
+- No persistent token storage for enhanced security
+- All scopes requested upfront during authentication
+- User-based actions for complete audit trail
+
+**Client Requirements:**
+- MCP client must support form elicitation (MCP specification feature)
+- As of November 2025, elicitation support is limited across clients
+- Without elicitation, authentication URL cannot be displayed to user
 
 ## Error Handling
 
@@ -559,7 +641,8 @@ pingone_AIC_MCP/
 │   ├── config/
 │   │   └── managedObjectUtils.ts           # Shared utilities, examples, and validation
 │   ├── services/
-│   │   └── authService.ts                  # OAuth 2.0 PKCE authentication
+│   │   ├── authService.ts                  # OAuth 2.0 PKCE and Device Code authentication
+│   │   └── tokenStorage.ts                # Token storage abstraction (Keychain/File)
 │   ├── utils/
 │   │   ├── apiHelpers.ts                   # Shared API request helpers
 │   │   └── responseHelpers.ts              # Response formatting utilities
@@ -593,6 +676,8 @@ pingone_AIC_MCP/
 │           ├── setVariable.ts              # Create/update variable
 │           └── deleteVariable.ts           # Delete variable
 ├── dist/                                    # Compiled JavaScript (generated)
+├── Dockerfile                               # Multi-stage Docker build (sets DOCKER_CONTAINER=true)
+├── .dockerignore                            # Docker build context exclusions
 ├── package.json                             # Dependencies and scripts
 ├── tsconfig.json                            # TypeScript configuration
 ├── CLAUDE.md                                # This file
