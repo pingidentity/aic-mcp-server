@@ -15,20 +15,11 @@ describe('listManagedObjects', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should call config managed endpoint', async () => {
+    it('should build request with URL and scopes', async () => {
       await listManagedObjectsTool.toolFunction();
 
       expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/openidm/config/managed',
-        ['fr:idm:*']
-      );
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await listManagedObjectsTool.toolFunction();
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
         ['fr:idm:*']
       );
     });
@@ -76,30 +67,22 @@ describe('listManagedObjects', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
-      server.use(
-        http.get('https://*/openidm/config/managed', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized' }),
-            { status: 401 }
-          );
-        })
-      );
+    it.each([
+      {
+        name: 'should handle 401 Unauthorized error',
+        handler: () => new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 }),
+        matcher: /Error listing managed objects.*401/s,
+      },
+      {
+        name: 'should handle network error',
+        handler: () => HttpResponse.error(),
+        matcher: /Error listing managed objects/i,
+      },
+    ])('$name', async ({ handler, matcher }) => {
+      server.use(http.get('https://*/openidm/config/managed', handler));
 
       const result = await listManagedObjectsTool.toolFunction();
-      expect(result.content[0].text).toContain('Error listing managed objects');
-      expect(result.content[0].text).toContain('401');
-    });
-
-    it('should handle network error', async () => {
-      server.use(
-        http.get('https://*/openidm/config/managed', () => {
-          return HttpResponse.error();
-        })
-      );
-
-      const result = await listManagedObjectsTool.toolFunction();
-      expect(result.content[0].text).toMatch(/Error listing managed objects/i);
+      expect(result.content[0].text).toMatch(matcher);
     });
   });
 });

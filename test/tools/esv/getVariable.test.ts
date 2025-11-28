@@ -15,43 +15,19 @@ describe('getVariable', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with variableId', async () => {
+    it('should build request with URL, headers, and scopes', async () => {
       await getVariableTool.toolFunction({
         variableId: 'esv-api-key',
       });
 
       expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/environment/variables/esv-api-key',
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should add accept-api-version header', async () => {
-      await getVariableTool.toolFunction({
-        variableId: 'esv-api-key',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
+        ['fr:idc:esv:read'],
         expect.objectContaining({
           headers: expect.objectContaining({
             'accept-api-version': 'resource=2.0',
           }),
         })
-      );
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await getVariableTool.toolFunction({
-        variableId: 'esv-api-key',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idc:esv:read'],
-        expect.any(Object)
       );
     });
   });

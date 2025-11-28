@@ -35,20 +35,11 @@ describe('deleteTheme', () => {
       expect(calls[0][2]).toBeUndefined();
     });
 
-    it('should validate config structure exists', async () => {
-      mockThemeConfigHandlers({ realm: {} as any });
-
-      const result = await deleteThemeTool.toolFunction({
-        realm: 'alpha',
-        themeIdentifier: 'theme-123',
-      });
-
-      expect(result.content[0].text).toContain('Invalid theme configuration structure');
-      expect(result.content[0].text).toContain('alpha');
-    });
-
-    it('should validate realm exists in config', async () => {
-      mockThemeConfigHandlers(buildRealmConfig({ bravo: [] }));
+    it.each([
+      { name: 'should validate config structure exists', config: { realm: {} as any } },
+      { name: 'should validate realm exists in config', config: buildRealmConfig({ bravo: [] }) },
+    ])('$name', async ({ config }) => {
+      mockThemeConfigHandlers(config as any);
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',

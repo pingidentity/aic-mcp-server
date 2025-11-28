@@ -15,7 +15,7 @@ describe('deleteVariable', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with variableId', async () => {
+    it('should build request with URL, method, headers, and scopes', async () => {
       await deleteVariableTool.toolFunction({
         variableId: 'esv-old-key',
       });
@@ -23,49 +23,12 @@ describe('deleteVariable', () => {
       expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/environment/variables/esv-old-key',
         ['fr:idc:esv:update'],
-        expect.objectContaining({ method: 'DELETE' })
-      );
-    });
-
-    it('should use DELETE method', async () => {
-      await deleteVariableTool.toolFunction({
-        variableId: 'esv-old-key',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
         expect.objectContaining({
           method: 'DELETE',
-        })
-      );
-    });
-
-    it('should add accept-api-version header with protocol and resource 1.0', async () => {
-      await deleteVariableTool.toolFunction({
-        variableId: 'esv-old-key',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
-        expect.objectContaining({
           headers: expect.objectContaining({
             'accept-api-version': 'protocol=1.0,resource=1.0',
           }),
         })
-      );
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await deleteVariableTool.toolFunction({
-        variableId: 'esv-old-key',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idc:esv:update'],
-        expect.any(Object)
       );
     });
   });
@@ -127,61 +90,21 @@ describe('deleteVariable', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      { status: 401, body: { error: 'unauthorized', message: 'Invalid token' }, variableId: 'esv-test' },
+      { status: 404, body: { code: 404, message: 'Variable not found' }, variableId: 'esv-nonexistent' },
+      { status: 403, body: { code: 403, message: 'Insufficient permissions' }, variableId: 'esv-protected' },
+    ])('handles $status errors', async ({ status, body, variableId }) => {
       server.use(
         http.delete('https://*/environment/variables/:variableId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid token' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
-      const result = await deleteVariableTool.toolFunction({
-        variableId: 'esv-test',
-      });
+      const result = await deleteVariableTool.toolFunction({ variableId });
 
       expect(result.content[0].text).toContain('Failed to delete variable');
-      expect(result.content[0].text).toContain('esv-test');
-      expect(result.content[0].type).toBe('text');
-    });
-
-    it('should handle 404 Not Found error', async () => {
-      server.use(
-        http.delete('https://*/environment/variables/:variableId', () => {
-          return new HttpResponse(
-            JSON.stringify({ code: 404, message: 'Variable not found' }),
-            { status: 404 }
-          );
-        })
-      );
-
-      const result = await deleteVariableTool.toolFunction({
-        variableId: 'esv-nonexistent',
-      });
-
-      // Verify error includes variable ID for context
-      expect(result.content[0].text).toContain('Failed to delete variable');
-      expect(result.content[0].text).toContain('esv-nonexistent');
-      expect(result.content[0].type).toBe('text');
-    });
-
-    it('should handle 403 Forbidden error', async () => {
-      server.use(
-        http.delete('https://*/environment/variables/:variableId', () => {
-          return new HttpResponse(
-            JSON.stringify({ code: 403, message: 'Insufficient permissions' }),
-            { status: 403 }
-          );
-        })
-      );
-
-      const result = await deleteVariableTool.toolFunction({
-        variableId: 'esv-protected',
-      });
-
-      expect(result.content[0].text).toContain('Failed to delete variable');
-      expect(result.content[0].text).toContain('esv-protected');
+      expect(result.content[0].text).toContain(variableId);
       expect(result.content[0].type).toBe('text');
     });
   });

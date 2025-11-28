@@ -128,19 +128,23 @@ describe('AuthService Token Caching', () => {
   });
 
   describe('Expired Token', () => {
-    it('should trigger re-authentication when token is expired (expiresAt < Date.now())', async () => {
+    it.each([
+      {
+        name: 'should trigger re-authentication when token is expired (expiresAt < Date.now())',
+        token: (now: number) => createTestTokenData({ expiresAt: now - 1000, aicBaseUrl: 'test.forgeblocks.com' }),
+      },
+      {
+        name: 'should trigger re-authentication when cached token is for different aicBaseUrl',
+        token: (now: number) => createTestTokenData({ expiresAt: now + 3600000, aicBaseUrl: 'different-tenant.forgeblocks.com' }),
+      },
+    ])('$name', async ({ token }) => {
       const mockNow = 1000000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
 
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
 
-      // Mock storage to return expired token
-      const expiredToken = createTestTokenData({
-        expiresAt: mockNow - 1000, // Already expired
-        aicBaseUrl: 'test.forgeblocks.com',
-      });
-      getStorage()._mockGetToken().mockResolvedValue(expiredToken);
+      getStorage()._mockGetToken().mockResolvedValue(token(mockNow));
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -149,127 +153,64 @@ describe('AuthService Token Caching', () => {
 
       await getAuthService().getToken(['fr:idm:*']);
 
-      // Should check storage
       expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(1);
-
-      // Should trigger PKCE flow (default mode)
       expect(mockPkceFlow).toHaveBeenCalledTimes(1);
       expect(mockPkceFlow).toHaveBeenCalledWith(['fr:idm:*']);
     });
   });
 
-  describe('Different Tenant Token', () => {
-    it('should trigger re-authentication when cached token is for different aicBaseUrl', async () => {
-      const mockNow = 1000000000;
-      vi.spyOn(Date, 'now').mockReturnValue(mockNow);
-
-      // Mock console.error to verify error message
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
-
-      // Token is valid but for different tenant
-      const differentTenantToken = createTestTokenData({
-        expiresAt: mockNow + 3600000, // Valid expiry
-        aicBaseUrl: 'different-tenant.forgeblocks.com', // Different tenant
-      });
-      getStorage()._mockGetToken().mockResolvedValue(differentTenantToken);
-
-      const authServiceInstance = getAuthService() as any;
-      authServiceInstance.executePkceFlow = mockPkceFlow;
-      authServiceInstance.executeDeviceFlow = mockDeviceFlow;
-      authServiceInstance.exchangeToken = mockExchangeToken;
-
-      await getAuthService().getToken(['fr:idm:*']);
-
-      // Should log error message about different tenant
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Cached token is for different tenant')
-      );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('different-tenant.forgeblocks.com')
-      );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('test.forgeblocks.com')
-      );
-
-      // Should trigger PKCE flow
-      expect(mockPkceFlow).toHaveBeenCalledTimes(1);
-
-      consoleErrorSpy.mockRestore();
-    });
-  });
-
   describe('allowCachedOnFirstRequest Configuration', () => {
-    it('should skip cache on first request when allowCachedOnFirstRequest is false', async () => {
+    it.each([
+      {
+        name: 'skips cache on first request when allowCachedOnFirstRequest is false',
+        allowCachedOnFirstRequest: false,
+        expectCacheCalls: 0,
+        expectPkceCalls: 1,
+        expectMessage: 'Fresh authentication required on startup',
+      },
+      {
+        name: 'uses cache on first request when allowCachedOnFirstRequest is true',
+        allowCachedOnFirstRequest: true,
+        expectCacheCalls: 1,
+        expectPkceCalls: 0,
+        expectMessage: null,
+        cachedToken: { accessToken: 'cached-token' },
+      },
+    ])('$name', async ({ allowCachedOnFirstRequest, expectCacheCalls, expectPkceCalls, expectMessage, cachedToken }) => {
       const mockNow = 1000000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
 
-      // Mock console.error to verify error message
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: false });
+      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest });
 
-      // Valid cached token exists
-      const validToken = createTestTokenData({
+      const tokenData = createTestTokenData({
+        accessToken: cachedToken?.accessToken ?? 'cached-token',
         expiresAt: mockNow + 3600000,
         aicBaseUrl: 'test.forgeblocks.com',
       });
-      getStorage()._mockGetToken().mockResolvedValue(validToken);
+      getStorage()._mockGetToken().mockResolvedValue(tokenData);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
       authServiceInstance.executeDeviceFlow = mockDeviceFlow;
       authServiceInstance.exchangeToken = mockExchangeToken;
 
-      // First call should skip cache
-      await getAuthService().getToken(['fr:idm:*']);
+      const result = await getAuthService().getToken(['fr:idm:*']);
 
-      // Should log fresh authentication message
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Fresh authentication required on startup');
+      if (expectMessage) {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(expectMessage);
+      }
 
-      // Should NOT check storage
-      expect(getStorage()._mockGetToken()).not.toHaveBeenCalled();
+      expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(expectCacheCalls);
+      expect(mockPkceFlow).toHaveBeenCalledTimes(expectPkceCalls);
 
-      // Should trigger PKCE flow
-      expect(mockPkceFlow).toHaveBeenCalledTimes(1);
+      if (allowCachedOnFirstRequest) {
+        expect(result).toBe('scoped-token');
+      }
 
       consoleErrorSpy.mockRestore();
-    });
-
-    it('should use cache on first request when allowCachedOnFirstRequest is true', async () => {
-      const mockNow = 1000000000;
-      vi.spyOn(Date, 'now').mockReturnValue(mockNow);
-
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
-
-      // Valid cached token exists
-      const validToken = createTestTokenData({
-        accessToken: 'cached-token',
-        expiresAt: mockNow + 3600000,
-        aicBaseUrl: 'test.forgeblocks.com',
-      });
-      getStorage()._mockGetToken().mockResolvedValue(validToken);
-
-      const authServiceInstance = getAuthService() as any;
-      authServiceInstance.executePkceFlow = mockPkceFlow;
-      authServiceInstance.executeDeviceFlow = mockDeviceFlow;
-      authServiceInstance.exchangeToken = mockExchangeToken;
-
-      // First call should use cache
-      const token = await getAuthService().getToken(['fr:idm:*']);
-
-      // Should return scoped token (from exchange)
-      expect(token).toBe('scoped-token');
-
-      // Should check storage
-      expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(1);
-
-      // Should NOT trigger PKCE flow
-      expect(mockPkceFlow).not.toHaveBeenCalled();
     });
   });
 

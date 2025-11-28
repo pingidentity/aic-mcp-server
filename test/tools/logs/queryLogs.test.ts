@@ -15,119 +15,71 @@ describe('queryLogs', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with sources parameter (comma-separated)', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication', 'idm-activity']
-      });
+    it.each([
+      {
+        name: 'should encode sources as comma-separated',
+        input: { sources: ['am-authentication', 'idm-activity'] },
+        expected: 'source=am-authentication%2Cidm-activity',
+      },
+      {
+        name: 'should handle single source',
+        input: { sources: ['am-authentication'] },
+        expected: 'source=am-authentication',
+      },
+      {
+        name: 'should encode beginTime parameter',
+        input: { sources: ['am-authentication'], beginTime: '2025-01-11T10:00:00Z' },
+        expected: 'beginTime=2025-01-11T10%3A00%3A00Z',
+      },
+      {
+        name: 'should encode endTime parameter',
+        input: { sources: ['am-authentication'], endTime: '2025-01-11T11:00:00Z' },
+        expected: 'endTime=2025-01-11T11%3A00%3A00Z',
+      },
+      {
+        name: 'should add transactionId parameter',
+        input: { sources: ['am-authentication'], transactionId: 'txn-12345' },
+        expected: 'transactionId=txn-12345',
+      },
+      {
+        name: 'should encode queryFilter parameter',
+        input: { sources: ['am-authentication'], queryFilter: '/payload/level eq "ERROR"' },
+        expected: '_queryFilter=%2Fpayload%2Flevel+eq+%22ERROR%22',
+      },
+      {
+        name: 'should add pagedResultsCookie parameter',
+        input: { sources: ['am-authentication'], pagedResultsCookie: 'cookie-xyz' },
+        expected: '_pagedResultsCookie=cookie-xyz',
+      },
+      {
+        name: 'should use provided pageSize',
+        input: { sources: ['am-authentication'], pageSize: 50 },
+        expected: '_pageSize=50',
+      },
+      {
+        name: 'should default pageSize to 100',
+        input: { sources: ['am-authentication'] },
+        expected: '_pageSize=100',
+      },
+      {
+        name: 'should clamp pageSize to maximum 1000',
+        input: { sources: ['am-authentication'], pageSize: 1500 },
+        expected: '_pageSize=1000',
+      },
+    ])('$name', async ({ input, expected }) => {
+      await queryLogsTool.toolFunction(input as any);
 
       const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('source=am-authentication%2Cidm-activity');
+      expect(callUrl).toContain(expected);
     });
 
-    it('should construct URL with single source', async () => {
+    it('should use GET method and pass correct scopes', async () => {
       await queryLogsTool.toolFunction({
         sources: ['am-authentication']
       });
 
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('source=am-authentication');
-      expect(callUrl).not.toContain(',');
-    });
-
-    it('should add beginTime to URL when provided', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        beginTime: '2025-01-11T10:00:00Z'
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('beginTime=2025-01-11T10%3A00%3A00Z');
-    });
-
-    it('should add endTime to URL when provided', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        endTime: '2025-01-11T11:00:00Z'
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('endTime=2025-01-11T11%3A00%3A00Z');
-    });
-
-    it('should add transactionId to URL when provided', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        transactionId: 'txn-12345'
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('transactionId=txn-12345');
-    });
-
-    it('should add queryFilter to URL when provided', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        queryFilter: '/payload/level eq "ERROR"'
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('_queryFilter=%2Fpayload%2Flevel+eq+%22ERROR%22');
-    });
-
-    it('should add pagedResultsCookie to URL when provided', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        pagedResultsCookie: 'cookie-xyz'
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('_pagedResultsCookie=cookie-xyz');
-    });
-
-    it('should add pageSize to URL', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        pageSize: 50
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('_pageSize=50');
-    });
-
-    it('should default pageSize to 100 when omitted', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication']
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('_pageSize=100');
-    });
-
-    it('should clamp pageSize to maximum 1000', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        pageSize: 1500
-      });
-
-      const callUrl = getSpy().mock.calls[0][0];
-      expect(callUrl).toContain('_pageSize=1000');
-    });
-
-    it('should use GET method (default)', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication']
-      });
-
-      // makeAuthenticatedRequest is called without method option, which defaults to GET
       const options = getSpy().mock.calls[0][2];
       expect(options?.method).toBeUndefined(); // No method specified means GET
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await queryLogsTool.toolFunction({
-        sources: ['am-authentication']
-      });
-
       expect(getSpy()).toHaveBeenCalledWith(
         expect.any(String),
         ['fr:idc:monitoring:*']
@@ -240,54 +192,31 @@ describe('queryLogs', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'should handle 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Invalid credentials' },
+      },
+      {
+        name: 'should handle 400 Bad Request error',
+        status: 400,
+        body: { error: 'bad_request', message: 'Invalid query filter syntax' },
+      },
+      {
+        name: 'should handle 500 Internal Server Error',
+        status: 500,
+        body: { error: 'internal_error', message: 'Server error' },
+      },
+    ])('$name', async ({ status, body }) => {
       server.use(
         http.get('https://*/monitoring/logs', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
       const result = await queryLogsTool.toolFunction({
         sources: ['am-authentication']
-      });
-
-      expect(result.content[0].text).toContain('Failed to query logs');
-    });
-
-    it('should handle 400 Bad Request error', async () => {
-      server.use(
-        http.get('https://*/monitoring/logs', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'bad_request', message: 'Invalid query filter syntax' }),
-            { status: 400 }
-          );
-        })
-      );
-
-      const result = await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        queryFilter: 'invalid'
-      });
-
-      expect(result.content[0].text).toContain('Failed to query logs');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      server.use(
-        http.get('https://*/monitoring/logs', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'internal_error', message: 'Server error' }),
-            { status: 500 }
-          );
-        })
-      );
-
-      const result = await queryLogsTool.toolFunction({
-        sources: ['am-authentication'],
-        queryFilter: 'payload/level eq "ERROR"' // Missing leading /
       });
 
       expect(result.content[0].text).toContain('Failed to query logs');

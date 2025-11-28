@@ -15,7 +15,7 @@ describe('setVariable', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL with variableId', async () => {
+    it('should build request with URL, method, headers, and scopes', async () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-api-key',
         value: 'secret',
@@ -24,158 +24,37 @@ describe('setVariable', () => {
 
       expect(getSpy()).toHaveBeenCalledWith(
         'https://test.forgeblocks.com/environment/variables/esv-api-key',
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should use PUT method', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-api-key',
-        value: 'secret',
-        type: 'string',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
+        ['fr:idc:esv:update'],
         expect.objectContaining({
           method: 'PUT',
-        })
-      );
-    });
-
-    it('should add accept-api-version header', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-api-key',
-        value: 'secret',
-        type: 'string',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
-        expect.objectContaining({
           headers: expect.objectContaining({
             'accept-api-version': 'resource=2.0',
           }),
         })
       );
     });
-
-    it('should pass correct scopes to auth', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-api-key',
-        value: 'secret',
-        type: 'string',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idc:esv:update'],
-        expect.any(Object)
-      );
-    });
   });
 
   // ===== VALUE PROCESSING TESTS (Type-Specific Encoding Logic) =====
   describe('Value Processing', () => {
-    it('should use String() conversion for string type', async () => {
+    it.each([
+      { type: 'string', value: 'hello', expected: 'hello' },
+      { type: 'list', value: 'a,b,c', expected: 'a,b,c' },
+      { type: 'array', value: ['a', 'b', 'c'], expected: '["a","b","c"]' },
+      { type: 'object', value: { key: 'value' }, expected: '{"key":"value"}' },
+      { type: 'bool', value: true, expected: 'true' },
+      { type: 'int', value: 42, expected: '42' },
+      { type: 'number', value: 3.14, expected: '3.14' },
+    ])('should encode $type correctly', async ({ type, value, expected }) => {
       await setVariableTool.toolFunction({
         variableId: 'esv-test',
-        value: 'hello',
-        type: 'string',
+        value: value as any,
+        type: type as any,
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
-
-      // Decode base64 to verify encoding logic
       const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
-      expect(decodedValue).toBe('hello'); // Not JSON-stringified
-    });
-
-    it('should use String() conversion for list type', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-list',
-        value: 'a,b,c',
-        type: 'list',
-      });
-
-      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
-
-      // Decode base64 to verify encoding logic
-      const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
-      expect(decodedValue).toBe('a,b,c'); // Not JSON-stringified
-    });
-
-    it('should use JSON.stringify() for array type', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-array',
-        value: ['a', 'b', 'c'],
-        type: 'array',
-      });
-
-      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
-
-      // Decode base64 to verify encoding logic
-      const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
-      expect(decodedValue).toBe('["a","b","c"]'); // JSON-stringified
-    });
-
-    it('should use JSON.stringify() for object type', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-obj',
-        value: { key: 'value' },
-        type: 'object',
-      });
-
-      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
-
-      // Decode base64 to verify encoding logic
-      const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
-      expect(decodedValue).toBe('{"key":"value"}'); // JSON-stringified
-    });
-
-    it('should use JSON.stringify() for bool type', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-flag',
-        value: true,
-        type: 'bool',
-      });
-
-      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
-
-      // Decode base64 to verify encoding logic
-      const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
-      expect(decodedValue).toBe('true'); // JSON-stringified (boolean)
-    });
-
-    it('should use JSON.stringify() for int type', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-count',
-        value: 42,
-        type: 'int',
-      });
-
-      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
-
-      // Decode base64 to verify encoding logic
-      const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
-      expect(decodedValue).toBe('42'); // JSON-stringified (number)
-    });
-
-    it('should use JSON.stringify() for number type', async () => {
-      await setVariableTool.toolFunction({
-        variableId: 'esv-pi',
-        value: 3.14,
-        type: 'number',
-      });
-
-      const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
-
-      // Decode base64 to verify encoding logic
-      const decodedValue = Buffer.from(requestBody.valueBase64, 'base64').toString();
-      expect(decodedValue).toBe('3.14'); // JSON-stringified (number)
+      expect(decodedValue).toBe(expected);
     });
   });
 

@@ -276,34 +276,11 @@ describe('setDefaultTheme', () => {
       expect(capturedBody.otherConfigProp).toBe('value');
     });
 
-    it('should handle invalid config structure - missing realm property', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            _id: 'ui/themerealm',
-          });
-        })
-      );
-
-      const result = await setDefaultThemeTool.toolFunction({
-        realm: 'alpha',
-        themeIdentifier: 'theme-123',
-      });
-
-      expect(result.content[0].text).toContain('Invalid theme configuration');
-      expect(result.content[0].text).toContain('alpha');
-    });
-
-    it('should handle invalid config structure - missing specific realm', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              bravo: [],
-            },
-          });
-        })
-      );
+    it.each([
+      { name: 'should handle invalid config structure - missing realm property', config: { _id: 'ui/themerealm' } },
+      { name: 'should handle invalid config structure - missing specific realm', config: buildRealmConfig({ bravo: [] }) },
+    ])('$name', async ({ config }) => {
+      mockThemeConfigHandlers(config as any);
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',

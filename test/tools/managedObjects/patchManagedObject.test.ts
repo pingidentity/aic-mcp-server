@@ -255,13 +255,35 @@ describe('patchManagedObject', () => {
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
+    it.each([
+      {
+        name: 'should handle 401 Unauthorized error',
+        status: 401,
+        body: { error: 'unauthorized', message: 'Invalid token' },
+        matcher: /401|[Uu]nauthorized/,
+      },
+      {
+        name: 'should handle 404 Not Found error',
+        status: 404,
+        body: { error: 'not_found', message: 'Object does not exist' },
+        matcher: /404|[Nn]ot [Ff]ound/,
+      },
+      {
+        name: 'should handle 412 Precondition Failed error (revision mismatch)',
+        status: 412,
+        body: { error: 'precondition_failed', message: 'The resource version does not match the version provided' },
+        matcher: /412|[Pp]recondition|[Rr]evision/,
+      },
+      {
+        name: 'should handle 400 Bad Request error (invalid patch)',
+        status: 400,
+        body: { error: 'bad_request', message: 'Invalid patch operation' },
+        matcher: /400|[Bb]ad [Rr]equest/,
+      },
+    ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.patch('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid token' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify(body), { status });
         })
       );
 
@@ -273,76 +295,7 @@ describe('patchManagedObject', () => {
       });
 
       expect(result.content[0].text).toContain('Failed to patch managed object');
-      expect(result.content[0].text).toMatch(/401|[Uu]nauthorized/);
-    });
-
-    it('should handle 404 Not Found error', async () => {
-      server.use(
-        http.patch('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'not_found', message: 'Object does not exist' }),
-            { status: 404 }
-          );
-        })
-      );
-
-      const result = await patchManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'nonexistent',
-        revision: '1',
-        operations: [],
-      });
-
-      expect(result.content[0].text).toContain('Failed to patch managed object');
-      expect(result.content[0].text).toMatch(/404|[Nn]ot [Ff]ound/);
-    });
-
-    it('should handle 412 Precondition Failed error (revision mismatch)', async () => {
-      server.use(
-        http.patch('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({
-              error: 'precondition_failed',
-              message: 'The resource version does not match the version provided'
-            }),
-            { status: 412 }
-          );
-        })
-      );
-
-      const result = await patchManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-        revision: 'old',
-        operations: [],
-      });
-
-      expect(result.content[0].text).toContain('Failed to patch managed object');
-      expect(result.content[0].text).toMatch(/412|[Pp]recondition|[Rr]evision/);
-    });
-
-    it('should handle 400 Bad Request error (invalid patch)', async () => {
-      server.use(
-        http.patch('https://*/openidm/managed/:objectType/:objectId', () => {
-          return new HttpResponse(
-            JSON.stringify({
-              error: 'bad_request',
-              message: 'Invalid patch operation'
-            }),
-            { status: 400 }
-          );
-        })
-      );
-
-      const result = await patchManagedObjectTool.toolFunction({
-        objectType: 'alpha_user',
-        objectId: 'obj-123',
-        revision: '1',
-        operations: [{ operation: 'replace', field: '/invalid' }],
-      });
-
-      expect(result.content[0].text).toContain('Failed to patch managed object');
-      expect(result.content[0].text).toMatch(/400|[Bb]ad [Rr]equest/);
+      expect(result.content[0].text).toMatch(matcher);
     });
   });
 });

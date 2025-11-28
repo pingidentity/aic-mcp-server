@@ -108,98 +108,88 @@ describe('AuthService Token Exchange', () => {
   });
 
   describe('Response Processing', () => {
-    it('should extract access_token field from response', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
-      primeStorageWithValidToken();
+    const responseCases = [
+      {
+        name: 'should extract access_token field from response',
+        response: { access_token: 'exchanged-token', expires_in: 3600, token_type: 'Bearer' },
+        expected: 'exchanged-token',
+      },
+      {
+        name: 'should return only the token string (not full response)',
+        response: { access_token: 'just-the-token', expires_in: 3600, token_type: 'Bearer', extra: 'ignored-field' },
+        expected: 'just-the-token',
+      },
+      {
+        name: 'should handle missing access_token field',
+        response: { expires_in: 3600, token_type: 'Bearer' },
+        expected: undefined,
+      },
+    ] as const;
 
-      server.use(
-        http.post('https://test.forgeblocks.com/am/oauth2/access_token', ({ request }) => {
-          const body = request.clone();
-          return HttpResponse.json({
-            access_token: 'exchanged-token',
-            expires_in: 3600,
-            token_type: 'Bearer',
-          });
-        })
-      );
-
-      const result = await getAuthService().getToken(['fr:idm:*']);
-      expect(result).toBe('exchanged-token');
-    });
-
-    it('should return only the token string (not full response)', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
-      primeStorageWithValidToken();
-
-      server.use(
-        http.post('https://test.forgeblocks.com/am/oauth2/access_token', () => {
-          return HttpResponse.json({
-            access_token: 'just-the-token',
-            expires_in: 3600,
-            token_type: 'Bearer',
-            extra: 'ignored-field',
-          });
-        })
-      );
-
-      const result = await getAuthService().getToken(['fr:idm:*']);
-      expect(result).toBe('just-the-token');
-    });
-
-    it('should handle missing access_token field', async () => {
+    it.each(responseCases)('$name', async ({ response, expected }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
       primeStorageWithValidToken();
 
       server.use(
         http.post('https://test.forgeblocks.com/am/oauth2/access_token', () => {
-          return HttpResponse.json({
-            // access_token intentionally omitted
-            expires_in: 3600,
-            token_type: 'Bearer',
-          });
+          return HttpResponse.json(response as any);
         })
       );
 
       const result = await getAuthService().getToken(['fr:idm:*']);
-      expect(result).toBeUndefined();
+      expect(result).toBe(expected);
     });
   });
 
   describe('Error Handling', () => {
-    it('should catch HTTP errors and wrap them', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
-      primeStorageWithValidToken();
-
-      server.use(
-        http.post('https://test.forgeblocks.com/am/oauth2/access_token', () => {
-          return new HttpResponse('boom', { status: 500 });
-        })
-      );
-
-      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(
-        'Token exchange failed (500 Internal Server Error): boom'
-      );
-    });
-
-    it('should propagate network errors', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
-      primeStorageWithValidToken();
-
-      server.use(
-        http.post('https://test.forgeblocks.com/am/oauth2/access_token', () => {
+    it.each([
+      {
+        name: 'should catch HTTP errors and wrap them',
+        handler: () => new HttpResponse('boom', { status: 500 }),
+        expected: 'Token exchange failed (500 Internal Server Error): boom',
+      },
+      {
+        name: 'should propagate network errors',
+        handler: () => {
           throw new Error('network down');
-        })
+        },
+        expected: 'network down',
+      },
+    ])('$name', async ({ handler, expected }) => {
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
+      primeStorageWithValidToken();
+
+      server.use(
+        http.post('https://test.forgeblocks.com/am/oauth2/access_token', handler)
       );
 
-      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow('network down');
+      await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(expected);
     });
 
-    it('should retry once on 401 then succeed', async () => {
+    it.each([
+      {
+        name: 'should retry once on 401 then succeed',
+        responses: [
+          new HttpResponse('unauthorized', { status: 401 }),
+          HttpResponse.json({
+            access_token: 'exchanged-after-retry',
+            expires_in: 3600,
+            token_type: 'Bearer',
+          }),
+        ],
+        expectError: false,
+      },
+      {
+        name: 'should fail after retry if still unauthorized',
+        responses: [
+          new HttpResponse('unauthorized', { status: 401 }),
+          new HttpResponse('still unauthorized', { status: 401 }),
+        ],
+        expectError: /Token exchange failed \(401/,
+      },
+    ])('$name', async ({ responses, expectError }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
       primeStorageWithValidToken();
@@ -209,23 +199,19 @@ describe('AuthService Token Exchange', () => {
       server.use(
         http.post('https://test.forgeblocks.com/am/oauth2/access_token', () => {
           exchangeCalls += 1;
-
-          if (exchangeCalls === 1) {
-            return new HttpResponse('unauthorized', { status: 401 });
-          }
-
-          return HttpResponse.json({
-            access_token: 'exchanged-after-retry',
-            expires_in: 3600,
-            token_type: 'Bearer',
-          });
+          const next = responses[Math.min(exchangeCalls - 1, responses.length - 1)];
+          return next;
         })
       );
 
-      const token = await getAuthService().getToken(['fr:idm:*']);
+      if (expectError) {
+        await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(expectError as RegExp);
+      } else {
+        const token = await getAuthService().getToken(['fr:idm:*']);
+        expect(token).toBe('exchanged-after-retry');
+      }
 
       expect(exchangeCalls).toBe(2);
-      expect(token).toBe('exchanged-after-retry');
     });
 
     it('should log when token exchange fails', async () => {

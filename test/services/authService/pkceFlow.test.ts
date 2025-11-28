@@ -622,43 +622,59 @@ describe('AuthService PKCE Flow', () => {
       expect(mockServerInstance.close).toHaveBeenCalled();
     });
 
-    it('should close server on error (no code parameter)', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      // Simulate redirect without code parameter
-      const mockReq = { url: 'http://localhost:3000?error=access_denied' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
-      await expect(tokenPromise).rejects.toThrow('Authorization code not found in redirect.');
-      expect(mockServerInstance.close).toHaveBeenCalled();
-    });
-
-    it('should close server on server error', async () => {
+    it.each([
+      {
+        name: 'should close server on error (no code parameter)',
+        trigger: async (tokenPromise: Promise<any>) => {
+          const mockReq = { url: 'http://localhost:3000?error=access_denied' };
+          const mockRes = { end: vi.fn() };
+          mockRequestHandler(mockReq, mockRes);
+          await expect(tokenPromise).rejects.toThrow('Authorization code not found in redirect.');
+        },
+        expectClose: true,
+      },
+      {
+        name: 'should close server on server error',
+        setupErrorHandler: true,
+        trigger: async (_: Promise<any>, errorHandler: any) => {
+          errorHandler(new Error('Port already in use'));
+        },
+        expectedMessage: 'Port already in use',
+        expectClose: true,
+      },
+      {
+        name: 'should propagate server errors',
+        setupErrorHandler: true,
+        trigger: async (_: Promise<any>, errorHandler: any) => {
+          errorHandler(new Error('Server startup failed'));
+        },
+        expectedMessage: 'Server startup failed',
+        expectClose: false,
+      },
+    ])('$name', async ({ setupErrorHandler, trigger, expectedMessage, expectClose }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});
 
       let errorHandler: any = null;
-
-      mockServerInstance.on.mockImplementation((event: string, handler: any) => {
-        if (event === 'error') {
-          errorHandler = handler;
-        }
-      });
+      if (setupErrorHandler) {
+        mockServerInstance.on.mockImplementation((event: string, handler: any) => {
+          if (event === 'error') {
+            errorHandler = handler;
+          }
+        });
+      }
 
       const tokenPromise = getAuthService().getToken(['fr:idm:*']);
       await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
 
-      // Trigger server error
-      expect(errorHandler).toBeDefined();
-      errorHandler(new Error('Port already in use'));
+      await trigger(tokenPromise, errorHandler);
 
-      await expect(tokenPromise).rejects.toThrow('Port already in use');
-      expect(mockServerInstance.close).toHaveBeenCalled();
+      if (expectedMessage) {
+        await expect(tokenPromise).rejects.toThrow(expectedMessage);
+      }
+      if (expectClose) {
+        expect(mockServerInstance.close).toHaveBeenCalled();
+      }
     });
 
     it('should clear redirectServer reference after completion', async () => {
@@ -687,26 +703,6 @@ describe('AuthService PKCE Flow', () => {
   });
 
   describe('Error Handling', () => {
-    it('should propagate server errors', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
-      let errorHandler: any = null;
-
-      mockServerInstance.on.mockImplementation((event: string, handler: any) => {
-        if (event === 'error') {
-          errorHandler = handler;
-        }
-      });
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      errorHandler(new Error('Server startup failed'));
-
-      await expect(tokenPromise).rejects.toThrow('Server startup failed');
-    });
-
     it('should propagate token exchange errors', async () => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});

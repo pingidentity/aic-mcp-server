@@ -15,20 +15,7 @@ describe('queryESVs', () => {
 
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
-    it('should construct URL for variable type', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('https://test.forgeblocks.com/environment/variables'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should construct URL for secret type', async () => {
-      // Add handler for secrets endpoint
+    const setupSecretsEndpoint = () =>
       server.use(
         http.get('https://*/environment/secrets', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
@@ -46,245 +33,187 @@ describe('queryESVs', () => {
         })
       );
 
-      await queryESVsTool.toolFunction({
-        type: 'secret',
-      });
+    const requestCases = [
+      {
+        name: 'routes variable type to variables endpoint',
+        input: { type: 'variable' },
+        assert: ({ url }: any) => expect(url).toContain('environment/variables'),
+      },
+      {
+        name: 'routes secret type to secrets endpoint',
+        input: { type: 'secret' },
+        setup: setupSecretsEndpoint,
+        assert: ({ url }: any) => expect(url).toContain('environment/secrets'),
+      },
+      {
+        name: 'adds queryFilter with queryTerm',
+        input: { type: 'variable', queryTerm: 'api-key' },
+        assert: ({ url }: any) => expect(url).toContain('_queryFilter=%2F_id+co+%22api-key%22'),
+      },
+      {
+        name: 'defaults queryFilter to true when omitted',
+        input: { type: 'variable' },
+        assert: ({ url }: any) => expect(url).toContain('_queryFilter=true'),
+      },
+      {
+        name: 'escapes double quotes in queryTerm',
+        input: { type: 'variable', queryTerm: 'test\"injection' },
+        assert: ({ url }: any) => expect(url).toContain('_queryFilter=%2F_id+co+%22test%5C%22injection%22'),
+      },
+      {
+        name: 'applies provided pageSize',
+        input: { type: 'variable', pageSize: 25 },
+        assert: ({ url }: any) => expect(url).toContain('_pageSize=25'),
+      },
+      {
+        name: 'defaults pageSize to 50',
+        input: { type: 'variable' },
+        assert: ({ url }: any) => expect(url).toContain('_pageSize=50'),
+      },
+      {
+        name: 'clamps pageSize to maximum 100',
+        input: { type: 'variable', pageSize: 150 },
+        assert: ({ url }: any) => expect(url).toContain('_pageSize=100'),
+      },
+      {
+        name: 'adds pagedResultsCookie when provided',
+        input: { type: 'variable', pagedResultsCookie: 'cookie-abc' },
+        assert: ({ url }: any) => expect(url).toContain('_pagedResultsCookie=cookie-abc'),
+      },
+      {
+        name: 'adds sortKeys when provided',
+        input: { type: 'variable', sortKeys: '_id,-lastChangeDate' },
+        assert: ({ url }: any) => expect(url).toContain('_sortKeys=_id%2C-lastChangeDate'),
+      },
+      {
+        name: 'adds accept-api-version header',
+        input: { type: 'variable' },
+        assert: ({ options }: any) =>
+          expect(options).toEqual(
+            expect.objectContaining({
+              headers: expect.objectContaining({ 'accept-api-version': 'resource=2.0' })
+            })
+          ),
+      },
+      {
+        name: 'passes correct scopes to auth',
+        input: { type: 'variable' },
+        assert: ({ scopes }: any) => expect(scopes).toEqual(['fr:idc:esv:read']),
+      },
+    ];
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('https://test.forgeblocks.com/environment/secrets'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
+    it.each(requestCases)('$name', async ({ input, setup, assert }) => {
+      setup?.();
 
-    it('should add queryFilter with queryTerm', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-        queryTerm: 'api-key',
-      });
+      await queryESVsTool.toolFunction(input as any);
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_queryFilter=%2F_id+co+%22api-key%22'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should default queryFilter to "true" when queryTerm omitted', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_queryFilter=true'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should escape double quotes in queryTerm', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-        queryTerm: 'test"injection',
-      });
-
-      // The escaped quote should be \\" which URL-encodes to %5C%22
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_queryFilter=%2F_id+co+%22test%5C%22injection%22'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should add pageSize to URL', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-        pageSize: 25,
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pageSize=25'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should default pageSize to 50 when omitted', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pageSize=50'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should clamp pageSize to maximum 100', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-        pageSize: 150,
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pageSize=100'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should add pagedResultsCookie to URL when provided', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-        pagedResultsCookie: 'cookie-abc',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_pagedResultsCookie=cookie-abc'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should add sortKeys to URL when provided', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-        sortKeys: '_id,-lastChangeDate',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_sortKeys=_id%2C-lastChangeDate'),
-        expect.any(Array),
-        expect.any(Object)
-      );
-    });
-
-    it('should add accept-api-version header', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'accept-api-version': 'resource=2.0'
-          })
-        })
-      );
-    });
-
-    it('should pass correct scopes to auth', async () => {
-      await queryESVsTool.toolFunction({
-        type: 'variable',
-      });
-
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idc:esv:read'],
-        expect.any(Object)
-      );
+      const [url, scopes, options] = getSpy().mock.calls.at(-1)!;
+      assert({ url, scopes, options });
     });
   });
 
   // ===== RESPONSE HANDLING TESTS =====
   describe('Response Handling', () => {
-    it('should format successful response', async () => {
-      const result = await queryESVsTool.toolFunction({
-        type: 'variable',
-      });
+    it.each([
+      {
+        name: 'should format successful response',
+        setup: undefined,
+        input: { type: 'variable' },
+        assert: (response: any) => {
+          expect(response).toHaveProperty('result');
+          expect(Array.isArray(response.result)).toBe(true);
+        },
+      },
+      {
+        name: 'should handle empty results',
+        setup: () => {
+          server.use(
+            http.get('https://*/environment/variables', ({ request }) => {
+              const authHeader = request.headers.get('Authorization');
+              if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return new HttpResponse(
+                  JSON.stringify({ error: 'unauthorized' }),
+                  { status: 401 }
+                );
+              }
+              return HttpResponse.json({
+                result: [],
+                resultCount: 0,
+                totalPagedResults: 0,
+              });
+            })
+          );
+        },
+        input: { type: 'variable', queryTerm: 'nonexistent' },
+        assert: (response: any) => {
+          expect(response.result).toEqual([]);
+          expect(response.resultCount).toBe(0);
+        },
+      },
+    ])('$name', async ({ input, setup, assert }) => {
+      setup?.();
 
+      const result = await queryESVsTool.toolFunction(input as any);
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe('text');
       const response = JSON.parse(result.content[0].text);
-      expect(response).toHaveProperty('result');
-      expect(Array.isArray(response.result)).toBe(true);
-    });
-
-    it('should handle empty results', async () => {
-      server.use(
-        http.get('https://*/environment/variables', ({ request }) => {
-          const authHeader = request.headers.get('Authorization');
-          if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
-          }
-          return HttpResponse.json({
-            result: [],
-            resultCount: 0,
-            totalPagedResults: 0,
-          });
-        })
-      );
-
-      const result = await queryESVsTool.toolFunction({
-        type: 'variable',
-        queryTerm: 'nonexistent',
-      });
-
-      expect(result.content).toHaveLength(1);
-      const response = JSON.parse(result.content[0].text);
-      expect(response.result).toEqual([]);
-      expect(response.resultCount).toBe(0);
+      assert(response);
     });
   });
 
   // ===== INPUT VALIDATION TESTS =====
   describe('Input Validation', () => {
-    it('should reject invalid type enum', () => {
-      const schema = queryESVsTool.inputSchema.type;
-      expect(() => schema.parse('invalid')).toThrow();
-    });
-
     it('should accept both valid type enum values', () => {
       const schema = queryESVsTool.inputSchema.type;
       expect(() => schema.parse('variable')).not.toThrow();
       expect(() => schema.parse('secret')).not.toThrow();
     });
 
-    it('should reject queryTerm exceeding max length', () => {
-      const schema = queryESVsTool.inputSchema.queryTerm;
-      expect(() => schema.parse('a'.repeat(101))).toThrow();
-    });
-
-    it('should reject sortKeys exceeding max length', () => {
-      const schema = queryESVsTool.inputSchema.sortKeys;
-      expect(() => schema.parse('a'.repeat(201))).toThrow();
+    it.each([
+      {
+        name: 'rejects invalid type enum',
+        schema: queryESVsTool.inputSchema.type,
+        value: 'invalid',
+      },
+      {
+        name: 'rejects queryTerm exceeding max length',
+        schema: queryESVsTool.inputSchema.queryTerm,
+        value: 'a'.repeat(101),
+      },
+      {
+        name: 'rejects sortKeys exceeding max length',
+        schema: queryESVsTool.inputSchema.sortKeys,
+        value: 'a'.repeat(201),
+      },
+    ])('$name', ({ schema, value }) => {
+      expect(() => schema.parse(value)).toThrow();
     });
   });
 
   // ===== ERROR HANDLING TESTS =====
   describe('Error Handling', () => {
-    it('should handle 401 Unauthorized error', async () => {
-      server.use(
-        http.get('https://*/environment/variables', () => {
-          return new HttpResponse(
+    it.each([
+      {
+        name: 'should handle 401 Unauthorized error',
+        handler: () =>
+          new HttpResponse(
             JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }),
             { status: 401 }
-          );
-        })
-      );
-
-      const result = await queryESVsTool.toolFunction({
-        type: 'variable',
-      });
-
-      expect(result.content[0].text).toContain('Failed to query environment variables');
-      expect(result.content[0].text).toContain('401');
-    });
-
-    it('should handle 500 Internal Server Error', async () => {
-      server.use(
-        http.get('https://*/environment/variables', () => {
-          return new HttpResponse(
+          ),
+        expected: '401',
+      },
+      {
+        name: 'should handle 500 Internal Server Error',
+        handler: () =>
+          new HttpResponse(
             JSON.stringify({ error: 'internal_error', message: 'Server error' }),
             { status: 500 }
-          );
-        })
+          ),
+        expected: '500',
+      },
+    ])('$name', async ({ handler, expected }) => {
+      server.use(
+        http.get('https://*/environment/variables', handler)
       );
 
       const result = await queryESVsTool.toolFunction({
@@ -292,7 +221,7 @@ describe('queryESVs', () => {
       });
 
       expect(result.content[0].text).toContain('Failed to query environment variables');
-      expect(result.content[0].text).toContain('500');
+      expect(result.content[0].text).toContain(expected);
     });
   });
 });
