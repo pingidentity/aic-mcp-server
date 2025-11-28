@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
 import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
-import { server } from '../../setup.js';
-import { http, HttpResponse } from 'msw';
 import { deleteThemeTool } from '../../../src/tools/themes/deleteTheme.js';
+import { http, HttpResponse } from 'msw';
+import { buildRealmConfig, mockThemeConfigHandlers } from '../../helpers/themeConfigMocks.js';
+import { server } from '../../setup.js';
 
 describe('deleteTheme', () => {
   const getSpy = setupTestEnvironment();
@@ -16,21 +17,10 @@ describe('deleteTheme', () => {
   // ===== APPLICATION LOGIC TESTS (Complex Multi-Step Process) =====
   describe('Application Logic (Multi-Step Process)', () => {
     it('should fetch current theme config first', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
-          });
-        }),
-        http.put('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({});
-        })
-      );
+      mockThemeConfigHandlers(buildRealmConfig({
+        alpha: [{ _id: 'theme-123', name: 'TestTheme', isDefault: false }],
+        bravo: [],
+      }));
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
@@ -46,11 +36,7 @@ describe('deleteTheme', () => {
     });
 
     it('should validate config structure exists', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({});
-        })
-      );
+      mockThemeConfigHandlers({ realm: {} as any });
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
@@ -62,15 +48,7 @@ describe('deleteTheme', () => {
     });
 
     it('should validate realm exists in config', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              bravo: [],
-            },
-          });
-        })
-      );
+      mockThemeConfigHandlers(buildRealmConfig({ bravo: [] }));
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',

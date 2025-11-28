@@ -1,41 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createTestTokenData, setupAuthServiceTest } from '../../helpers/authServiceTestHelper.js';
+import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
 // Track mock storage instance
 let mockStorage: any;
+const getStorage = () => {
+  const storage = getMockStorage();
+  if (!storage) {
+    throw new Error('MockStorage instance not initialized');
+  }
+  return storage;
+};
 
 // Use vi.hoisted() to ensure mocks are created before imports
-const { MockStorage } = vi.hoisted(() => {
-  class MockStorage {
-    private mockGetToken = vi.fn();
-    private mockSetToken = vi.fn();
-    private mockDeleteToken = vi.fn();
-
-    constructor() {
-      // Store reference to instance so tests can configure it
-      mockStorage = this;
-    }
-
-    async getToken() {
-      return this.mockGetToken();
-    }
-
-    async setToken(tokenData: any) {
-      return this.mockSetToken(tokenData);
-    }
-
-    async deleteToken() {
-      return this.mockDeleteToken();
-    }
-
-    // Test helper methods
-    _mockGetToken() { return this.mockGetToken; }
-    _mockSetToken() { return this.mockSetToken; }
-    _mockDeleteToken() { return this.mockDeleteToken; }
-  }
-
-  return { MockStorage };
-});
+const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi);
 
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
@@ -71,6 +49,7 @@ describe('AuthService Token Caching', () => {
     // Reset modules to clear singleton instance
     vi.resetModules();
 
+    mockStorage = getMockStorage();
     // Create mock auth flow functions
     mockPkceFlow = vi.fn().mockResolvedValue('mock-access-token');
     mockDeviceFlow = vi.fn().mockResolvedValue('mock-access-token');
@@ -97,7 +76,7 @@ describe('AuthService Token Caching', () => {
         expiresAt: mockNow + 3600000, // Expires in 1 hour
         aicBaseUrl: 'test.forgeblocks.com',
       });
-      mockStorage._mockGetToken().mockResolvedValue(validToken);
+      getStorage()._mockGetToken().mockResolvedValue(validToken);
 
       // Mock auth flows and token exchange
       const authServiceInstance = getAuthService() as any;
@@ -112,7 +91,7 @@ describe('AuthService Token Caching', () => {
       expect(token).toBe('scoped-token');
 
       // Should check storage
-      expect(mockStorage._mockGetToken()).toHaveBeenCalledTimes(1);
+      expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(1);
 
       // Should NOT trigger authentication
       expect(mockPkceFlow).not.toHaveBeenCalled();
@@ -134,7 +113,7 @@ describe('AuthService Token Caching', () => {
         expiresAt: mockNow + 3600000,
         aicBaseUrl: 'test.forgeblocks.com',
       });
-      mockStorage._mockGetToken().mockResolvedValue(validToken);
+      getStorage()._mockGetToken().mockResolvedValue(validToken);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -144,7 +123,7 @@ describe('AuthService Token Caching', () => {
       await getAuthService().getToken(['fr:idm:*']);
 
       // Verify storage was checked
-      expect(mockStorage._mockGetToken()).toHaveBeenCalledTimes(1);
+      expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -161,7 +140,7 @@ describe('AuthService Token Caching', () => {
         expiresAt: mockNow - 1000, // Already expired
         aicBaseUrl: 'test.forgeblocks.com',
       });
-      mockStorage._mockGetToken().mockResolvedValue(expiredToken);
+      getStorage()._mockGetToken().mockResolvedValue(expiredToken);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -171,7 +150,7 @@ describe('AuthService Token Caching', () => {
       await getAuthService().getToken(['fr:idm:*']);
 
       // Should check storage
-      expect(mockStorage._mockGetToken()).toHaveBeenCalledTimes(1);
+      expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(1);
 
       // Should trigger PKCE flow (default mode)
       expect(mockPkceFlow).toHaveBeenCalledTimes(1);
@@ -195,7 +174,7 @@ describe('AuthService Token Caching', () => {
         expiresAt: mockNow + 3600000, // Valid expiry
         aicBaseUrl: 'different-tenant.forgeblocks.com', // Different tenant
       });
-      mockStorage._mockGetToken().mockResolvedValue(differentTenantToken);
+      getStorage()._mockGetToken().mockResolvedValue(differentTenantToken);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -238,7 +217,7 @@ describe('AuthService Token Caching', () => {
         expiresAt: mockNow + 3600000,
         aicBaseUrl: 'test.forgeblocks.com',
       });
-      mockStorage._mockGetToken().mockResolvedValue(validToken);
+      getStorage()._mockGetToken().mockResolvedValue(validToken);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -252,7 +231,7 @@ describe('AuthService Token Caching', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Fresh authentication required on startup');
 
       // Should NOT check storage
-      expect(mockStorage._mockGetToken()).not.toHaveBeenCalled();
+      expect(getStorage()._mockGetToken()).not.toHaveBeenCalled();
 
       // Should trigger PKCE flow
       expect(mockPkceFlow).toHaveBeenCalledTimes(1);
@@ -273,7 +252,7 @@ describe('AuthService Token Caching', () => {
         expiresAt: mockNow + 3600000,
         aicBaseUrl: 'test.forgeblocks.com',
       });
-      mockStorage._mockGetToken().mockResolvedValue(validToken);
+      getStorage()._mockGetToken().mockResolvedValue(validToken);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -287,7 +266,7 @@ describe('AuthService Token Caching', () => {
       expect(token).toBe('scoped-token');
 
       // Should check storage
-      expect(mockStorage._mockGetToken()).toHaveBeenCalledTimes(1);
+      expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(1);
 
       // Should NOT trigger PKCE flow
       expect(mockPkceFlow).not.toHaveBeenCalled();
@@ -303,7 +282,7 @@ describe('AuthService Token Caching', () => {
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
 
       // No cached token exists
-      mockStorage._mockGetToken().mockResolvedValue(null);
+      getStorage()._mockGetToken().mockResolvedValue(null);
 
       // Mock PKCE flow with delay to simulate async behavior
       let resolveAuthFlow: (value: string) => void;
@@ -343,7 +322,7 @@ describe('AuthService Token Caching', () => {
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
 
       // No cached token exists
-      mockStorage._mockGetToken().mockResolvedValue(null);
+      getStorage()._mockGetToken().mockResolvedValue(null);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -358,7 +337,7 @@ describe('AuthService Token Caching', () => {
 
       // Reset mock and storage for second call
       mockPkceFlow.mockClear();
-      mockStorage._mockGetToken().mockResolvedValue(null);
+      getStorage()._mockGetToken().mockResolvedValue(null);
 
       // Second call should trigger new authentication (not use cleared promise)
       await getAuthService().getToken(['fr:idm:*']);
@@ -374,7 +353,7 @@ describe('AuthService Token Caching', () => {
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
 
       // No cached token exists
-      mockStorage._mockGetToken().mockResolvedValue(null);
+      getStorage()._mockGetToken().mockResolvedValue(null);
 
       const authServiceInstance = getAuthService() as any;
       mockPkceFlow.mockImplementation(async (scopes: string[]) => {
@@ -401,7 +380,7 @@ describe('AuthService Token Caching', () => {
 
       // Mock storage to throw error
       const storageError = new Error('Keychain access denied');
-      mockStorage._mockGetToken().mockRejectedValue(storageError);
+      getStorage()._mockGetToken().mockRejectedValue(storageError);
 
       const authServiceInstance = getAuthService() as any;
       authServiceInstance.executePkceFlow = mockPkceFlow;
@@ -426,7 +405,7 @@ describe('AuthService Token Caching', () => {
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
 
       // Mock storage to throw error
-      mockStorage._mockGetToken().mockRejectedValue(new Error('Storage error'));
+      getStorage()._mockGetToken().mockRejectedValue(new Error('Storage error'));
 
       mockPkceFlow.mockResolvedValue('fresh-token');
 

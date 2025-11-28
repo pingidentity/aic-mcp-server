@@ -5,42 +5,13 @@ import {
   setupAuthServiceTest,
   MOCK_TOKEN_RESPONSE,
 } from '../../helpers/authServiceTestHelper.js';
+import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
 // Track mock storage instance
 let mockStorage: any;
 
 // Use vi.hoisted() to ensure mocks are created before imports
-const { MockStorage } = vi.hoisted(() => {
-  class MockStorage {
-    private mockGetToken = vi.fn();
-    private mockSetToken = vi.fn();
-    private mockDeleteToken = vi.fn();
-
-    constructor() {
-      // Store reference to instance so tests can configure it
-      mockStorage = this;
-    }
-
-    async getToken() {
-      return this.mockGetToken();
-    }
-
-    async setToken(tokenData: any) {
-      return this.mockSetToken(tokenData);
-    }
-
-    async deleteToken() {
-      return this.mockDeleteToken();
-    }
-
-    // Test helper methods
-    _mockGetToken() { return this.mockGetToken; }
-    _mockSetToken() { return this.mockSetToken; }
-    _mockDeleteToken() { return this.mockDeleteToken; }
-  }
-
-  return { MockStorage };
-});
+const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi);
 
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
@@ -80,6 +51,7 @@ describe('AuthService Token Exchange', () => {
   });
 
   function primeStorageWithValidToken() {
+    mockStorage = getMockStorage();
     if (!mockStorage) {
       throw new Error('MockStorage instance not initialized');
     }

@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
 import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
-import { server } from '../../setup.js';
-import { http, HttpResponse } from 'msw';
 import { createThemeTool } from '../../../src/tools/themes/createTheme.js';
+import { buildRealmConfig, mockThemeConfigHandlers, capturePutBody } from '../../helpers/themeConfigMocks.js';
+import { HttpResponse, http } from 'msw';
+import { server } from '../../setup.js';
 
 describe('createTheme', () => {
   const getSpy = setupTestEnvironment();
@@ -37,19 +38,7 @@ describe('createTheme', () => {
     });
 
     it('should fetch current theme config first', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [],
-              bravo: [],
-            },
-          });
-        }),
-        http.put('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({});
-        })
-      );
+      mockThemeConfigHandlers(buildRealmConfig({ alpha: [], bravo: [] }));
 
       await createThemeTool.toolFunction({
         realm: 'alpha',
@@ -65,11 +54,7 @@ describe('createTheme', () => {
     });
 
     it('should validate config structure exists', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({});
-        })
-      );
+      mockThemeConfigHandlers({ realm: {} as any });
 
       const result = await createThemeTool.toolFunction({
         realm: 'alpha',
@@ -80,15 +65,7 @@ describe('createTheme', () => {
     });
 
     it('should validate realm exists in config', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              bravo: [],
-            },
-          });
-        })
-      );
+      mockThemeConfigHandlers(buildRealmConfig({ bravo: [] }));
 
       const result = await createThemeTool.toolFunction({
         realm: 'alpha',
@@ -99,18 +76,10 @@ describe('createTheme', () => {
     });
 
     it('should check for duplicate theme name', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [
-                { _id: 'theme-existing', name: 'ExistingTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
-          });
-        })
-      );
+      mockThemeConfigHandlers(buildRealmConfig({
+        alpha: [{ _id: 'theme-existing', name: 'ExistingTheme', isDefault: false }],
+        bravo: [],
+      }));
 
       const result = await createThemeTool.toolFunction({
         realm: 'alpha',
@@ -122,20 +91,7 @@ describe('createTheme', () => {
     });
 
     it('should generate UUID for new theme', async () => {
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [],
-              bravo: [],
-            },
-          });
-        }),
-        http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
-          const body = await request.json() as any;
-          return HttpResponse.json(body);
-        })
-      );
+      mockThemeConfigHandlers(buildRealmConfig({ alpha: [], bravo: [] }));
 
       const result = await createThemeTool.toolFunction({
         realm: 'alpha',
@@ -150,28 +106,15 @@ describe('createTheme', () => {
     });
 
     it('should add _id to themeData', async () => {
-      let capturedPutBody: any = null;
-
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [],
-              bravo: [],
-            },
-          });
-        }),
-        http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
-          capturedPutBody = await request.json();
-          return HttpResponse.json(capturedPutBody);
-        })
-      );
+      const putCapture = capturePutBody();
+      mockThemeConfigHandlers(buildRealmConfig({ alpha: [], bravo: [] }), putCapture.handler);
 
       await createThemeTool.toolFunction({
         realm: 'alpha',
         themeData: { name: 'NewTheme', primaryColor: '#0066cc' },
       });
 
+      const capturedPutBody = putCapture.get();
       expect(capturedPutBody).not.toBeNull();
       expect(capturedPutBody.realm.alpha).toHaveLength(1);
       expect(capturedPutBody.realm.alpha[0]._id).toBeDefined();
@@ -180,49 +123,22 @@ describe('createTheme', () => {
       expect(capturedPutBody.realm.alpha[0].primaryColor).toBe('#0066cc');
     });
 
-    it('should set isDefault to false', async () => {
-      let capturedPutBody: any = null;
-
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [],
-              bravo: [],
-            },
-          });
-        }),
-        http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
-          capturedPutBody = await request.json();
-          return HttpResponse.json(capturedPutBody);
-        })
-      );
+    it('should set isDefault=false on new theme', async () => {
+      const putCapture = capturePutBody();
+      mockThemeConfigHandlers(buildRealmConfig({ alpha: [], bravo: [] }), putCapture.handler);
 
       await createThemeTool.toolFunction({
         realm: 'alpha',
         themeData: { name: 'NewTheme' },
       });
 
+      const capturedPutBody = putCapture.get();
       expect(capturedPutBody.realm.alpha[0].isDefault).toBe(false);
     });
 
     it('should preserve user-provided themeData fields', async () => {
-      let capturedPutBody: any = null;
-
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [],
-              bravo: [],
-            },
-          });
-        }),
-        http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
-          capturedPutBody = await request.json();
-          return HttpResponse.json(capturedPutBody);
-        })
-      );
+      const putCapture = capturePutBody();
+      mockThemeConfigHandlers(buildRealmConfig({ alpha: [], bravo: [] }), putCapture.handler);
 
       await createThemeTool.toolFunction({
         realm: 'alpha',
@@ -234,7 +150,7 @@ describe('createTheme', () => {
         },
       });
 
-      const newTheme = capturedPutBody.realm.alpha[0];
+      const newTheme = putCapture.get().realm.alpha[0];
       expect(newTheme._id).toBeDefined();
       expect(typeof newTheme._id).toBe('string');
       expect(newTheme.isDefault).toBe(false);
@@ -245,35 +161,24 @@ describe('createTheme', () => {
     });
 
     it('should append new theme to realm themes array', async () => {
-      let capturedPutBody: any = null;
-
-      server.use(
-        http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json({
-            realm: {
-              alpha: [
-                { _id: 'theme-1', name: 'Theme1', isDefault: false },
-                { _id: 'theme-2', name: 'Theme2', isDefault: true },
-              ],
-              bravo: [],
-            },
-          });
-        }),
-        http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
-          capturedPutBody = await request.json();
-          return HttpResponse.json(capturedPutBody);
-        })
-      );
+      const putCapture = capturePutBody();
+      mockThemeConfigHandlers(buildRealmConfig({
+        alpha: [
+          { _id: 'theme-1', name: 'Theme1', isDefault: false },
+          { _id: 'theme-2', name: 'Theme2', isDefault: true },
+        ],
+        bravo: [],
+      }), putCapture.handler);
 
       await createThemeTool.toolFunction({
         realm: 'alpha',
         themeData: { name: 'NewTheme' },
       });
 
-      expect(capturedPutBody.realm.alpha).toHaveLength(3);
-      expect(capturedPutBody.realm.alpha[0].name).toBe('Theme1');
-      expect(capturedPutBody.realm.alpha[1].name).toBe('Theme2');
-      expect(capturedPutBody.realm.alpha[2].name).toBe('NewTheme');
+      expect(putCapture.get().realm.alpha).toHaveLength(3);
+      expect(putCapture.get().realm.alpha[0].name).toBe('Theme1');
+      expect(putCapture.get().realm.alpha[1].name).toBe('Theme2');
+      expect(putCapture.get().realm.alpha[2].name).toBe('NewTheme');
     });
 
     it('should preserve other realm configs', async () => {

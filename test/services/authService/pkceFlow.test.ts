@@ -5,42 +5,20 @@ import {
   setupAuthServiceTest,
   MOCK_TOKEN_RESPONSE,
 } from '../../helpers/authServiceTestHelper.js';
+import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
 // Track mock storage instance
 let mockStorage: any;
+const getStorage = () => {
+  const storage = getMockStorage();
+  if (!storage) {
+    throw new Error('MockStorage instance not initialized');
+  }
+  return storage;
+};
 
 // Use vi.hoisted() to ensure mocks are created before imports
-const { MockStorage } = vi.hoisted(() => {
-  class MockStorage {
-    private mockGetToken = vi.fn();
-    private mockSetToken = vi.fn();
-    private mockDeleteToken = vi.fn();
-
-    constructor() {
-      // Store reference to instance so tests can configure it
-      mockStorage = this;
-    }
-
-    async getToken() {
-      return this.mockGetToken();
-    }
-
-    async setToken(tokenData: any) {
-      return this.mockSetToken(tokenData);
-    }
-
-    async deleteToken() {
-      return this.mockDeleteToken();
-    }
-
-    // Test helper methods
-    _mockGetToken() { return this.mockGetToken; }
-    _mockSetToken() { return this.mockSetToken; }
-    _mockDeleteToken() { return this.mockDeleteToken; }
-  }
-
-  return { MockStorage };
-});
+const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi);
 
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
@@ -92,6 +70,7 @@ describe('AuthService PKCE Flow', () => {
     vi.resetModules();
 
     // Mock storage to return null (no cached token)
+    mockStorage = getMockStorage();
     if (mockStorage) {
       // Reset spy calls between tests
       mockStorage._mockGetToken().mockReset();
@@ -419,7 +398,8 @@ describe('AuthService PKCE Flow', () => {
       await tokenPromise;
 
       // Verify token was stored with correct values
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith(
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
           accessToken: 'custom-access-token',
         })
@@ -469,7 +449,8 @@ describe('AuthService PKCE Flow', () => {
 
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledTimes(1);
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledTimes(1);
     });
 
     it('should store token with accessToken, expiresAt, and aicBaseUrl', async () => {
@@ -494,7 +475,8 @@ describe('AuthService PKCE Flow', () => {
 
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith({
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith({
         accessToken: MOCK_TOKEN_RESPONSE.access_token,
         expiresAt: mockNow + (MOCK_TOKEN_RESPONSE.expires_in * 1000),
         aicBaseUrl: 'test.forgeblocks.com',
@@ -529,7 +511,8 @@ describe('AuthService PKCE Flow', () => {
 
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith(
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
           expiresAt: mockNow + 7200000, // 2 hours in milliseconds
         })

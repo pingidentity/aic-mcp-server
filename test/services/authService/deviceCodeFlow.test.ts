@@ -7,42 +7,20 @@ import {
   MOCK_DEVICE_CODE_RESPONSE,
   MOCK_TOKEN_RESPONSE,
 } from '../../helpers/authServiceTestHelper.js';
+import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
 // Track mock storage instance
 let mockStorage: any;
+const getStorage = () => {
+  const storage = getMockStorage();
+  if (!storage) {
+    throw new Error('MockStorage instance not initialized');
+  }
+  return storage;
+};
 
 // Use vi.hoisted() to ensure mocks are created before imports
-const { MockStorage } = vi.hoisted(() => {
-  class MockStorage {
-    private mockGetToken = vi.fn();
-    private mockSetToken = vi.fn();
-    private mockDeleteToken = vi.fn();
-
-    constructor() {
-      // Store reference to instance so tests can configure it
-      mockStorage = this;
-    }
-
-    async getToken() {
-      return this.mockGetToken();
-    }
-
-    async setToken(tokenData: any) {
-      return this.mockSetToken(tokenData);
-    }
-
-    async deleteToken() {
-      return this.mockDeleteToken();
-    }
-
-    // Test helper methods
-    _mockGetToken() { return this.mockGetToken; }
-    _mockSetToken() { return this.mockSetToken; }
-    _mockDeleteToken() { return this.mockDeleteToken; }
-  }
-
-  return { MockStorage };
-});
+const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi);
 
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
@@ -82,6 +60,7 @@ describe('AuthService Device Code Flow', () => {
     mockMcpServer = createMockMcpServer();
 
     // Mock storage to return null (no cached token)
+    mockStorage = getMockStorage();
     if (mockStorage) {
       // Reset spy calls between tests
       mockStorage._mockGetToken().mockReset();
@@ -597,7 +576,8 @@ describe('AuthService Device Code Flow', () => {
       await vi.advanceTimersByTimeAsync(5000);
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledTimes(1);
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledTimes(1);
     });
 
     it('should store token with accessToken, expiresAt, and aicBaseUrl', async () => {
@@ -621,7 +601,8 @@ describe('AuthService Device Code Flow', () => {
       await vi.advanceTimersByTimeAsync(5000);
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith({
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith({
         accessToken: MOCK_TOKEN_RESPONSE.access_token,
         expiresAt: mockNow + (MOCK_TOKEN_RESPONSE.expires_in * 1000),
         aicBaseUrl: 'test.forgeblocks.com',
@@ -654,7 +635,8 @@ describe('AuthService Device Code Flow', () => {
       await vi.advanceTimersByTimeAsync(5000);
       await tokenPromise;
 
-      expect(mockStorage._mockSetToken()).toHaveBeenCalledWith(
+      const storage = getStorage();
+      expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
           expiresAt: mockNow + 7200000, // 2 hours in milliseconds
         })
@@ -828,7 +810,7 @@ describe('AuthService Device Code Flow', () => {
       initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
 
       // Mock storage to throw error on setToken
-      mockStorage._mockSetToken().mockRejectedValue(new Error('Disk full'));
+      getStorage()._mockSetToken().mockRejectedValue(new Error('Disk full'));
 
       server.use(
         http.post('https://*/am/oauth2/device/code', () => {
