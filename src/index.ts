@@ -24,13 +24,16 @@ if (!process.env.AIC_BASE_URL) {
 const allTools = getAllTools();
 const allScopes = getAllScopes();
 
-// Initialize auth service with all scopes
-initAuthService(allScopes);
-
 // Create an MCP server
 const server = new McpServer({
   name: 'pingone-aic-mcp-server',
   version: '1.0.0'
+});
+
+// Initialize auth service with all scopes and MCP server reference
+// MCP server is required for device code flow URL elicitation
+initAuthService(allScopes, {
+  mcpServer: server
 });
 
 // Register all tools

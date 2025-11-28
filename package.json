@@ -16,10 +16,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:snapshots:update": "UPDATE_SNAPSHOTS=true vitest run"
+    "test:snapshots:update": "UPDATE_SNAPSHOTS=true vitest run",
+    "docker:build": "docker build -t pingone-aic-mcp:latest .",
+    "docker:run": "docker run --rm -i -e AIC_BASE_URL=${AIC_BASE_URL} pingone-aic-mcp:latest"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.18.2",
+    "@modelcontextprotocol/sdk": "1.23.0",
     "keytar": "^7.9.0",
     "open": "^10.1.0",
     "zod": "^3.25.64"
@@ -28,6 +30,7 @@
     "@types/node": "^24.1.0",
     "@types/open": "^6.0.0",
     "@vitest/coverage-v8": "^2.1.9",
+    "memfs": "^4.51.0",
     "msw": "^2.12.2",
     "shx": "^0.4.0",
     "tsx": "^4.20.6",

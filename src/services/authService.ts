@@ -2,7 +2,28 @@
 import * as http from 'http';
 import * as crypto from 'crypto';
 import open from 'open';
-import keytar from 'keytar';
+import { TokenStorage, TokenData, KeychainStorage, FileStorage } from './tokenStorage.js';
+
+/**
+ * Response from device code authorization request (RFC 8628)
+ */
+interface DeviceCodeResponse {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  verification_uri_complete: string;
+  expires_in: number;
+  interval: number;
+}
+
+/**
+ * Response from device code token request
+ */
+interface DeviceCodeTokenResponse {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+}
 
 // --- Configuration ---
 const AIC_BASE_URL = process.env.AIC_BASE_URL;
@@ -15,29 +36,17 @@ const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
 const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
 const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/access_token`;
 
-// Keychain configuration
-const KEYCHAIN_SERVICE = 'PingOneAIC_MCP_Server';
-const KEYCHAIN_ACCOUNT = 'user-token';
-
-/**
- * Token data stored in keychain
- */
-interface TokenData {
-  accessToken: string;
-  expiresAt: number; // Unix timestamp in milliseconds
-  aicBaseUrl: string; // The AIC tenant this token was obtained for
-}
-
 /**
  * Configuration for AuthService behavior
  */
 export interface AuthServiceConfig {
   allowCachedOnFirstRequest?: boolean;
+  mcpServer?: any;  // MCP server instance for device code flow elicitation
 }
 
 /**
- * Authentication service using OAuth 2.0 PKCE flow
- * Handles user authentication and token management
+ * Authentication service supporting OAuth 2.0 PKCE and Device Code flows
+ * Handles user authentication and token management with automatic mode selection
  */
 class AuthService {
   private tokenPromise: Promise<string> | null = null;
@@ -45,16 +54,29 @@ class AuthService {
   private allScopes: string[];
   private hasAuthenticatedThisSession: boolean = false;
   private config: AuthServiceConfig;
+  private useDeviceCode: boolean;
+  private storage: TokenStorage;
+  private mcpServer?: any;
+  private deviceCodeVerifier?: string; // PKCE verifier for device code flow
 
   constructor(allScopes: string[], config: AuthServiceConfig = {}) {
     this.allScopes = allScopes;
     this.config = config;
-    console.error('Using user PKCE authentication');
+    this.mcpServer = config.mcpServer;
+
+    // Docker build sets DOCKER_CONTAINER=true
+    const inDocker = process.env.DOCKER_CONTAINER === 'true';
+
+    this.useDeviceCode = inDocker;
+
+    this.storage = inDocker
+      ? new FileStorage('/app/tokens/token.json')
+      : new KeychainStorage();
   }
 
   /**
    * Get the primary access token with all scopes
-   * Retrieves from keychain if available and valid, otherwise performs PKCE authentication
+   * Retrieves from storage if available and valid, otherwise performs authentication
    * Always requires fresh authentication on first request of the session
    * @returns Primary access token with all scopes
    */
@@ -63,11 +85,11 @@ class AuthService {
       && !this.config.allowCachedOnFirstRequest;
 
     if (!shouldSkipCache) {
-      // Try to get token from keychain
+      // Try to get token from storage
       try {
-        const storedTokenData = await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
-        if (storedTokenData) {
-          const { accessToken, expiresAt, aicBaseUrl }: TokenData = JSON.parse(storedTokenData);
+        const tokenData = await this.storage.getToken();
+        if (tokenData) {
+          const { accessToken, expiresAt, aicBaseUrl } = tokenData;
 
           // Check if token is for the current tenant
           if (aicBaseUrl !== AIC_BASE_URL) {
@@ -80,7 +102,7 @@ class AuthService {
           }
         }
       } catch (error) {
-        console.error('Error accessing keychain:', error);
+        console.error('Error accessing token storage:', error);
       }
     } else {
       console.error('Fresh authentication required on startup');
@@ -91,9 +113,19 @@ class AuthService {
       return this.tokenPromise;
     }
 
-    // Start new token acquisition with all scopes
-    this.tokenPromise = this.executePkceFlow(this.allScopes);
-    return this.tokenPromise;
+    // Determine which auth flow to use
+    if (this.useDeviceCode) {
+      this.tokenPromise = this.executeDeviceFlow(this.allScopes);
+    } else {
+      this.tokenPromise = this.executePkceFlow(this.allScopes);
+    }
+
+    try {
+      return await this.tokenPromise;
+    } finally {
+      // Clear promise after awaiting so all concurrent waiters receive the result
+      this.tokenPromise = null;
+    }
   }
 
   /**
@@ -162,9 +194,9 @@ class AuthService {
       console.error(`Token exchange successful for scopes: [${scopes.join(', ')}]`);
 
       return exchangedToken;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If token exchange failed due to expired/invalid token, retry with fresh auth
-      if (error.shouldRetryWithReauth) {
+      if (error && typeof error === 'object' && 'shouldRetryWithReauth' in error && error.shouldRetryWithReauth) {
         console.error('Primary token invalid, re-authenticating and retrying token exchange...');
 
         // Force fresh authentication
@@ -212,16 +244,16 @@ class AuthService {
       // Calculate expiry time
       const expiresAt = Date.now() + expiresIn * 1000;
 
-      // Store token in keychain with tenant information
+      // Store token in storage with tenant information
       try {
         const tokenData: TokenData = {
           accessToken,
           expiresAt,
           aicBaseUrl: AIC_BASE_URL!
         };
-        await keytar.setPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, JSON.stringify(tokenData));
+        await this.storage.setToken(tokenData);
       } catch (error) {
-        console.error('Failed to store token in keychain:', error);
+        console.error('Failed to store token in storage:', error);
       }
 
       // Mark that we've authenticated this session
@@ -231,8 +263,6 @@ class AuthService {
     } catch (error) {
       console.error('User authentication failed:', error);
       throw error;
-    } finally {
-      this.tokenPromise = null;
     }
   }
 
@@ -308,6 +338,185 @@ class AuthService {
       accessToken: data.access_token,
       expiresIn: data.expires_in,
     };
+  }
+
+  /**
+   * Request a device code from PingOne AIC with PKCE
+   * @param scopes - OAuth scopes to request
+   * @returns Device code response with verification URL
+   */
+  private async requestDeviceCode(scopes: string[]): Promise<DeviceCodeResponse> {
+    // Generate PKCE challenge for device code flow
+    const { verifier, challenge } = this.generatePkceChallenge();
+
+    // Store verifier for later use in token polling
+    this.deviceCodeVerifier = verifier;
+
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      scope: scopes.join(' '),
+      code_challenge: challenge,
+      code_challenge_method: 'S256'
+    });
+
+    const response = await fetch(`https://${AIC_BASE_URL}/am/oauth2/device/code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Device code request failed (${response.status} ${response.statusText}): ${errorText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Poll the token endpoint until user completes authentication
+   * @param deviceCode - Device code to poll for
+   * @param interval - Polling interval in seconds
+   * @param expiresIn - How long until device code expires
+   * @returns Access token response
+   */
+  private async pollForToken(
+    deviceCode: string,
+    interval: number,
+    expiresIn: number
+  ): Promise<DeviceCodeTokenResponse> {
+    const startTime = Date.now();
+    const timeout = expiresIn * 1000;
+
+    console.error('Waiting for user authentication...');
+
+    while (Date.now() - startTime < timeout) {
+      // Wait for the specified interval
+      await new Promise(resolve => setTimeout(resolve, interval * 1000));
+
+      // Attempt to get the token with PKCE verifier
+      const params = new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        device_code: deviceCode,
+        client_id: CLIENT_ID,
+        code_verifier: this.deviceCodeVerifier!
+      });
+
+      const response = await fetch(TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+
+      // Check error response
+      const errorData = await response.json();
+
+      // authorization_pending means user hasn't completed auth yet - keep polling
+      if (errorData.error === 'authorization_pending') {
+        continue;
+      }
+
+      // Any other error is fatal
+      throw new Error(`Device code polling failed: ${errorData.error} - ${errorData.error_description || ''}`);
+    }
+
+    throw new Error('Device code expired - authentication timed out');
+  }
+
+  /**
+   * Execute the complete OAuth Device Code Flow with MCP form elicitation
+   * Presents authentication URL to user and waits for confirmation before polling
+   * NOTE: once MCP client adoption of URL elicitation is widespread, we will switch to that method
+   * NOTE: few clients support any MCP elicitation currently, so this and dockerisation are experimental features
+   * @param scopes - OAuth scopes to request
+   * @returns Primary access token
+   */
+  private async executeDeviceFlow(scopes: string[]): Promise<string> {
+    if (!this.mcpServer) {
+      throw new Error('MCP server reference required for device code flow. Pass mcpServer in AuthServiceConfig.');
+    }
+
+    try {
+      // 1. Request device code from PingOne AIC
+      const deviceData = await this.requestDeviceCode(scopes);
+
+      // 2. Trigger MCP form elicitation with authentication URL
+      const { randomUUID } = await import('crypto');
+      const elicitationId = randomUUID();
+
+      console.error('Requesting user authentication via device code flow...');
+
+      const result = await this.mcpServer.server.elicitInput({
+        mode: 'form',
+        message: `Please authenticate with PingOne AIC by opening this URL in your browser:\n\n${deviceData.verification_uri_complete}\n\nPlease respond after you complete authentication.`,
+        requestedSchema: {
+          type: 'object',
+          properties: {},
+          required: []
+        },
+        elicitationId: elicitationId
+      });
+
+      // 3. Check if user confirmed authentication by accepting the form
+      if (result.action !== 'accept') {
+        console.error('User cancelled authentication. Action:', result.action);
+        throw new Error(`User cancelled authentication (action: ${result.action})`);
+      }
+
+      // 4. User accepted - poll for token
+      console.error('User accepted authentication prompt, polling for token...');
+      let tokenData: DeviceCodeTokenResponse;
+      try {
+        tokenData = await this.pollForToken(
+          deviceData.device_code,
+          deviceData.interval,
+          deviceData.expires_in
+        );
+        console.error('Polling completed successfully');
+      } catch (pollError: unknown) {
+        const errorMessage = pollError instanceof Error ? pollError.message : String(pollError);
+        console.error('Polling failed:', errorMessage);
+        throw new Error(
+          `Polling failed after user confirmed authentication. ` +
+          `Error: ${errorMessage}. ` +
+          `This suggests the user may not have completed authentication at PingOne AIC before confirming.`
+        );
+      }
+
+      // 5. Store token using storage abstraction
+      const tokenToStore: TokenData = {
+        accessToken: tokenData.access_token,
+        expiresAt: Date.now() + (tokenData.expires_in * 1000),
+        aicBaseUrl: AIC_BASE_URL!
+      };
+
+      await this.storage.setToken(tokenToStore);
+      this.hasAuthenticatedThisSession = true;
+
+      // 6. Send completion notification (optional per spec)
+      try {
+        await this.mcpServer.server.notification({
+          method: 'notifications/elicitation/complete',
+          params: { elicitationId }
+        });
+      } catch (error) {
+        // Notification is optional, don't fail if it doesn't work
+        console.error('Failed to send elicitation completion notification:', error);
+      }
+
+      console.error('✅ Device code authentication successful');
+      return tokenData.access_token;
+
+    } catch (error) {
+      console.error('Device code authentication failed:', error);
+      throw error;
+    } finally {
+      this.deviceCodeVerifier = undefined;
+    }
   }
 
   /**

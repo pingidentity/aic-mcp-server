@@ -90,6 +90,44 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 Restart your AI assistant and start asking questions about your PingOne AIC environment! On first use, your browser will open for authentication.
 
+## Docker Deployment (Experimental)
+
+> **⚠️ EXPERIMENTAL FEATURE**: Docker deployment uses OAuth 2.0 Device Code Flow with MCP form elicitation for authentication. **MCP client support for form elicitation is currently limited.** This feature is in preview as it will only work for certain AI agents. If your agent doesn't support elicitation, use the local deployment method above instead.
+
+### Build
+
+```bash
+npm run docker:build
+```
+
+### Configure Your AI Assistant
+
+#### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "pingone-aic": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "AIC_BASE_URL=your-tenant.forgeblocks.com",
+        "pingone-aic-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+Replace `your-tenant.forgeblocks.com` with your PingOne AIC environment hostname.
+
+**Authentication**: When authentication is required, your MCP client should display a URL. Click it to authenticate in your browser, then accept the prompt in your client. If you don't see the URL, your client may not support form elicitation yet.
+
 ## Available Tools
 
 ### listManagedObjects
