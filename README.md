@@ -101,22 +101,27 @@ For other MCP clients supporting STDIO transport:
 
 ### 3. Start Using
 
-Restart your MCP client and start asking questions! On first use, your browser will open for authentication.
+Restart your MCP client and start asking questions! Your browser will open for authentication when you use the first tool in a session.
 
 ## Authentication
 
 The server uses **OAuth 2.0 PKCE flow** for secure user authentication:
 
-1. **First Use** - Browser opens automatically for user login at PingOne AIC
+1. **First Tool Use** - Browser opens automatically for user login at PingOne AIC when you use a tool for the first time in a session
 2. **Token Storage** - Access tokens stored securely in OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service)
-3. **Automatic Reuse** - Cached tokens used for subsequent requests
-4. **Auto Re-authentication** - When tokens expire, browser opens again for new login
+3. **Automatic Reuse** - Cached tokens used for subsequent tool calls within the same session
+4. **Auto Re-authentication** - When tokens expire during a session, browser opens again for new login
 
 **Docker Deployment**: Uses OAuth 2.0 Device Code Flow with ephemeral token storage (tokens deleted on container restart).
 
 **Security Features**:
 - User-based actions provide complete audit trail
 - All actions traceable to authenticated users for compliance
+
+> [!CAUTION]
+> **Administrator Access Required**: This server requires administrative authentication and provides administrative capabilities to your PingOne AIC development environment. All operations are performed as the authenticated administrator and are fully auditable.
+>
+> **Development Environments Only**: This server can only be used with development environments. Use with trusted AI assistants in secure contexts. AI-driven operations can make mistakes - review and test changes carefully before promoting to higher environments.
 
 ## Available Tools
 
@@ -218,12 +223,6 @@ The PingOne AIC MCP Server implements multiple security layers:
 - **User-based authentication** - All API calls are authenticated as the user who logged in, providing complete audit trails
 - **Input validation** - Built-in protections against path traversal and query injection attacks
 - **Tenant isolation** - Tokens are validated against the configured `AIC_BASE_URL` to prevent accidental cross-tenant operations
-
-> [!IMPORTANT]
-> Tokens are cached and reused across sessions. When switching between different PingOne AIC environments, ensure you update the `AIC_BASE_URL` configuration. The server will automatically detect tenant mismatches and prompt for re-authentication.
-
-> [!CAUTION]
-> This MCP server grants broad administrative access to your PingOne AIC environment. Only use it with AI assistants in secure, trusted contexts. All operations are performed with your authenticated user's permissions.
 
 ## Troubleshooting
 
