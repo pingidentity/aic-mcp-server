@@ -3,7 +3,7 @@
 # ============================================================================
 # Stage 1: Builder - Compile TypeScript
 # ============================================================================
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ RUN npm prune --production
 # ============================================================================
 # Stage 2: Runtime - Minimal production image
 # ============================================================================
-FROM node:20-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
