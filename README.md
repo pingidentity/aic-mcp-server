@@ -16,7 +16,7 @@
 > - Features, APIs, and functionality may change at any time without notice
 > - Not recommended for production use or critical workloads
 > - Support during the beta period is limited
-> - Issues and feedback can be reported through the [GitHub issue tracker](https://github.com/your-org/pingone_AIC_MCP/issues)
+> - Issues and feedback can be reported through the [GitHub issue tracker](https://github.com/pingidentity/aic-mcp-server/issues)
 >
 > By using this beta software, you acknowledge and accept these conditions.
 
@@ -50,8 +50,8 @@ Ask questions like "Find all alpha_users with email starting with john@example.c
 ### 1. Install
 
 ```bash
-git clone https://github.com/your-org/pingone_AIC_MCP.git
-cd pingone_AIC_MCP
+git clone https://github.com/pingidentity/aic-mcp-server.git
+cd aic-mcp-server
 npm install
 npm run build
 ```
@@ -292,7 +292,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Feedback & Issues
 
-Found a bug or have a feature request? Please [open an issue](https://github.com/your-org/pingone_AIC_MCP/issues).
+Found a bug or have a feature request? Please [open an issue](https://github.com/pingidentity/aic-mcp-server/issues).
 
 ## License
 
