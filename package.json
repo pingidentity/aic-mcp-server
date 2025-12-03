@@ -1,9 +1,8 @@
 {
-  "name": "@pingidentity/aic-mcp-server",
+  "name": "@ping-identity/aic-mcp-server",
   "version": "1.0.0",
   "main": "dist/index.js",
   "license": "Apache-2.0",
-  "private": true,
   "type": "module",
   "repository": {
     "type": "git",
@@ -13,6 +12,15 @@
     "url": "https://github.com/pingidentity/aic-mcp-server/issues"
   },
   "homepage": "https://github.com/pingidentity/aic-mcp-server#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "node dist/index.js",
     "build": "rm -rf dist && tsc",
