@@ -145,6 +145,7 @@ fi
 # Create GitHub release
 info "Creating GitHub release..."
 gh release create "$VERSION" \
+    --repo pingidentity/aic-mcp-server \
     --title "$VERSION" \
     --generate-notes \
     $PRERELEASE_FLAG \
@@ -154,5 +155,5 @@ gh release create "$VERSION" \
 info "✓ Successfully created GitHub release ${VERSION}"
 echo ""
 info "Release URL:"
-gh release view "$VERSION" --web
+gh release view "$VERSION" --repo pingidentity/aic-mcp-server --web
 echo ""
