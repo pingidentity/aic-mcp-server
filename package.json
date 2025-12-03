@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/aic-mcp-server",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0-alpha.1",
   "main": "dist/index.js",
   "bin": {
     "aic-mcp-server": "dist/index.js"
