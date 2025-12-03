@@ -4,6 +4,9 @@
 # Build output
 /dist
 
+# Release artifacts
+/release-artifacts
+
 # Logs
 npm-debug.log*
 

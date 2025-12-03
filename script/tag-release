@@ -1,0 +1,110 @@
+#!/bin/bash
+set -e
+
+# Tag Release Script
+# Creates a new release tag after validation
+# Usage: ./script/tag-release v1.0.0-beta.1
+
+VERSION=$1
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+error() {
+    echo -e "${RED}Error: $1${NC}" >&2
+    exit 1
+}
+
+info() {
+    echo -e "${GREEN}$1${NC}"
+}
+
+warn() {
+    echo -e "${YELLOW}$1${NC}"
+}
+
+# Check if version argument is provided
+if [ -z "$VERSION" ]; then
+    error "Version argument required.\nUsage: $0 v1.0.0-beta.1"
+fi
+
+# Validate version format (with or without 'v' prefix)
+if [[ ! $VERSION =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+    error "Invalid version format. Expected: v1.0.0 or v1.0.0-beta.1"
+fi
+
+# Strip 'v' prefix for npm version command
+NPM_VERSION="${VERSION#v}"
+
+# Add 'v' prefix for git tag if not present
+if [[ ! $VERSION =~ ^v ]]; then
+    GIT_TAG="v${VERSION}"
+else
+    GIT_TAG="$VERSION"
+fi
+
+info "Preparing to release ${GIT_TAG}..."
+
+# Check if on main branch
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    error "Must be on 'main' branch (currently on: $CURRENT_BRANCH)"
+fi
+
+# Check if working directory is clean
+if [ -n "$(git status --porcelain)" ]; then
+    error "Working directory is not clean. Commit or stash changes first."
+fi
+
+# Fetch latest from remote
+info "Fetching latest changes from remote..."
+git fetch origin
+
+# Check if local branch is up-to-date with remote
+LOCAL=$(git rev-parse @)
+REMOTE=$(git rev-parse @{u})
+
+if [ "$LOCAL" != "$REMOTE" ]; then
+    error "Local branch is not up-to-date with remote. Pull changes first."
+fi
+
+# Check if tag already exists locally
+if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
+    error "Tag $GIT_TAG already exists locally"
+fi
+
+# Check if tag already exists on remote
+if git ls-remote --tags origin | grep -q "refs/tags/$GIT_TAG$"; then
+    error "Tag $GIT_TAG already exists on remote"
+fi
+
+# Display current version
+CURRENT_VERSION=$(node -p "require('./package.json').version")
+info "Current version: v${CURRENT_VERSION}"
+info "New version: ${GIT_TAG}"
+
+# Confirm with user
+echo ""
+read -p "Create release tag ${GIT_TAG}? (y/N): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    warn "Release cancelled"
+    exit 0
+fi
+
+# Use npm version to update package.json, package-lock.json, and create tag
+info "Creating version ${NPM_VERSION}..."
+npm version "$NPM_VERSION" -m "Release %s"
+
+# Push commit and tag to remote
+info "Pushing to remote..."
+git push origin main --follow-tags
+
+info "✓ Successfully created and pushed tag ${GIT_TAG}"
+echo ""
+info "Next step:"
+echo "  ./script/create-github-release ${GIT_TAG}"
+echo ""
