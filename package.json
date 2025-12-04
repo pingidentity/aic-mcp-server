@@ -40,20 +40,20 @@
     "docker:run": "docker run --rm -i -e AIC_BASE_URL=${AIC_BASE_URL} pingone-aic-mcp:latest"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.23.0",
+    "@modelcontextprotocol/sdk": "^1.24.2",
     "keytar": "^7.9.0",
     "open": "^10.1.0",
     "zod": "^3.25.64"
   },
   "devDependencies": {
-    "@types/node": "^24.1.0",
+    "@types/node": "^24.10.1",
     "@types/open": "^6.0.0",
-    "@vitest/coverage-v8": "^2.1.9",
-    "memfs": "^4.51.0",
-    "msw": "^2.12.2",
+    "@vitest/coverage-v8": "^4.0.15",
+    "memfs": "^4.51.1",
+    "msw": "^2.12.4",
     "shx": "^0.4.0",
-    "tsx": "^4.20.6",
+    "tsx": "^4.21.0",
     "typescript": "^5.0.4",
-    "vitest": "^2.1.9"
+    "vitest": "^4.0.15"
   }
 }

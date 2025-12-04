@@ -2,7 +2,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { initAuthService } from './services/authService.js';
+import { initAuthService, cleanupAuthService } from './services/authService.js';
 import { getAllTools, getAllScopes } from './utils/toolHelpers.js';
 
 /**
@@ -57,6 +57,7 @@ await server.connect(transport);
 
 // Graceful shutdown
 function cleanup() {
+  cleanupAuthService();
   process.exit();
 }
 
@@ -65,5 +66,9 @@ process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
 process.on('uncaughtException', (err) => {
   console.error('Uncaught exception:', err);
-  process.exit(1);
+  cleanup();
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at:', promise, 'reason:', reason);
+  cleanup();
 });

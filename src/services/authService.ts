@@ -16,6 +16,13 @@ const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
 const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/access_token`;
 
 /**
+ * Clock skew tolerance in milliseconds
+ * Tokens are considered expired this many milliseconds before actual expiry
+ * to account for clock drift between client and server
+ */
+const CLOCK_SKEW_BUFFER_MS = 60 * 1000; // 60 seconds
+
+/**
  * Configuration for AuthService behavior
  */
 export interface AuthServiceConfig {
@@ -76,7 +83,7 @@ class AuthService {
             // Token is for different tenant, proceed to get new token
           }
           // Check if token is still valid (and for correct tenant)
-          else if (Date.now() < expiresAt) {
+          else if (Date.now() + CLOCK_SKEW_BUFFER_MS < expiresAt) {
             return accessToken;
           }
         }
@@ -209,6 +216,7 @@ class AuthService {
         clientId: CLIENT_ID,
         redirectUri: REDIRECT_URI,
         redirectPort: REDIRECT_URI_PORT,
+        aicBaseUrl: AIC_BASE_URL!,
         onServerCreated: (server) => { this.redirectServer = server; },
         onServerClosed: () => { this.redirectServer = null; },
       });
@@ -263,6 +271,21 @@ class AuthService {
     this.hasAuthenticatedThisSession = true;
     return tokenData.access_token;
   }
+
+  /**
+   * Cleanup resources (e.g., HTTP server for redirect)
+   * Safe to call multiple times
+   */
+  cleanup(): void {
+    if (this.redirectServer) {
+      try {
+        this.redirectServer.close();
+      } catch (error) {
+        console.error('Error closing redirect server:', error);
+      }
+      this.redirectServer = null;
+    }
+  }
 }
 
 // Singleton instance
@@ -290,4 +313,14 @@ export function getAuthService(): AuthService {
     throw new Error('AuthService not initialized. Call initAuthService first.');
   }
   return instance;
+}
+
+/**
+ * Cleanup authentication service resources
+ * Closes any running redirect server
+ */
+export function cleanupAuthService(): void {
+  if (instance) {
+    instance.cleanup();
+  }
 }

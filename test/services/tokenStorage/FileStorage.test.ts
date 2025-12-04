@@ -2,10 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { FileStorage as FileStorageType } from '../../../src/services/tokenStorage.js';
 
 // Use vi.hoisted() to ensure mocks are created before imports
-const { mockReadFile, mockWriteFile, mockMkdir, mockUnlink } = vi.hoisted(() => ({
+const { mockReadFile, mockWriteFile, mockMkdir, mockChmod, mockUnlink } = vi.hoisted(() => ({
   mockReadFile: vi.fn(),
   mockWriteFile: vi.fn(),
   mockMkdir: vi.fn(),
+  mockChmod: vi.fn(),
   mockUnlink: vi.fn(),
 }));
 
@@ -14,6 +15,7 @@ vi.mock('node:fs/promises', () => ({
   readFile: mockReadFile,
   writeFile: mockWriteFile,
   mkdir: mockMkdir,
+  chmod: mockChmod,
   unlink: mockUnlink,
 }));
 
@@ -48,6 +50,7 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
@@ -55,7 +58,10 @@ describe('FileStorage', () => {
       expect(mockWriteFile).toHaveBeenCalledWith(
         DEFAULT_FILE_PATH,
         expect.stringContaining('"accessToken"'),
-        'utf-8'
+        {
+          encoding: 'utf-8',
+          mode: 0o600
+        }
       );
 
       // Verify pretty formatting (should contain newlines and 2-space indentation)
@@ -73,6 +79,7 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
@@ -80,7 +87,10 @@ describe('FileStorage', () => {
       expect(mockWriteFile).toHaveBeenCalledWith(
         DEFAULT_FILE_PATH,
         expect.any(String),
-        'utf-8'
+        {
+          encoding: 'utf-8',
+          mode: 0o600
+        }
       );
     });
 
@@ -124,11 +134,15 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
 
-      expect(mockMkdir).toHaveBeenCalledWith('/deeply/nested/path', { recursive: true });
+      expect(mockMkdir).toHaveBeenCalledWith('/deeply/nested/path', {
+        recursive: true,
+        mode: 0o700
+      });
     });
 
     it('should handle existing directories without error', async () => {
@@ -136,10 +150,14 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined); // Directory already exists
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await expect(storage.setToken(tokenData)).resolves.toBeUndefined();
-      expect(mockMkdir).toHaveBeenCalledWith('/app/tokens', { recursive: true });
+      expect(mockMkdir).toHaveBeenCalledWith('/app/tokens', {
+        recursive: true,
+        mode: 0o700
+      });
     });
 
     it('should extract directory path correctly for nested paths', async () => {
@@ -147,11 +165,15 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
 
-      expect(mockMkdir).toHaveBeenCalledWith('/a/b/c/d/e/f', { recursive: true });
+      expect(mockMkdir).toHaveBeenCalledWith('/a/b/c/d/e/f', {
+        recursive: true,
+        mode: 0o700
+      });
     });
   });
 
@@ -237,6 +259,7 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
@@ -256,6 +279,7 @@ describe('FileStorage', () => {
       });
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
@@ -263,7 +287,10 @@ describe('FileStorage', () => {
       expect(mockWriteFile).toHaveBeenCalledWith(
         DEFAULT_FILE_PATH,
         expect.stringContaining('token-with-unicode-©-symbol'),
-        'utf-8'
+        {
+          encoding: 'utf-8',
+          mode: 0o600
+        }
       );
     });
   });
@@ -274,6 +301,7 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
@@ -281,7 +309,10 @@ describe('FileStorage', () => {
       expect(mockWriteFile).toHaveBeenCalledWith(
         '/app/tokens/token.json',
         expect.any(String),
-        'utf-8'
+        {
+          encoding: 'utf-8',
+          mode: 0o600
+        }
       );
     });
 
@@ -290,6 +321,7 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData();
 
       mockMkdir.mockResolvedValue(undefined);
+      mockChmod.mockResolvedValue(undefined);
       mockWriteFile.mockResolvedValue(undefined);
 
       await storage.setToken(tokenData);
@@ -297,7 +329,10 @@ describe('FileStorage', () => {
       expect(mockWriteFile).toHaveBeenCalledWith(
         CUSTOM_FILE_PATH,
         expect.any(String),
-        'utf-8'
+        {
+          encoding: 'utf-8',
+          mode: 0o600
+        }
       );
     });
   });

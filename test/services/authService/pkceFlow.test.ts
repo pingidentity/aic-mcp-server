@@ -26,9 +26,12 @@ vi.mock('../../../src/services/tokenStorage.js', () => ({
   KeychainStorage: MockStorage,
 }));
 
+// Create a persistent mock for 'open' that we can access
+const mockOpen = vi.fn().mockResolvedValue(undefined);
+
 // Mock 'open' to prevent browser launching during tests
 vi.mock('open', () => ({
-  default: vi.fn().mockResolvedValue(undefined),
+  default: mockOpen,
 }));
 
 // Mock http module for createServer
@@ -46,6 +49,75 @@ vi.mock('http', () => ({
     return mockServerInstance;
   }),
 }));
+
+// Helper to create mock request/response objects with proper headers
+function createMockRedirect(url: string) {
+  return {
+    req: {
+      url,
+      headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' }
+    },
+    res: {
+      end: vi.fn(),
+      writeHead: vi.fn()
+    }
+  };
+}
+
+/**
+ * Helper to set up PKCE flow and extract state parameter
+ * Reduces boilerplate in tests that need to send custom redirects
+ */
+async function setupPkceFlowTest(options: {
+  setupTokenEndpoint?: boolean;
+  scopes?: string[];
+  tokenResponse?: any;
+  customTokenHandler?: (request: Request) => Response | Promise<Response>;
+} = {}) {
+  const scopes = options.scopes || ['fr:idm:*'];
+
+  vi.resetModules();
+  const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+  initAuthService(scopes, {});
+
+  // Setup MSW token endpoint handler if requested
+  if (options.setupTokenEndpoint) {
+    server.use(
+      http.post('https://*/am/oauth2/access_token', () => {
+        return HttpResponse.json(options.tokenResponse || MOCK_TOKEN_RESPONSE);
+      })
+    );
+  } else if (options.customTokenHandler) {
+    server.use(
+      http.post('https://*/am/oauth2/access_token', ({ request }) => options.customTokenHandler!(request))
+    );
+  }
+
+  // Start authentication flow
+  const tokenPromise = getAuthService().getToken(scopes);
+  await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
+
+  // Extract state and authUrl from authorization URL
+  const openModule = await import('open');
+  const authUrl = (openModule.default as any).mock.calls[0][0];
+  const url = new URL(authUrl);
+  const state = url.searchParams.get('state')!;
+
+  /**
+   * Send a mock OAuth redirect with custom headers
+   */
+  const sendRedirect = (headers: Record<string, string> = {}, code = 'test-auth-code') => {
+    const mockReq = {
+      url: `http://localhost:3000?code=${code}&state=${state}`,
+      headers
+    };
+    const mockRes = { end: vi.fn(), writeHead: vi.fn() };
+    mockRequestHandler(mockReq, mockRes);
+    return { mockReq, mockRes };
+  };
+
+  return { tokenPromise, state, sendRedirect, authUrl, url, getAuthService };
+}
 
 /**
  * Tests for AuthService OAuth 2.0 PKCE Flow
@@ -66,9 +138,6 @@ describe('AuthService PKCE Flow', () => {
     // Set local mode (NOT container mode)
     process.env.DOCKER_CONTAINER = 'false';
 
-    // Reset modules to clear singleton instance
-    vi.resetModules();
-
     // Mock storage to return null (no cached token)
     mockStorage = getMockStorage();
     if (mockStorage) {
@@ -80,6 +149,9 @@ describe('AuthService PKCE Flow', () => {
       mockStorage._mockGetToken().mockResolvedValue(null);
       mockStorage._mockSetToken().mockResolvedValue(undefined);
     }
+
+    // Reset 'open' mock calls
+    mockOpen.mockClear();
 
     // Reset mock server
     mockServerInstance.listen.mockReset();
@@ -105,6 +177,7 @@ describe('AuthService PKCE Flow', () => {
 
   describe('PKCE Challenge Generation', () => {
     it('should generate PKCE verifier and challenge correctly', async () => {
+      vi.resetModules();
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});
 
@@ -130,14 +203,14 @@ describe('AuthService PKCE Flow', () => {
       const tokenPromise = getAuthService().getToken(['fr:idm:*']);
       await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
 
-      // Extract code_challenge
+      // Extract code_challenge and state
       const authUrl = (openModule.default as any).mock.calls[0][0];
       const url = new URL(authUrl);
       codeChallenge = url.searchParams.get('code_challenge');
+      const state = url.searchParams.get('state');
 
-      // Simulate OAuth redirect
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
+      // Simulate OAuth redirect with state parameter
+      const { req: mockReq, res: mockRes } = createMockRedirect(`http://localhost:3000?code=test-auth-code&state=${state}`);
       mockRequestHandler(mockReq, mockRes);
 
       await tokenPromise;
@@ -157,6 +230,7 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should generate unique verifiers on multiple calls', async () => {
+      vi.resetModules();
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});
 
@@ -176,8 +250,13 @@ describe('AuthService PKCE Flow', () => {
       const promise1 = getAuthService().getToken(['fr:idm:*']);
       await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
 
-      const mockReq1 = { url: 'http://localhost:3000?code=test-auth-code-1' };
-      const mockRes1 = { end: vi.fn() };
+      // Extract state from first authorization URL
+      const openModule = await import('open');
+      let authUrl = (openModule.default as any).mock.calls[0][0];
+      let url = new URL(authUrl);
+      const state1 = url.searchParams.get('state');
+
+      const { req: mockReq1, res: mockRes1 } = createMockRedirect(`http://localhost:3000?code=test-auth-code-1&state=${state1}`);
       mockRequestHandler(mockReq1, mockRes1);
 
       await promise1;
@@ -187,14 +266,26 @@ describe('AuthService PKCE Flow', () => {
       mockServerInstance.listen.mockReset();
       mockServerInstance.close.mockReset();
 
+      // Reconfigure mock server after reset
+      mockServerInstance.listen.mockImplementation((_port: number, callback?: () => void) => {
+        if (callback) callback();
+      });
+
       // Second call
       const { initAuthService: init2, getAuthService: get2 } = await import('../../../src/services/authService.js');
       init2(['fr:idm:*'], {});
       const promise2 = get2().getToken(['fr:idm:*']);
       await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
 
-      const mockReq2 = { url: 'http://localhost:3000?code=test-auth-code-2' };
-      const mockRes2 = { end: vi.fn() };
+      // Wait for second open call
+      await vi.waitFor(() => expect(mockOpen.mock.calls.length).toBe(2));
+
+      // Extract state from second authorization URL
+      authUrl = mockOpen.mock.calls[1][0];
+      url = new URL(authUrl);
+      const state2 = url.searchParams.get('state');
+
+      const { req: mockReq2, res: mockRes2 } = createMockRedirect(`http://localhost:3000?code=test-auth-code-2&state=${state2}`);
       mockRequestHandler(mockReq2, mockRes2);
 
       await promise2;
@@ -207,16 +298,10 @@ describe('AuthService PKCE Flow', () => {
 
   describe('Authorization URL Construction', () => {
     it('should include all required parameters in authorization URL', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*', 'fr:idc:esv:*', 'other:scope'], {});
-
-      const openModule = await import('open');
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*', 'fr:idc:esv:*', 'other:scope']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const authUrl = (openModule.default as any).mock.calls[0][0];
-      const url = new URL(authUrl);
+      const { tokenPromise, url, sendRedirect } = await setupPkceFlowTest({
+        setupTokenEndpoint: true,
+        scopes: ['fr:idm:*', 'fr:idc:esv:*', 'other:scope']
+      });
 
       expect(url.searchParams.get('client_id')).toBe('AICMCPClient');
       expect(url.searchParams.get('redirect_uri')).toBe('http://localhost:3000');
@@ -224,45 +309,27 @@ describe('AuthService PKCE Flow', () => {
       expect(url.searchParams.get('code_challenge')).toBeTruthy();
       expect(url.searchParams.get('code_challenge_method')).toBe('S256');
       expect(url.searchParams.get('scope')).toBe('fr:idm:* fr:idc:esv:* other:scope');
+      expect(url.searchParams.get('state')).toBeTruthy();
       expect(url.hostname).toBe('test.forgeblocks.com');
       expect(url.pathname).toBe('/am/oauth2/authorize');
 
-      // Clean up
-      const mockReq = { url: 'http://localhost:3000?code=test-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
     });
   });
 
   describe('Code Exchange', () => {
     it('should POST to TOKEN_URL', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       let capturedRequest: Request | undefined;
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: async (request) => {
           capturedRequest = request.clone();
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       expect(capturedRequest).toBeDefined();
@@ -271,32 +338,22 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should include grant_type=authorization_code', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       let capturedParams: URLSearchParams | undefined;
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: async (request) => {
           const body = await request.text();
           const params = new URLSearchParams(body);
 
-          // Only capture from authorization_code grant (not token exchange)
           if (params.get('grant_type') === 'authorization_code') {
             capturedParams = params;
           }
 
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       expect(capturedParams).toBeDefined();
@@ -304,32 +361,22 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should include code, redirect_uri, and client_id', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       let capturedParams: URLSearchParams | undefined;
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: async (request) => {
           const body = await request.text();
           const params = new URLSearchParams(body);
 
-          // Only capture from authorization_code grant (not token exchange)
           if (params.get('grant_type') === 'authorization_code') {
             capturedParams = params;
           }
 
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       expect(capturedParams).toBeDefined();
@@ -339,32 +386,22 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should include code_verifier for PKCE', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       let capturedParams: URLSearchParams | undefined;
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: async (request) => {
           const body = await request.text();
           const params = new URLSearchParams(body);
 
-          // Only capture from authorization_code grant (not token exchange)
           if (params.get('grant_type') === 'authorization_code') {
             capturedParams = params;
           }
 
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       expect(capturedParams).toBeDefined();
@@ -373,31 +410,20 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should parse access_token and expires_in from response', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       const customTokenResponse = {
         access_token: 'custom-access-token',
         expires_in: 7200,
         token_type: 'Bearer',
       };
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(customTokenResponse);
-        })
-      );
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        setupTokenEndpoint: true,
+        tokenResponse: customTokenResponse
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
-      // Verify token was stored with correct values
       const storage = getStorage();
       expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -407,21 +433,13 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should throw descriptive error on token exchange failure', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: () => {
           return new HttpResponse('Invalid authorization code', { status: 400 });
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
 
       await expect(tokenPromise).rejects.toThrow(
         'Authorization code exchange failed (400 Bad Request): Invalid authorization code'
@@ -431,22 +449,9 @@ describe('AuthService PKCE Flow', () => {
 
   describe('Token Storage', () => {
     it('should call storage.setToken() after successful exchange', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       const storage = getStorage();
@@ -454,25 +459,12 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should store token with accessToken, expiresAt, and aicBaseUrl', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       const mockNow = 1000000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       const storage = getStorage();
@@ -484,9 +476,6 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should calculate expiresAt from expires_in', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       const mockNow = 1000000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
 
@@ -496,19 +485,12 @@ describe('AuthService PKCE Flow', () => {
         token_type: 'Bearer',
       };
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(customTokenResponse);
-        })
-      );
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        setupTokenEndpoint: true,
+        tokenResponse: customTokenResponse
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       const storage = getStorage();
@@ -520,25 +502,11 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should set hasAuthenticatedThisSession to true', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
+      const { tokenPromise, sendRedirect, getAuthService } = await setupPkceFlowTest({ setupTokenEndpoint: true });
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
-      // Access internal state
       const authService = getAuthService() as any;
       expect(authService.hasAuthenticatedThisSession).toBe(true);
     });
@@ -546,77 +514,40 @@ describe('AuthService PKCE Flow', () => {
 
   describe('Server Lifecycle', () => {
     it('should start HTTP server on port 3000', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
 
       expect(mockServerInstance.listen).toHaveBeenCalledWith(3000, expect.any(Function));
 
-      // Clean up
-      const mockReq = { url: 'http://localhost:3000?code=test-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' }, 'test-code');
       await tokenPromise;
     });
 
     it('should extract code parameter from query string', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       let capturedCode: string | null = null;
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: async (request) => {
           const body = await request.text();
           const params = new URLSearchParams(body);
 
-          // Only capture from authorization_code grant (not token exchange)
           if (params.get('grant_type') === 'authorization_code') {
             capturedCode = params.get('code');
           }
 
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=my-special-auth-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' }, 'my-special-auth-code');
       await tokenPromise;
 
       expect(capturedCode).toBe('my-special-auth-code');
     });
 
     it('should close server after receiving code', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
       expect(mockServerInstance.close).toHaveBeenCalled();
@@ -624,10 +555,31 @@ describe('AuthService PKCE Flow', () => {
 
     it.each([
       {
-        name: 'should close server on error (no code parameter)',
+        name: 'should close server on error (no state parameter)',
         trigger: async (tokenPromise: Promise<any>) => {
-          const mockReq = { url: 'http://localhost:3000?error=access_denied' };
-          const mockRes = { end: vi.fn() };
+          const mockReq = { url: 'http://localhost:3000?code=test-code', headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' } };
+          const mockRes = { end: vi.fn(), writeHead: vi.fn() };
+          mockRequestHandler(mockReq, mockRes);
+          await expect(tokenPromise).rejects.toThrow('CSRF protection failed: state parameter missing');
+        },
+        expectClose: true,
+      },
+      {
+        name: 'should close server on error (invalid state parameter)',
+        needsState: true,
+        trigger: async (tokenPromise: Promise<any>) => {
+          const mockReq = { url: 'http://localhost:3000?code=test-code&state=invalid-state', headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' } };
+          const mockRes = { end: vi.fn(), writeHead: vi.fn() };
+          mockRequestHandler(mockReq, mockRes);
+          await expect(tokenPromise).rejects.toThrow('CSRF protection failed: state mismatch');
+        },
+        expectClose: true,
+      },
+      {
+        name: 'should close server on error (no code parameter)',
+        needsState: true,
+        trigger: async (tokenPromise: Promise<any>, _: any, state: string) => {
+          const { req: mockReq, res: mockRes } = createMockRedirect(`http://localhost:3000?error=access_denied&state=${state}`);
           mockRequestHandler(mockReq, mockRes);
           await expect(tokenPromise).rejects.toThrow('Authorization code not found in redirect.');
         },
@@ -651,7 +603,7 @@ describe('AuthService PKCE Flow', () => {
         expectedMessage: 'Server startup failed',
         expectClose: false,
       },
-    ])('$name', async ({ setupErrorHandler, trigger, expectedMessage, expectClose }) => {
+    ])('$name', async ({ setupErrorHandler, trigger, expectedMessage, expectClose, needsState }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});
 
@@ -667,7 +619,16 @@ describe('AuthService PKCE Flow', () => {
       const tokenPromise = getAuthService().getToken(['fr:idm:*']);
       await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
 
-      await trigger(tokenPromise, errorHandler);
+      let state: string = '';
+      if (needsState) {
+        // Extract state from authorization URL
+        const openModule = await import('open');
+        const authUrl = (openModule.default as any).mock.calls[0][0];
+        const url = new URL(authUrl);
+        state = url.searchParams.get('state') || '';
+      }
+
+      await trigger(tokenPromise, errorHandler, state);
 
       if (expectedMessage) {
         await expect(tokenPromise).rejects.toThrow(expectedMessage);
@@ -678,25 +639,11 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should clear redirectServer reference after completion', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
+      const { tokenPromise, sendRedirect, getAuthService } = await setupPkceFlowTest({ setupTokenEndpoint: true });
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
-          return HttpResponse.json(MOCK_TOKEN_RESPONSE);
-        })
-      );
-
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await tokenPromise;
 
-      // Access internal state
       const authService = getAuthService() as any;
       expect(authService.redirectServer).toBeNull();
     });
@@ -704,21 +651,13 @@ describe('AuthService PKCE Flow', () => {
 
   describe('Error Handling', () => {
     it('should propagate token exchange errors', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: () => {
           return new HttpResponse('Token exchange failed', { status: 500 });
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
 
       await expect(tokenPromise).rejects.toThrow(
         'Authorization code exchange failed (500 Internal Server Error): Token exchange failed'
@@ -726,30 +665,92 @@ describe('AuthService PKCE Flow', () => {
     });
 
     it('should log errors on token exchange failure', async () => {
-      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
-      initAuthService(['fr:idm:*'], {});
-
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      server.use(
-        http.post('https://*/am/oauth2/access_token', () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
+        customTokenHandler: () => {
           return new HttpResponse('Token exchange failed', { status: 500 });
-        })
-      );
+        }
+      });
 
-      const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
-
-      const mockReq = { url: 'http://localhost:3000?code=test-code' };
-      const mockRes = { end: vi.fn() };
-      mockRequestHandler(mockReq, mockRes);
-
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
       await expect(tokenPromise).rejects.toThrow();
 
       const errorCall = consoleErrorSpy.mock.calls.find(
         (call) => call[0] === 'User authentication failed:' && call[1] instanceof Error
       );
       expect(errorCall).toBeDefined();
+    });
+  });
+
+  describe('Origin Validation', () => {
+    it('should accept request with valid referer header', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
+
+      sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
+
+      await expect(tokenPromise).resolves.toBeDefined();
+      expect(mockServerInstance.close).toHaveBeenCalled();
+    });
+
+    it('should accept request with valid origin header', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
+
+      sendRedirect({ origin: 'https://test.forgeblocks.com' });
+
+      await expect(tokenPromise).resolves.toBeDefined();
+      expect(mockServerInstance.close).toHaveBeenCalled();
+    });
+
+    it('should accept request with no origin/referer headers (lenient mode)', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
+
+      sendRedirect({});
+
+      await expect(tokenPromise).resolves.toBeDefined();
+      expect(mockServerInstance.close).toHaveBeenCalled();
+    });
+
+    it('should reject request with invalid hostname', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest();
+
+      const { mockRes } = sendRedirect({ referer: 'https://evil.attacker.com/am/oauth2/authorize' });
+
+      await expect(tokenPromise).rejects.toThrow('Origin validation failed: hostname mismatch');
+      expect(mockServerInstance.close).toHaveBeenCalled();
+      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html' });
+    });
+
+    it('should reject subdomain attack attempt', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest();
+
+      const { mockRes } = sendRedirect({ referer: 'https://evil.test.forgeblocks.com.attacker.com/am/oauth2/authorize' });
+
+      await expect(tokenPromise).rejects.toThrow('Origin validation failed: hostname mismatch');
+      expect(mockServerInstance.close).toHaveBeenCalled();
+      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html' });
+    });
+
+    it('should reject request with invalid URL format', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest();
+
+      const { mockRes } = sendRedirect({ referer: 'not-a-valid-url' });
+
+      await expect(tokenPromise).rejects.toThrow('Origin validation failed: invalid URL format');
+      expect(mockServerInstance.close).toHaveBeenCalled();
+      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html' });
+    });
+
+    it('should prefer referer over origin when both present', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
+
+      sendRedirect({
+        referer: 'https://test.forgeblocks.com/am/oauth2/authorize',
+        origin: 'https://evil.attacker.com'
+      });
+
+      await expect(tokenPromise).resolves.toBeDefined();
+      expect(mockServerInstance.close).toHaveBeenCalled();
     });
   });
 });
