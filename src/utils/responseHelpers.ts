@@ -32,6 +32,7 @@ export function formatSuccess(data: unknown, response: Response): string {
 
 /**
  * Formats an error with response details and optional transaction ID
+ * In production, sanitizes error body to prevent information leakage
  * @param response - The fetch Response object containing status and headers
  * @param errorBody - The error response body text
  * @param operation - Optional operation name to prefix the error message (e.g., "Failed to fetch users")
@@ -40,11 +41,23 @@ export function formatSuccess(data: unknown, response: Response): string {
 export function formatError(response: Response, errorBody: string, operation?: string): string {
   const transactionId = response.headers.get('x-forgerock-transactionid');
   const prefix = operation ? `${operation}: ` : '';
-  let error = `${prefix}${response.status} ${response.statusText} - ${errorBody}`;
 
-  if (transactionId) {
-    error += `\n\nTransaction ID: ${transactionId}`;
+  // Sanitize error body in production
+  let displayError: string;
+  if (process.env.NODE_ENV === 'production') {
+    // Generic message + status code, no details
+    displayError = `Request failed with status ${response.status}`;
+  } else {
+    // Full details in development
+    displayError = `${response.status} ${response.statusText} - ${errorBody}`;
   }
 
-  return error;
+  let result = `${prefix}${displayError}`;
+
+  // Always include transaction ID (not sensitive)
+  if (transactionId) {
+    result += `\n\nTransaction ID: ${transactionId}`;
+  }
+
+  return result;
 }
