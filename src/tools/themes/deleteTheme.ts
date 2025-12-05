@@ -12,6 +12,10 @@ export const deleteThemeTool = {
   title: 'Delete Theme',
   description: 'Delete a theme from a realm in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    destructiveHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     realm: z.enum(REALMS).describe('Realm name'),
     themeIdentifier: z.string().describe('Theme ID or name')

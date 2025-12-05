@@ -13,6 +13,10 @@ export const queryManagedObjectsTool = {
   title: 'Query Managed Objects',
   description: 'Query managed objects in PingOne AIC using CREST query filter syntax',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     objectType: z.string().min(1).describe(
       `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`

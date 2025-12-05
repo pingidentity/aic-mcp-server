@@ -11,6 +11,10 @@ export const getLogSourcesTool = {
   title: 'Get Log Sources',
   description: 'Retrieve the list of available log sources in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   async toolFunction() {
     const url = `https://${aicBaseUrl}/monitoring/logs/sources`;
 

@@ -13,6 +13,10 @@ export const deleteManagedObjectTool = {
   title: 'Delete Managed Object',
   description: 'Delete a managed object by ID from PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    destructiveHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     objectType: z.string().min(1).describe(
       `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`

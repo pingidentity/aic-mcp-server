@@ -12,6 +12,10 @@ export const updateThemeTool = {
   title: 'Update Theme',
   description: 'Update an existing theme in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    idempotentHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     realm: z.enum(REALMS).describe('Realm name'),
     themeIdentifier: z.string().describe('Theme ID or name'),

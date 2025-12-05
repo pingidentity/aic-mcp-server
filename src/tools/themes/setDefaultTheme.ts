@@ -12,6 +12,10 @@ export const setDefaultThemeTool = {
   title: 'Set Default Theme',
   description: 'Set a theme as the default for a realm in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    idempotentHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     realm: z.enum(REALMS).describe('Realm name'),
     themeIdentifier: z.string().describe('Theme ID or name')

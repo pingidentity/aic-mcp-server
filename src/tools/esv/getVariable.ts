@@ -11,6 +11,10 @@ export const getVariableTool = {
   title: 'Get Environment Variable (ESV)',
   description: 'Retrieve a specific environment variable (ESV) by ID with decoded value',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     variableId: z.string().describe('Variable ID (format: esv-*)'),
   },

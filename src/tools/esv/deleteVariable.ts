@@ -11,6 +11,10 @@ export const deleteVariableTool = {
   title: 'Delete Environment Variable (ESV)',
   description: 'Delete an environment variable (ESV) from PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    destructiveHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     variableId: z.string().min(1).describe('Variable ID (format: esv-*)'),
   },

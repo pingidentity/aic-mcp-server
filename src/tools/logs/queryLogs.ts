@@ -12,6 +12,10 @@ export const queryLogsTool = {
   title: 'Query Logs',
   description: 'Query PingOne AIC logs with flexible filtering by time range, source, transaction ID, and payload content',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     sources: z.array(z.string())
       .describe("Log sources to query (e.g., ['am-authentication', 'idm-activity']). IMPORTANT: use the getLogSources tool to determine available sources."),

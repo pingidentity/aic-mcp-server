@@ -14,6 +14,10 @@ export const setVariableTool = {
   title: 'Set Environment Variable (ESV)',
   description: 'Create or update an environment variable (ESV) in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    idempotentHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     variableId: z.string().describe('Variable ID (format: esv-*)'),
     value: z.any().describe(

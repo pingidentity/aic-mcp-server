@@ -12,6 +12,10 @@ export const getThemeTool = {
   title: 'Get Theme',
   description: 'Retrieve a specific theme by ID or name from PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     realm: z.enum(REALMS).describe('Realm name'),
     themeIdentifier: z.string().describe('Theme ID or name')

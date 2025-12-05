@@ -11,6 +11,10 @@ export const queryESVsTool = {
   title: 'Query Environment Secrets and Variables (ESVs)',
   description: 'Query environment secrets or variables (ESVs) in PingOne AIC by ID',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     type: z.enum(['variable', 'secret']).describe('Type of ESV to query'),
     queryTerm: z.string().max(100).optional().describe(

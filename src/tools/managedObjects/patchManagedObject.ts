@@ -20,6 +20,9 @@ export const patchManagedObjectTool = {
   title: 'Patch Managed Object',
   description: 'Update specific fields of a managed object in PingOne AIC using JSON Patch operations',
   scopes: SCOPES,
+  annotations: {
+    openWorldHint: true
+  },
   inputSchema: {
     objectType: z.string().min(1).describe(
       `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
