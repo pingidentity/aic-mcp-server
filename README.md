@@ -47,16 +47,7 @@ Ask questions like "Find all alpha_users with email starting with john@example.c
 - **PingOne Advanced Identity Cloud environment**
 - **MCP-compatible client** (Claude Desktop, VS Code with Cline, Cursor, Zed, etc.)
 
-### 1. Install
-
-```bash
-git clone https://github.com/pingidentity/aic-mcp-server.git
-cd aic-mcp-server
-npm install
-npm run build
-```
-
-### 2. Configure Your MCP Client
+### 1. Configure Your MCP Client
 
 The MCP server requires the `AIC_BASE_URL` environment variable to be set to your PingOne AIC hostname.
 
@@ -68,8 +59,8 @@ Add this to your Claude Desktop MCP configuration:
 {
   "mcpServers": {
     "pingone-aic": {
-      "command": "node",
-      "args": ["/absolute/path/to/pingone_AIC_MCP/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@ping-identity/aic-mcp-server"],
       "env": {
         "AIC_BASE_URL": "your-tenant.forgeblocks.com"
       }
@@ -95,11 +86,11 @@ Add this to your Claude Desktop MCP configuration:
 #### Other MCP Clients
 
 For other MCP clients supporting STDIO transport:
-- **Command**: `node`
-- **Args**: `["/absolute/path/to/pingone_AIC_MCP/dist/index.js"]`
+- **Command**: `npx`
+- **Args**: `["-y", "@ping-identity/aic-mcp-server"]`
 - **Environment**: `AIC_BASE_URL=your-tenant.forgeblocks.com`
 
-### 3. Start Using
+### 2. Start Using
 
 Restart your MCP client and start asking questions! Your browser will open for authentication when you use the first tool in a session.
 
@@ -240,16 +231,41 @@ Your MCP client may not support form elicitation yet. Use the local deployment m
 
 ## Development
 
-### Build
+### Building from Source
+
+To build the server from source for development:
 
 ```bash
+# Clone the repository
+git clone https://github.com/pingidentity/aic-mcp-server.git
+cd aic-mcp-server
+
 # Install dependencies
 npm install
 
 # Compile TypeScript
 npm run build
+```
 
-# Type check without building
+Then configure your MCP client to use the local build:
+
+```json
+{
+  "mcpServers": {
+    "pingone-aic": {
+      "command": "node",
+      "args": ["/absolute/path/to/aic-mcp-server/dist/index.js"],
+      "env": {
+        "AIC_BASE_URL": "your-tenant.forgeblocks.com"
+      }
+    }
+  }
+}
+```
+
+For type checking without building:
+
+```bash
 npm run typecheck
 ```
 

@@ -499,41 +499,6 @@ Only one environment variable is required:
 - Tokens cached securely in system keychain
 - Ideal for interactive desktop applications (e.g., Claude Desktop)
 
-## Setup and Installation
-
-### Prerequisites
-- Node.js (version with ES2022 support)
-- Access to a PingOne Advanced Identity Cloud environment
-
-### Installation Steps
-
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Build the project:**
-   ```bash
-   npm run build
-   ```
-
-3. **Configure environment variable:**
-   ```bash
-   export AIC_BASE_URL="your-tenant.forgeblocks.com"
-   ```
-
-4. **Start the server:**
-   ```bash
-   npm start
-   ```
-
-### Development
-
-For development with auto-rebuild on file changes:
-```bash
-npm run dev
-```
-
 ## MCP Client Integration
 
 ### Claude Desktop Configuration Example
@@ -544,8 +509,8 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
 {
   "mcpServers": {
     "pingone-aic": {
-      "command": "node",
-      "args": ["/absolute/path/to/pingone_AIC_MCP/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@ping-identity/aic-mcp-server"],
       "env": {
         "AIC_BASE_URL": "your-tenant.forgeblocks.com"
       }
@@ -556,7 +521,54 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
 
 ### Other MCP Clients
 
-Any MCP client that supports STDIO transport can use this server. Simply configure the `AIC_BASE_URL` environment variable to point to your PingOne AIC environment.
+For other MCP clients supporting STDIO transport:
+- **Command**: `npx`
+- **Args**: `["-y", "@ping-identity/aic-mcp-server"]`
+- **Environment**: `AIC_BASE_URL=your-tenant.forgeblocks.com`
+
+## Building from Source
+
+To build the server from source for development or contribution:
+
+### Prerequisites
+- Node.js (version with ES2022 support)
+- Access to a PingOne Advanced Identity Cloud environment
+
+### Build Steps
+
+1. **Clone and install:**
+   ```bash
+   git clone https://github.com/pingidentity/aic-mcp-server.git
+   cd aic-mcp-server
+   npm install
+   ```
+
+2. **Build the project:**
+   ```bash
+   npm run build
+   ```
+
+3. **Configure your MCP client to use the local build:**
+   ```json
+   {
+     "mcpServers": {
+       "pingone-aic": {
+         "command": "node",
+         "args": ["/absolute/path/to/aic-mcp-server/dist/index.js"],
+         "env": {
+           "AIC_BASE_URL": "your-tenant.forgeblocks.com"
+         }
+       }
+     }
+   }
+   ```
+
+### Development
+
+For development with auto-rebuild on file changes:
+```bash
+npm run dev
+```
 
 ## Authentication Flow
 
