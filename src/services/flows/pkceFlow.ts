@@ -2,6 +2,7 @@ import * as http from 'http';
 import * as crypto from 'crypto';
 import open from 'open';
 import { generatePkcePair } from './pkceUtils.js';
+import { generateAuthResultPage } from './authResultPage.js';
 
 export interface PkceFlowParams {
   scopes: string[];
@@ -76,8 +77,8 @@ function startServerAndGetAuthCode(params: {
           parsedHostname = parsedUrl.hostname.toLowerCase();
         } catch {
           console.error(`Invalid URL format in origin/referer header: ${headerValue}`);
-          res.writeHead(403, { 'Content-Type': 'text/html' });
-          res.end('<h1>Error</h1><p>Invalid request origin</p>');
+          res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(generateAuthResultPage(false, 'Invalid request origin'));
           cleanup(new Error('Origin validation failed: invalid URL format'));
           return;
         }
@@ -86,8 +87,8 @@ function startServerAndGetAuthCode(params: {
         if (parsedHostname !== expectedDomain) {
           console.error(`Rejected redirect from unexpected origin: ${parsedHostname}`);
           console.error(`Expected origin: ${expectedDomain}`);
-          res.writeHead(403, { 'Content-Type': 'text/html' });
-          res.end('<h1>Error</h1><p>Invalid request origin</p>');
+          res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(generateAuthResultPage(false, 'Invalid request origin'));
           cleanup(new Error('Origin validation failed: hostname mismatch'));
           return;
         }
@@ -100,7 +101,8 @@ function startServerAndGetAuthCode(params: {
 
       // Validate state first (CSRF protection)
       if (!receivedState) {
-        res.end('<h1>Error</h1><p>Missing state parameter</p>');
+        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(generateAuthResultPage(false, 'Missing state parameter'));
         cleanup(new Error('CSRF protection failed: state parameter missing'));
         return;
       }
@@ -111,18 +113,21 @@ function startServerAndGetAuthCode(params: {
 
       if (stateBuffer.length !== receivedBuffer.length ||
           !crypto.timingSafeEqual(stateBuffer, receivedBuffer)) {
-        res.end('<h1>Error</h1><p>Invalid state parameter</p>');
+        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(generateAuthResultPage(false, 'Invalid state parameter'));
         cleanup(new Error('CSRF protection failed: state mismatch'));
         return;
       }
 
       // Continue with existing authCode check
       if (authCode) {
-        res.end('<h1>Success!</h1><p>You can close this browser tab.</p>');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(generateAuthResultPage(true));
         cleanup();
         resolve(authCode);
       } else {
-        res.end('<h1>Error</h1><p>No authorization code found.</p>');
+        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(generateAuthResultPage(false, 'No authorization code received'));
         cleanup(new Error('Authorization code not found in redirect.'));
       }
     });
