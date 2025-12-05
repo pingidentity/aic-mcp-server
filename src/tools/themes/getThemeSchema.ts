@@ -11,6 +11,9 @@ export const getThemeSchemaTool = {
   title: 'Get Theme Schema',
   description: 'Get comprehensive schema documentation for PingOne AIC themes including the expected payload structure, field types, enum values, and constraints. Use this before creating or updating themes to understand requirements.',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true
+  },
   inputSchema: {},
   async toolFunction() {
     const schema = {

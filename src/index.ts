@@ -12,6 +12,12 @@ interface ToolConfig {
   title: string;
   description: string;
   inputSchema?: Record<string, z.ZodTypeAny>;
+  annotations?: {
+    readOnlyHint?: boolean;
+    destructiveHint?: boolean;
+    idempotentHint?: boolean;
+    openWorldHint?: boolean;
+  };
 }
 
 // Check for the required environment variable on startup
@@ -46,6 +52,11 @@ allTools.forEach(tool => {
   // Only add inputSchema if it exists (some tools like getLogSources don't have one)
   if ('inputSchema' in tool && tool.inputSchema) {
     toolConfig.inputSchema = tool.inputSchema;
+  }
+
+  // Add annotations if present
+  if ('annotations' in tool && tool.annotations) {
+    toolConfig.annotations = tool.annotations;
   }
 
   server.registerTool(tool.name, toolConfig, tool.toolFunction as any);

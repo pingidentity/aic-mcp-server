@@ -9,6 +9,10 @@ export const listManagedObjectsTool = {
   title: 'List Managed Objects',
   description: 'Retrieve the list of all managed object types available in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     // No parameters needed
   },

@@ -13,6 +13,9 @@ export const createManagedObjectTool = {
   title: 'Create Managed Object',
   description: 'Create a new managed object in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    openWorldHint: true
+  },
   inputSchema: {
     objectType: z.string().min(1).describe(
       `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`

@@ -13,6 +13,10 @@ export const getManagedObjectSchemaTool = {
   title: 'Get Managed Object Schema',
   description: 'Retrieve schema definition for a managed object type in PingOne AIC',
   scopes: SCOPES,
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: true
+  },
   inputSchema: {
     objectType: z.string().min(1).describe(
       `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
