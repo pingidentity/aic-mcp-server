@@ -718,7 +718,7 @@ describe('AuthService PKCE Flow', () => {
 
       await expect(tokenPromise).rejects.toThrow('Origin validation failed: hostname mismatch');
       expect(mockServerInstance.close).toHaveBeenCalled();
-      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html' });
+      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html; charset=utf-8' });
     });
 
     it('should reject subdomain attack attempt', async () => {
@@ -728,7 +728,7 @@ describe('AuthService PKCE Flow', () => {
 
       await expect(tokenPromise).rejects.toThrow('Origin validation failed: hostname mismatch');
       expect(mockServerInstance.close).toHaveBeenCalled();
-      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html' });
+      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html; charset=utf-8' });
     });
 
     it('should reject request with invalid URL format', async () => {
@@ -738,7 +738,7 @@ describe('AuthService PKCE Flow', () => {
 
       await expect(tokenPromise).rejects.toThrow('Origin validation failed: invalid URL format');
       expect(mockServerInstance.close).toHaveBeenCalled();
-      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html' });
+      expect(mockRes.writeHead).toHaveBeenCalledWith(403, { 'Content-Type': 'text/html; charset=utf-8' });
     });
 
     it('should prefer referer over origin when both present', async () => {
@@ -751,6 +751,66 @@ describe('AuthService PKCE Flow', () => {
 
       await expect(tokenPromise).resolves.toBeDefined();
       expect(mockServerInstance.close).toHaveBeenCalled();
+    });
+  });
+
+  describe('HTML Response Content', () => {
+    it('should return success page on successful authentication', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest({ setupTokenEndpoint: true });
+
+      const { mockRes } = sendRedirect({ referer: 'https://test.forgeblocks.com/am/oauth2/authorize' });
+
+      await tokenPromise;
+
+      const htmlContent = mockRes.end.mock.calls[0][0];
+      expect(htmlContent).toContain('Authorization Successful');
+      expect(htmlContent).toContain('window.close()');
+    });
+
+    it('should return error page on CSRF failure', async () => {
+      const { tokenPromise } = await setupPkceFlowTest();
+
+      const mockReq = {
+        url: `http://localhost:3000?code=test-code&state=invalid-state`,
+        headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' }
+      };
+      const mockRes = { end: vi.fn(), writeHead: vi.fn() };
+      mockRequestHandler(mockReq, mockRes);
+
+      await expect(tokenPromise).rejects.toThrow('CSRF protection failed');
+
+      const htmlContent = mockRes.end.mock.calls[0][0];
+      expect(htmlContent).toContain('Authorization Failed');
+      expect(htmlContent).toContain('Invalid state parameter');
+    });
+
+    it('should return error page on origin validation failure', async () => {
+      const { tokenPromise, sendRedirect } = await setupPkceFlowTest();
+
+      const { mockRes } = sendRedirect({ referer: 'https://evil.attacker.com/am/oauth2/authorize' });
+
+      await expect(tokenPromise).rejects.toThrow('Origin validation failed');
+
+      const htmlContent = mockRes.end.mock.calls[0][0];
+      expect(htmlContent).toContain('Authorization Failed');
+      expect(htmlContent).toContain('Invalid request origin');
+    });
+
+    it('should return error page when auth code missing', async () => {
+      const { tokenPromise, state } = await setupPkceFlowTest();
+
+      const mockReq = {
+        url: `http://localhost:3000?state=${state}`,
+        headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' }
+      };
+      const mockRes = { end: vi.fn(), writeHead: vi.fn() };
+      mockRequestHandler(mockReq, mockRes);
+
+      await expect(tokenPromise).rejects.toThrow('Authorization code not found');
+
+      const htmlContent = mockRes.end.mock.calls[0][0];
+      expect(htmlContent).toContain('Authorization Failed');
+      expect(htmlContent).toContain('No authorization code received');
     });
   });
 });
