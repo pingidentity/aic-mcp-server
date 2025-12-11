@@ -1,24 +1,9 @@
 #!/usr/bin/env node
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from 'zod';
 import { initAuthService, cleanupAuthService } from './services/authService.js';
 import { getAllTools, getAllScopes } from './utils/toolHelpers.js';
-
-/**
- * Tool configuration structure for MCP tool registration
- */
-interface ToolConfig {
-  title: string;
-  description: string;
-  inputSchema?: Record<string, z.ZodTypeAny>;
-  annotations?: {
-    readOnlyHint?: boolean;
-    destructiveHint?: boolean;
-    idempotentHint?: boolean;
-    openWorldHint?: boolean;
-  };
-}
+import { ToolConfig } from './types/tool.js';
 
 // Check for the required environment variable on startup
 if (!process.env.AIC_BASE_URL) {
