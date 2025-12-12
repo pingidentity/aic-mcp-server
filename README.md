@@ -45,20 +45,17 @@ Ask questions like "Find all alpha_users with email starting with john@example.c
 
 - **Node.js 18+**
 - **PingOne Advanced Identity Cloud environment**
-- **MCP-compatible client** (Claude Desktop, VS Code with Cline, Cursor, Zed, etc.)
+- **MCP-compatible client** (Claude Code, Claude Desktop, Cursor, VS Code with GitHub Copilot, Gemini CLI, Codex, etc.)
 
-### 1. Configure Your MCP Client
+### Configure Your MCP Client
 
-The MCP server requires the `AIC_BASE_URL` environment variable to be set to your PingOne AIC hostname.
-
-#### Claude Desktop
-
-Add this to your Claude Desktop MCP configuration:
+Add this to your MCP client configuration:
 
 ```json
 {
   "mcpServers": {
-    "pingone-aic": {
+    "aic-mcp-server": {
+      "type": "stdio",
       "command": "npx",
       "args": ["-y", "@ping-identity/aic-mcp-server"],
       "env": {
@@ -69,28 +66,107 @@ Add this to your Claude Desktop MCP configuration:
 }
 ```
 
-> **Note**: Use your PingOne AIC hostname without `https://` or path components.
+**Required:** Replace `your-tenant.forgeblocks.com` with your PingOne AIC hostname (without `https://` or path components).
 
-#### VS Code (Cline Extension)
+**Client-specific instructions:**
 
-> **Note**: Configuration details to be added
+<details>
+<summary><b>Claude Code or Claude Desktop</b></summary>
 
-#### Cursor
+Add this to your Claude MCP configuration (`claude.json` for Claude Code or `claude_desktop_config.json` for Claude Desktop):
 
-> **Note**: Configuration details to be added
+```json
+{
+  "mcpServers": {
+    "aic-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@ping-identity/aic-mcp-server"],
+      "env": {
+        "AIC_BASE_URL": "your-tenant.forgeblocks.com"
+      }
+    }
+  }
+}
+```
 
-#### Zed
+</details>
 
-> **Note**: Configuration details to be added
+<details>
+<summary><b>Cursor</b></summary>
 
-#### Other MCP Clients
+Add this to your Cursor MCP configuration (`.cursor/mcp.json`):
 
-For other MCP clients supporting STDIO transport:
-- **Command**: `npx`
-- **Args**: `["-y", "@ping-identity/aic-mcp-server"]`
-- **Environment**: `AIC_BASE_URL=your-tenant.forgeblocks.com`
+```json
+{
+  "mcpServers": {
+    "aic-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@ping-identity/aic-mcp-server"],
+      "env": {
+        "AIC_BASE_URL": "your-tenant.forgeblocks.com"
+      }
+    }
+  }
+}
+```
 
-### 2. Start Using
+</details>
+
+<details>
+<summary><b>GitHub Copilot (VS Code)</b></summary>
+
+Add this to your Copilot MCP configuration (`mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "aic-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@ping-identity/aic-mcp-server"],
+      "env": {
+        "AIC_BASE_URL": "your-tenant.forgeblocks.com"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Gemini CLI</b></summary>
+
+Add this to your Gemini CLI MCP configuration (`settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "aic-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@ping-identity/aic-mcp-server"],
+      "env": {
+        "AIC_BASE_URL": "your-tenant.forgeblocks.com"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Codex (OpenAI)</b></summary>
+
+Add this to your Codex MCP configuration (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.aic-mcp-server]
+command = "npx"
+args = ["-y", "@ping-identity/aic-mcp-server"]
+env = {"AIC_BASE_URL" = "your-tenant.forgeblocks.com"}
+```
+
+</details>
 
 Restart your MCP client and start asking questions! Your browser will open for authentication when you use the first tool in a session.
 
@@ -178,14 +254,14 @@ npm run docker:build
 
 ### Configure Your MCP Client
 
-#### Claude Desktop
+#### Claude Code or Claude Desktop
 
-Add this to your Claude Desktop MCP configuration:
+Add this to your Claude MCP configuration (`claude.json` for Claude Code or `claude_desktop_config.json` for Claude Desktop):
 
 ```json
 {
   "mcpServers": {
-    "pingone-aic": {
+    "aic-mcp-server": {
       "command": "docker",
       "args": [
         "run",
@@ -193,7 +269,7 @@ Add this to your Claude Desktop MCP configuration:
         "-i",
         "-e",
         "AIC_BASE_URL=your-tenant.forgeblocks.com",
-        "pingone-aic-mcp:latest"
+        "pingidentity/aic-mcp-server:latest"
       ]
     }
   }
@@ -215,7 +291,8 @@ The PingOne AIC MCP Server implements multiple security layers:
 - **Input validation** - Built-in protections against path traversal and query injection attacks
 - **Tenant isolation** - Tokens are validated against the configured `AIC_BASE_URL` to prevent accidental cross-tenant operations
 
-## Troubleshooting
+<details>
+<summary><h2>Troubleshooting</h2></summary>
 
 ### "FATAL: AIC_BASE_URL environment variable is not set"
 Set the `AIC_BASE_URL` environment variable in your MCP client configuration to your PingOne AIC hostname (without `https://`).
@@ -229,9 +306,12 @@ Check that the `open` package has permissions to launch your browser, or manuall
 ### Docker: "URL not displayed during authentication"
 Your MCP client may not support form elicitation yet. Use the local deployment method instead.
 
+</details>
+
 ## Development
 
-### Building from Source
+<details>
+<summary><h3>Building from Source</h3></summary>
 
 To build the server from source for development:
 
@@ -252,7 +332,7 @@ Then configure your MCP client to use the local build:
 ```json
 {
   "mcpServers": {
-    "pingone-aic": {
+    "aic-mcp-server": {
       "command": "node",
       "args": ["/absolute/path/to/aic-mcp-server/dist/index.js"],
       "env": {
@@ -269,7 +349,10 @@ For type checking without building:
 npm run typecheck
 ```
 
-### Testing
+</details>
+
+<details>
+<summary><h3>Testing</h3></summary>
 
 The project includes a comprehensive test suite covering all tools and authentication flows.
 
@@ -287,7 +370,10 @@ npm run test:coverage
 npm run test:snapshots:update
 ```
 
-### MCP Inspector
+</details>
+
+<details>
+<summary><h3>MCP Inspector</h3></summary>
 
 Use the MCP Inspector to visually test tools in a web interface:
 
@@ -301,6 +387,8 @@ AIC_BASE_URL=your-tenant.forgeblocks.com npm run inspect
 ```
 
 Hosts a web interface for interactive tool testing and OAuth flow debugging.
+
+</details>
 
 ## Contributing
 
