@@ -66,7 +66,7 @@ Add this to your MCP client configuration:
 }
 ```
 
-**Required:** Replace `your-tenant.forgeblocks.com` with your PingOne AIC hostname (without `https://` or path components).
+**Required:** Replace `your-tenant.forgeblocks.com` with your PingOne AIC tenant URL.
 
 **Client-specific instructions:**
 
@@ -295,7 +295,7 @@ The PingOne AIC MCP Server implements multiple security layers:
 <summary><h2>Troubleshooting</h2></summary>
 
 ### "FATAL: AIC_BASE_URL environment variable is not set"
-Set the `AIC_BASE_URL` environment variable in your MCP client configuration to your PingOne AIC hostname (without `https://`).
+Set the `AIC_BASE_URL` environment variable in your MCP client configuration to your PingOne AIC tenant URL (e.g., `your-tenant.forgeblocks.com` or `https://your-tenant.forgeblocks.com`).
 
 ### "Port 3000 is already in use"
 Another service is using port 3000 (required for OAuth redirect). Stop that service and try again.
