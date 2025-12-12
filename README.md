@@ -1,24 +1,36 @@
 # PingOne Advanced Identity Cloud MCP Server
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/pingidentity/aic-mcp-server?include_prereleases&sort=semver)](https://github.com/pingidentity/aic-mcp-server/releases)
+[![npm version](https://img.shields.io/npm/v/@ping-identity/aic-mcp-server.svg)](https://www.npmjs.com/package/@ping-identity/aic-mcp-server)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
 ---
 
-**[Features](#features)** • **[Use Cases](#use-cases)** • **[Prerequisites](#prerequisites)** • **[Quick Start](#quick-start)** • **[Authentication](#authentication)** • **[Available Tools](#available-tools)** • **[Docker Deployment](#docker-deployment)** • **[Security](#security)** • **[Troubleshooting](#troubleshooting)** • **[Development](#development)** • **[License](#license)**
+**[Features](#features)** • **[Use Cases](#use-cases)** • **[Prerequisites](#prerequisites)** • **[Getting Started](#getting-started)** • **[Authentication](#authentication)** • **[Available Tools](#available-tools)** • **[Docker Deployment](#docker-deployment)** • **[Security](#security)** • **[Troubleshooting](#troubleshooting)** • **[Development](#development)** • **[License](#license)**
 
 ---
 
 > [!CAUTION]
-> **Beta Software Notice: This software is currently in beta and is provided AS IS without any warranties.**
+> **Preview Software Notice**
 >
-> - Features, APIs, and functionality may change at any time without notice
-> - Not recommended for production use or critical workloads
-> - Support during the beta period is limited
-> - Issues and feedback can be reported through the [GitHub issue tracker](https://github.com/pingidentity/aic-mcp-server/issues)
+> This is preview software provided AS IS with no warranties of any kind.
 >
-> By using this beta software, you acknowledge and accept these conditions.
+> - Current release is only for Sandbox and Development AIC tenants, the server is not enabled for production environments.
+> - Limited support is available during the public preview phase — please report bugs and provide feedback via the [GitHub issue tracker](https://github.com/pingidentity/aic-mcp-server/issues)
+>
+> Your use of this software constitutes acceptance of these terms.
+
+> [!CAUTION]
+> **Security Notice**
+>
+> Depending on the requests made to the MCP server, tenant configuration or data may be returned. Do not use the MCP server with untrusted MCP clients, agent code or LLM inference.
+
+> [!WARNING]
+> **Review Generated Configuration**
+>
+> Configuration can be generated dynamically using LLM and user feedback represented dynamically back to agents/conversations. Be sure to review generated configuration before promoting to production environments, or those serving live identity/access requests.
 
 An MCP (Model Context Protocol) server that enables AI assistants to interact with PingOne Advanced Identity Cloud environments. Manage users, roles, groups, organizations, customize authentication themes, analyze logs, and query identity data directly from your AI conversations.
 
@@ -34,9 +46,9 @@ Ask questions like "Find all alpha_users with email starting with john@example.c
 
 ## Use Cases
 
-- **Identity Operations** - "Find all users with admin in their username", "Create a new developer role", "Update the email for user xyz123"
 - **Authentication Customization** - "Create a branded theme with our corporate colors", "Show me all themes in production", "Set the new theme as default"
 - **Audit & Monitoring** - "Show me failed login attempts in the last hour", "Find all logs for transaction abc-123", "What log sources are available?"
+- **Identity Operations** - "Find all users with admin in their username", "Create a new developer role", "Update the email for user xyz123"
 - **Configuration Management** - "List all environment variables", "Create a new API key variable", "Update the database connection string"
 
 ## Getting Started
@@ -44,10 +56,12 @@ Ask questions like "Find all alpha_users with email starting with john@example.c
 ### Prerequisites
 
 - **Node.js 18+**
-- **PingOne Advanced Identity Cloud environment**
+- **PingOne Advanced Identity Cloud [Sandbox or Development](https://docs.pingidentity.com/pingoneaic/latest/tenants/environments.html) Tenant**
 - **MCP-compatible client** (Claude Code, Claude Desktop, Cursor, VS Code with GitHub Copilot, Gemini CLI, Codex, etc.)
 
 ### Configure Your MCP Client
+
+The MCP server requires the `AIC_BASE_URL` environment variable to be set to your PingOne AIC hostname.
 
 Add this to your MCP client configuration:
 
@@ -94,6 +108,8 @@ Add this to your Claude MCP configuration (`claude.json` for Claude Code or `cla
 <details>
 <summary><b>Cursor</b></summary>
 
+[![Install MCP Server with One-Click](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=pingone-aic&config=eyJlbnYiOnsiQUlDX0JBU0VfVVJMIjoieW91ci10ZW5hbnQuZm9yZ2VibG9ja3MuY29tIn0sImNvbW1hbmQiOiJucHggLXkgQHBpbmctaWRlbnRpdHkvYWljLW1jcC1zZXJ2ZXIifQ%3D%3D)
+
 Add this to your Cursor MCP configuration (`.cursor/mcp.json`):
 
 ```json
@@ -114,6 +130,8 @@ Add this to your Cursor MCP configuration (`.cursor/mcp.json`):
 
 <details>
 <summary><b>GitHub Copilot (VS Code)</b></summary>
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=aic-mcp-server&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_aic_base_url%22%2C%22description%22%3A%22The%20base%20URL%20of%20the%20AIC%20tenant%22%2C%22password%22%3Afalse%7D%5D&config=%7B%22command%22%3A%22npx%22%2C%22env%22%3A%7B%22AIC_BASE_URL%22%3A%22%24%7Binput%3Apingone_aic_base_url%7D%22%7D%2C%22args%22%3A%5B%22%40ping-identity%2Faic-mcp-server%22%5D%2C%22type%22%3A%22stdio%22%7D) [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=aic-mcp-server&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22pingone_aic_base_url%22%2C%22description%22%3A%22The%20base%20URL%20of%20the%20AIC%20tenant%22%2C%22password%22%3Afalse%7D%5D&config=%7B%22command%22%3A%22npx%22%2C%22env%22%3A%7B%22AIC_BASE_URL%22%3A%22%24%7Binput%3Apingone_aic_base_url%7D%22%7D%2C%22args%22%3A%5B%22%40ping-identity%2Faic-mcp-server%22%5D%2C%22type%22%3A%22stdio%22%7D&quality=insiders)
 
 Add this to your Copilot MCP configuration (`mcp.json`):
 
@@ -186,9 +204,9 @@ The server uses **OAuth 2.0 PKCE flow** for secure user authentication:
 - All actions traceable to authenticated users for compliance
 
 > [!CAUTION]
-> **Administrator Access Required**: This server requires administrative authentication and provides administrative capabilities to your PingOne AIC development environment. All operations are performed as the authenticated administrator and are fully auditable.
+> **Administrator Access Required**: This server requires administrative authentication and provides administrative capabilities to your PingOne AIC development and sandbox environments. All operations are performed as the authenticated administrator and are fully auditable.
 >
-> **Development Environments Only**: This server can only be used with development environments. Use with trusted AI assistants in secure contexts. AI-driven operations can make mistakes - review and test changes carefully before promoting to higher environments.
+> **Development and Sandbox Environments Only**: This server can only be used with development and sandbox environments. Use with trusted AI assistants in secure contexts. AI-driven operations can make mistakes - review and test changes carefully before promoting to higher environments.
 
 ## Available Tools
 
@@ -396,12 +414,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Feedback & Issues
 
-Found a bug or have a feature request? Please [open an issue](https://github.com/pingidentity/aic-mcp-server/issues).
+We welcome your feedback! Please use this repository's [issue tracker](https://github.com/pingidentity/aic-mcp-server/issues) to submit feedback, bug reports, or enhancement requests. For existing issues, you can add a 👍 reaction to help our team gauge priority.
 
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
----
-
-*Built with the [Model Context Protocol](https://modelcontextprotocol.io/)*
