@@ -1,15 +1,10 @@
 #!/usr/bin/env node
+import './init.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { initAuthService, cleanupAuthService } from './services/authService.js';
 import { getAllTools, getAllScopes } from './utils/toolHelpers.js';
 import { ToolConfig } from './types/tool.js';
-
-// Check for the required environment variable on startup
-if (!process.env.AIC_BASE_URL) {
-    console.error('FATAL: AIC_BASE_URL environment variable is not set.');
-    process.exit(1);
-}
 
 // Collect all tools and scopes using shared utility
 const allTools = getAllTools();
