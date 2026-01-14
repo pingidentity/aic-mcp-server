@@ -245,4 +245,61 @@ export const handlers = [
       totalPagedResults: 0,
     });
   }),
+
+  // AM - Journey list
+  http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      result: [],
+      resultCount: 0,
+    });
+  }),
+
+  // AM - Single journey
+  http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: 'Login',
+      nodes: {},
+    });
+  }),
+
+  // AM - Node schema (POST with _action=schema)
+  http.post('https://*/am/json/*/realm-config/authentication/authenticationtrees/nodes/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      type: 'object',
+      properties: {},
+    });
+  }),
+
+  // AM - Node config (GET)
+  http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/nodes/*/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: 'node-123',
+      nodeType: 'TestNode',
+    });
+  }),
+
+  // AM - Scripts
+  http.get('https://*/am/json/*/scripts/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: 'script-123',
+      name: 'TestScript',
+      script: '',
+      language: 'JAVASCRIPT',
+    });
+  }),
 ];
