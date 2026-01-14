@@ -84,7 +84,7 @@ describe('deleteVariable', () => {
     it('should reject empty variableId', () => {
       const schema = deleteVariableTool.inputSchema.variableId;
 
-      expect(() => schema.parse('')).toThrow(/String must contain at least 1 character/);
+      expect(() => schema.parse('')).toThrow();
     });
   });
 

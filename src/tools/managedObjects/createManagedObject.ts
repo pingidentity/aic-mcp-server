@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { EXAMPLE_TYPES_STRING } from '../../config/managedObjectUtils.js';
+import { EXAMPLE_TYPES_STRING } from '../../utils/managedObjectHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
+import { safePathSegmentSchema } from '../../utils/validationHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -16,7 +17,7 @@ export const getVariableTool = {
     openWorldHint: true
   },
   inputSchema: {
-    variableId: z.string().describe('Variable ID (format: esv-*)'),
+    variableId: safePathSegmentSchema.describe('Variable ID (format: esv-*)'),
   },
   async toolFunction({ variableId }: { variableId: string }) {
     try {

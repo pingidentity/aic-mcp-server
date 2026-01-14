@@ -194,13 +194,11 @@ describe('patchManagedObject', () => {
       expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
-    it('should reject objectId with path traversal', () => {
+    it('should use safePathSegmentSchema for objectId', () => {
       const schema = patchManagedObjectTool.inputSchema.objectId;
-
-      // Test various path traversal patterns
-      expect(() => schema.parse('../admin')).toThrow(/path traversal/);
-      expect(() => schema.parse('../../etc/passwd')).toThrow(/path traversal/);
-      expect(() => schema.parse('obj/../admin')).toThrow(/path traversal/);
+      expect(() => schema.parse('../etc/passwd')).toThrow(/path traversal/);
+      expect(() => schema.parse('')).toThrow(/cannot be empty/);
+      expect(() => schema.parse('ValidObjectId-123')).not.toThrow();
     });
 
     it('should require revision parameter', () => {

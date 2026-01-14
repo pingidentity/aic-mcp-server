@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { REALMS } from '../../config/managedObjectUtils.js';
+import { REALMS, safePathSegmentSchema } from '../../utils/validationHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -18,7 +18,7 @@ export const deleteThemeTool = {
   },
   inputSchema: {
     realm: z.enum(REALMS).describe('Realm name'),
-    themeIdentifier: z.string().describe('Theme ID or name')
+    themeIdentifier: safePathSegmentSchema.describe('Theme ID or name')
   },
   async toolFunction({ realm, themeIdentifier }: { realm: string; themeIdentifier: string }) {
     try {

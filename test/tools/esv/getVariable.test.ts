@@ -247,10 +247,9 @@ describe('getVariable', () => {
       expect(() => schema.parse('something-else')).not.toThrow();
     });
 
-    it('should accept empty variableId', () => {
+    it('should reject empty variableId', () => {
       const schema = getVariableTool.inputSchema.variableId;
-      // Note: The schema accepts empty string - API will return error if invalid
-      expect(() => schema.parse('')).not.toThrow();
+      expect(() => schema.parse('')).toThrow();
     });
   });
 

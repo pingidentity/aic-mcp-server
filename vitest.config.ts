@@ -15,7 +15,6 @@ export default defineConfig({
       exclude: [
         'src/**/*.d.ts',
         'src/**/index.ts',       // Re-export files
-        'src/config/**',         // Static configuration
       ],
       // No thresholds initially - we'll add them as we build coverage
     },
