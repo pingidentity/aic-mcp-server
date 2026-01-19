@@ -10,7 +10,7 @@ const SCOPES = ['fr:idc:monitoring:*'];
 export const queryLogsTool = {
   name: 'queryLogs',
   title: 'Query Logs',
-  description: 'Query PingOne AIC logs with flexible filtering by time range, source, transaction ID, and payload content',
+  description: 'Query PingOne AIC logs to investigate issues or understand system behavior. Useful for debugging journey execution failures, authentication errors, script exceptions, and API issues. Transaction IDs from error responses can be used to trace specific requests.',
   scopes: SCOPES,
   annotations: {
     readOnlyHint: true,
@@ -24,7 +24,7 @@ export const queryLogsTool = {
     endTime: z.string().optional()
       .describe("End time in ISO 8601 format without milliseconds (e.g., '2025-01-11T12:00:00Z'). Filters logs before this time. Defaults to current time if omitted. Must be within 24 hours of beginTime."),
     transactionId: z.string().optional()
-      .describe("Filter by specific transaction ID to trace a request across the system."),
+      .describe("Transaction ID to trace a specific request. Found in: (1) tool success/error messages, (2) x-forgerock-transactionid response header from AIC API calls, (3) browser network tab when debugging UI issues."),
     queryFilter: z.string().max(2000).optional()
       .describe(
         'CRITICAL: All field paths MUST start with / (e.g., /payload/level, /payload/principal). Missing the leading slash causes 500 Internal Server Error.\n\n' +
