@@ -10,7 +10,7 @@ const SCOPES = ['fr:am:*'];
 export const getAMScriptTool = {
   name: 'getAMScript',
   title: 'Get AM Script',
-  description: 'Retrieve an AM script by its ID. Scripts are used in journey configurations and nodes. Returns the complete script including name, description, language, and decoded source code.',
+  description: 'Retrieve an AM script by its ID. Returns the complete script including name, description, language, and source code.',
   scopes: SCOPES,
   annotations: {
     readOnlyHint: true,

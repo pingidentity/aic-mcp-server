@@ -8,6 +8,7 @@
  * - Base64 decoding utilities for script content
  */
 
+import { randomUUID } from 'crypto';
 import { makeAuthenticatedRequest } from './apiHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
@@ -23,12 +24,101 @@ export const AM_API_HEADERS = {
 
 /**
  * Headers for AM script API requests (protocol 1.0, resource 1.0).
- * Scripts use a different API version than other AM resources.
+ * Used by getAMScript for reading scripts.
  */
 export const AM_SCRIPT_HEADERS = {
   'accept-api-version': 'protocol=1.0,resource=1.0',
   'Content-Type': 'application/json',
 } as const;
+
+/**
+ * Headers for AM script API requests v2 (protocol 2.0, resource 1.0).
+ * Used for creating, updating, and deleting scripts, and for contexts endpoint.
+ */
+export const AM_SCRIPT_HEADERS_V2 = {
+  'accept-api-version': 'protocol=2.0,resource=1.0',
+  'Content-Type': 'application/json',
+} as const;
+
+/**
+ * Fixed node IDs for journey terminal nodes.
+ * These are constants defined by AM and must not be changed.
+ */
+export const STATIC_NODE_IDS = {
+  SUCCESS: '70e691a5-1e33-4ac3-a356-e7b6d60d92e0',
+  FAILURE: 'e301438c-0bd0-429c-ab0c-66126501069a',
+} as const;
+
+/**
+ * Human-readable aliases that LLMs can use in connections.
+ * These are transformed to real UUIDs before sending to AM.
+ */
+export const CONNECTION_ALIASES: Record<string, string> = {
+  'success': STATIC_NODE_IDS.SUCCESS,
+  'failure': STATIC_NODE_IDS.FAILURE,
+};
+
+/**
+ * Regex pattern for validating UUIDs
+ */
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Input format for journey nodes (LLM-friendly)
+ */
+export interface JourneyNodeInput {
+  nodeType: string;
+  displayName: string;
+  connections: Record<string, string>;  // outcomeId → targetNodeId or alias
+  config: Record<string, any>;
+}
+
+/**
+ * Input format for saveJourney tool
+ */
+export interface JourneyInput {
+  entryNodeId: string;
+  nodes: Record<string, JourneyNodeInput>;
+}
+
+/**
+ * Transformed journey ready for AM API
+ */
+export interface TransformedJourney {
+  _id: string;
+  entryNodeId: string;
+  nodes: Record<string, AMNode>;
+  staticNodes: Record<string, object>;
+}
+
+/**
+ * Node format expected by AM API
+ */
+export interface AMNode {
+  nodeType: string;
+  displayName: string;
+  connections: Record<string, string>;
+  config: Record<string, any> & { _id: string };
+}
+
+/**
+ * Result from fetching node type details
+ */
+export interface NodeTypeDetailsResult {
+  nodeType: string;
+  schema: any | null;
+  template: any | null;
+  outcomes: Array<{ id: string; displayName: string }> | null;
+  error: string | null;
+}
+
+/**
+ * Child node definition for PageNode outcomes calculation
+ */
+export interface PageNodeChild {
+  nodeType: string;
+  _properties: Record<string, any>;
+}
 
 /** Result of fetching a node schema */
 export interface SchemaResult {
@@ -173,6 +263,17 @@ export function categorizeError(message: string): string {
 const BASE64_REGEX = /^[A-Za-z0-9+/]{4,}={0,2}$/;
 
 /**
+ * Encodes a string to base64.
+ * Used for encoding script content before sending to AM API.
+ *
+ * @param content - The string content to encode
+ * @returns Base64-encoded string
+ */
+export function encodeBase64(content: string): string {
+  return Buffer.from(content, 'utf-8').toString('base64');
+}
+
+/**
  * Decodes a base64-encoded field on an object in place.
  * Only decodes if the field exists, is a string, and matches base64 pattern.
  *
@@ -195,4 +296,229 @@ export function decodeBase64Field(obj: any, fieldName: string): void {
       }
     }
   }
+}
+
+/**
+ * Fetches schema, template, and outcomes for multiple node types in parallel.
+ *
+ * @param realm - The realm to query
+ * @param nodeTypes - Array of node type names
+ * @param scopes - OAuth scopes for the request
+ * @returns Object keyed by nodeType with schema, template, outcomes, and any errors
+ */
+export async function fetchNodeTypeDetails(
+  realm: string,
+  nodeTypes: string[],
+  scopes: string[]
+): Promise<Record<string, NodeTypeDetailsResult>> {
+  const results: Record<string, NodeTypeDetailsResult> = {};
+
+  await Promise.all(nodeTypes.map(async (nodeType) => {
+    const baseUrl = buildAMJourneyNodesUrl(realm, nodeType);
+
+    try {
+      // Fetch all three endpoints in parallel for this node type
+      const [schemaRes, templateRes, outcomesRes] = await Promise.all([
+        makeAuthenticatedRequest(`${baseUrl}?_action=schema`, scopes, {
+          method: 'POST',
+          headers: AM_API_HEADERS,
+          body: JSON.stringify({}),
+        }),
+        makeAuthenticatedRequest(`${baseUrl}?_action=template`, scopes, {
+          method: 'POST',
+          headers: AM_API_HEADERS,
+          body: JSON.stringify({}),
+        }),
+        makeAuthenticatedRequest(`${baseUrl}?_action=listOutcomes`, scopes, {
+          method: 'POST',
+          headers: AM_API_HEADERS,
+          body: JSON.stringify({}),
+        }),
+      ]);
+
+      results[nodeType] = {
+        nodeType,
+        schema: schemaRes.data,
+        template: templateRes.data,
+        outcomes: outcomesRes.data as Array<{ id: string; displayName: string }>,
+        error: null,
+      };
+    } catch (error: any) {
+      results[nodeType] = {
+        nodeType,
+        schema: null,
+        template: null,
+        outcomes: null,
+        error: error.message,
+      };
+    }
+  }));
+
+  return results;
+}
+
+/**
+ * Builds the staticNodes object required by AM.
+ * Includes startNode and the fixed success/failure nodes.
+ *
+ * @returns Static nodes object for journey payload
+ */
+export function buildStaticNodes(): Record<string, object> {
+  return {
+    startNode: { x: 50, y: 250 },
+    [STATIC_NODE_IDS.SUCCESS]: { x: 550, y: 150 },
+    [STATIC_NODE_IDS.FAILURE]: { x: 550, y: 350 },
+  };
+}
+
+/**
+ * Generates a mapping from human-readable node IDs to UUIDs.
+ * If an ID is already a valid UUID, it's preserved as-is.
+ * Also extracts and maps PageNode child node IDs.
+ *
+ * @param journeyData - The journey input data
+ * @returns Mapping of original ID → UUID (includes both top-level and PageNode child IDs)
+ */
+export function generateNodeIdMapping(journeyData: JourneyInput): Record<string, string> {
+  const idMapping: Record<string, string> = {};
+
+  // Process top-level nodes
+  for (const nodeId of Object.keys(journeyData.nodes)) {
+    idMapping[nodeId] = UUID_REGEX.test(nodeId) ? nodeId : randomUUID();
+  }
+
+  // Process PageNode child nodes
+  for (const node of Object.values(journeyData.nodes)) {
+    if (node.nodeType === 'PageNode' && Array.isArray(node.config?.nodes)) {
+      for (const childNode of node.config.nodes) {
+        if (childNode._id && !idMapping[childNode._id]) {
+          idMapping[childNode._id] = UUID_REGEX.test(childNode._id)
+            ? childNode._id
+            : randomUUID();
+        }
+      }
+    }
+  }
+
+  return idMapping;
+}
+
+/**
+ * Validates that all connection targets reference valid nodes or aliases.
+ * Also checks that no node connects to itself (self-reference).
+ *
+ * @param journeyData - The journey input data
+ * @returns Object with isValid boolean and array of error messages
+ */
+export function validateConnectionTargets(journeyData: JourneyInput): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+  const validTargets = new Set([
+    ...Object.keys(journeyData.nodes),
+    ...Object.keys(CONNECTION_ALIASES),
+  ]);
+
+  // Check entryNodeId
+  if (!journeyData.nodes[journeyData.entryNodeId]) {
+    errors.push(`entryNodeId "${journeyData.entryNodeId}" does not reference a valid node`);
+  }
+
+  // Check all connections
+  for (const [nodeId, node] of Object.entries(journeyData.nodes)) {
+    for (const [outcome, targetId] of Object.entries(node.connections)) {
+      // Check for self-reference
+      if (targetId === nodeId) {
+        errors.push(`Node "${nodeId}" outcome "${outcome}" cannot connect to itself`);
+        continue;
+      }
+
+      const lowerTarget = targetId.toLowerCase();
+      if (!validTargets.has(targetId) && !CONNECTION_ALIASES[lowerTarget]) {
+        errors.push(`Node "${nodeId}" outcome "${outcome}" references unknown target "${targetId}"`);
+      }
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Transforms a journey definition to use UUIDs for all node references.
+ *
+ * - Replaces node keys with UUIDs
+ * - Updates entryNodeId
+ * - Updates all connection target references
+ * - Resolves "success"/"failure" aliases to static node IDs
+ * - Sets config._id to match the node's UUID
+ * - Transforms PageNode child node IDs
+ *
+ * @param journeyName - The name of the journey
+ * @param journeyData - Original journey data with human-readable IDs
+ * @param idMapping - Mapping from original IDs to UUIDs
+ * @returns Transformed journey data ready for AM API
+ */
+export function transformJourneyIds(
+  journeyName: string,
+  journeyData: JourneyInput,
+  idMapping: Record<string, string>
+): TransformedJourney {
+  const resolveId = (id: string): string => {
+    // Check if it's an alias first (case-insensitive)
+    const lowerCaseId = id.toLowerCase();
+    if (CONNECTION_ALIASES[lowerCaseId]) {
+      return CONNECTION_ALIASES[lowerCaseId];
+    }
+    // Then check the mapping
+    if (idMapping[id]) {
+      return idMapping[id];
+    }
+    // If not found, return as-is (might be a real UUID already)
+    return id;
+  };
+
+  const transformedNodes: Record<string, AMNode> = {};
+
+  for (const [originalId, node] of Object.entries(journeyData.nodes)) {
+    const newId = idMapping[originalId];
+
+    // Transform connections
+    const transformedConnections: Record<string, string> = {};
+    for (const [outcome, targetId] of Object.entries(node.connections)) {
+      transformedConnections[outcome] = resolveId(targetId);
+    }
+
+    // Transform PageNode child node IDs if present
+    // Child nodes are internal to PageNode and not referenced elsewhere in the graph,
+    // so we auto-generate UUIDs for any that don't have explicit _id values
+    let transformedConfig = { ...node.config };
+    if (node.nodeType === 'PageNode' && Array.isArray(node.config?.nodes)) {
+      transformedConfig.nodes = node.config.nodes.map((childNode: any) => ({
+        ...childNode,
+        _id: childNode._id || randomUUID(),
+      }));
+    }
+
+    // Build transformed node
+    transformedNodes[newId] = {
+      nodeType: node.nodeType,
+      displayName: node.displayName,
+      connections: transformedConnections,
+      config: {
+        ...transformedConfig,
+        _id: newId,  // Inject the UUID into config
+      },
+    };
+  }
+
+  return {
+    _id: journeyName,
+    entryNodeId: resolveId(journeyData.entryNodeId),
+    nodes: transformedNodes,
+    staticNodes: buildStaticNodes(),
+  };
 }

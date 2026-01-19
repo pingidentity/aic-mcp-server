@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { listJourneysTool } from '../../../src/tools/am/listJourneys.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
 import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
-import { server } from '../../setup.js';
-import { http, HttpResponse } from 'msw';
 
 describe('listJourneys', () => {
   const getSpy = setupTestEnvironment();
@@ -16,6 +14,23 @@ describe('listJourneys', () => {
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
     it('should build URL with realm and query parameters', async () => {
+      const mockResponse = { headers: new Headers({ 'x-forgerock-transactionid': 'test-tx-id' }) };
+
+      getSpy().mockImplementation((url: string) => {
+        if (url.includes('authenticationtrees/trees')) {
+          return Promise.resolve({
+            data: { result: [], resultCount: 0 },
+            response: mockResponse,
+          });
+        } else if (url.includes('realm-config/authentication')) {
+          return Promise.resolve({
+            data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
+            response: mockResponse,
+          });
+        }
+        return Promise.reject(new Error('Unexpected URL'));
+      });
+
       await listJourneysTool.toolFunction({ realm: 'alpha' });
 
       const [url, scopes, options] = getSpy().mock.calls[0];
@@ -27,6 +42,23 @@ describe('listJourneys', () => {
     });
 
     it('should include expected fields in request', async () => {
+      const mockResponse = { headers: new Headers({ 'x-forgerock-transactionid': 'test-tx-id' }) };
+
+      getSpy().mockImplementation((url: string) => {
+        if (url.includes('authenticationtrees/trees')) {
+          return Promise.resolve({
+            data: { result: [], resultCount: 0 },
+            response: mockResponse,
+          });
+        } else if (url.includes('realm-config/authentication')) {
+          return Promise.resolve({
+            data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
+            response: mockResponse,
+          });
+        }
+        return Promise.reject(new Error('Unexpected URL'));
+      });
+
       await listJourneysTool.toolFunction({ realm: 'bravo' });
 
       const url = getSpy().mock.calls[0][0];
@@ -40,32 +72,56 @@ describe('listJourneys', () => {
 
   // ===== RESPONSE HANDLING TESTS =====
   describe('Response Handling', () => {
-    it('should return journey list', async () => {
-      server.use(
-        http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees', () => {
-          return HttpResponse.json({
-            result: [
-              { _id: 'Login', description: 'Default login journey', enabled: true },
-              { _id: 'Registration', description: 'User registration', enabled: true },
-            ],
-            resultCount: 2,
+    it('should return journey list with default journey', async () => {
+      const mockResponse = { headers: new Headers({ 'x-forgerock-transactionid': 'test-tx-id' }) };
+
+      // Mock both parallel requests
+      getSpy().mockImplementation((url: string) => {
+        if (url.includes('authenticationtrees/trees')) {
+          return Promise.resolve({
+            data: {
+              result: [
+                { _id: 'Login', description: 'Default login journey', enabled: true },
+                { _id: 'Registration', description: 'User registration', enabled: true },
+              ],
+              resultCount: 2,
+            },
+            response: mockResponse,
           });
-        })
-      );
+        } else if (url.includes('realm-config/authentication')) {
+          return Promise.resolve({
+            data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
+            response: mockResponse,
+          });
+        }
+        return Promise.reject(new Error('Unexpected URL'));
+      });
 
       const result = await listJourneysTool.toolFunction({ realm: 'alpha' });
       const text = result.content[0].text;
 
       expect(text).toContain('Login');
       expect(text).toContain('Registration');
+      expect(text).toContain('defaultJourney');
     });
 
     it('should handle empty results', async () => {
-      server.use(
-        http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees', () => {
-          return HttpResponse.json({ result: [], resultCount: 0 });
-        })
-      );
+      const mockResponse = { headers: new Headers({ 'x-forgerock-transactionid': 'test-tx-id' }) };
+
+      getSpy().mockImplementation((url: string) => {
+        if (url.includes('authenticationtrees/trees')) {
+          return Promise.resolve({
+            data: { result: [], resultCount: 0 },
+            response: mockResponse,
+          });
+        } else if (url.includes('realm-config/authentication')) {
+          return Promise.resolve({
+            data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
+            response: mockResponse,
+          });
+        }
+        return Promise.reject(new Error('Unexpected URL'));
+      });
 
       const result = await listJourneysTool.toolFunction({ realm: 'alpha' });
 
@@ -94,12 +150,18 @@ describe('listJourneys', () => {
     it.each([
       { status: 401, desc: '401 Unauthorized' },
       { status: 404, desc: '404 Not Found' },
-    ])('should handle $desc', async ({ status }) => {
-      server.use(
-        http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees', () => {
-          return new HttpResponse(JSON.stringify({ error: 'error' }), { status });
-        })
-      );
+    ])('should handle $desc from journeys endpoint', async ({ status }) => {
+      getSpy().mockImplementation((url: string) => {
+        if (url.includes('authenticationtrees/trees')) {
+          return Promise.reject(new Error(`${status} Error`));
+        } else if (url.includes('realm-config/authentication')) {
+          return Promise.resolve({
+            data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
+            response: { headers: new Headers() },
+          });
+        }
+        return Promise.reject(new Error('Unexpected URL'));
+      });
 
       const result = await listJourneysTool.toolFunction({ realm: 'alpha' });
 

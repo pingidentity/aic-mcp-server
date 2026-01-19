@@ -1,0 +1,79 @@
+{
+  "name": "createScript",
+  "title": "Create AM Script",
+  "description": "Create a new Scripted Decision Node script for use in authentication journeys. Use getScriptedDecisionNodeBindings to see available variables and allowed imports before writing the script.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm to create the script in"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "name": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "min",
+            "value": 1
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "The name of the script"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "description": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Optional description of the script"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "script": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "min",
+            "value": 1
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "The JavaScript source code for the script"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

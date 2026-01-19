@@ -1,7 +1,7 @@
 {
-  "name": "listJourneys",
-  "title": "List AM Journeys",
-  "description": "Retrieve all authentication journeys (trees) for a specific realm in PingOne AIC. Returns journey metadata including ID, description, and the default journey for the realm.",
+  "name": "listScripts",
+  "title": "List AM Scripts",
+  "description": "List Scripted Decision Node scripts (evaluatorVersion 2.0) in a realm. Returns script metadata including ID, name, description, language, and context. Use getAMScript to retrieve the full script content.",
   "scopes": [
     "fr:am:*"
   ],

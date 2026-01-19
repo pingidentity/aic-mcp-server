@@ -1,7 +1,7 @@
 {
-  "name": "getAMScript",
-  "title": "Get AM Script",
-  "description": "Retrieve an AM script by its ID. Returns the complete script including name, description, language, and source code.",
+  "name": "setDefaultJourney",
+  "title": "Set Default Journey",
+  "description": "Set the default authentication journey for a realm. This journey will be used when no specific journey is requested during authentication.",
   "scopes": [
     "fr:am:*"
   ],
@@ -13,14 +13,14 @@
           "bravo"
         ],
         "typeName": "ZodEnum",
-        "description": "The realm containing the script"
+        "description": "The realm to configure"
       },
       "~standard": {
         "version": 1,
         "vendor": "zod"
       }
     },
-    "scriptId": {
+    "journeyName": {
       "_def": {
         "schema": {
           "_def": {
@@ -55,7 +55,7 @@
         "effect": {
           "type": "refinement"
         },
-        "description": "The unique identifier of the script (UUID format, e.g., '01e1a3c0-038b-4c16-956a-6c9d89328cff')"
+        "description": "The name of the journey to set as default"
       },
       "~standard": {
         "version": 1,

@@ -1,0 +1,59 @@
+{
+  "name": "deleteJourneyNodes",
+  "title": "Delete Journey Nodes (Batch)",
+  "description": "Batch delete orphaned node instances. Use this to clean up nodes that were removed from a journey during an update (via saveJourney) but still exist in AM. Note: Deleting an entire journey automatically cleans up its nodes, so this tool is only needed after journey updates that remove nodes. Deletes are executed in parallel and individual failures do not stop other deletions.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm containing the nodes"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "nodes": {
+      "_def": {
+        "type": {
+          "_def": {
+            "unknownKeys": "strip",
+            "catchall": {
+              "_def": {
+                "typeName": "ZodNever"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodObject"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          },
+          "_cached": null
+        },
+        "minLength": {
+          "value": 1
+        },
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Array of nodes to delete"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

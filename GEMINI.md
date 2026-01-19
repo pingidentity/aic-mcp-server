@@ -526,28 +526,7 @@ Retrieve a specific authentication journey by name with complete node details au
 - URL-encodes journey name to handle spaces and special characters
 - Returns journey as-is if it contains no nodes
 
-#### 21. `getJourneyNodeSchemas`
-**File:** [src/tools/am/getJourneyNodeSchemas.ts](src/tools/am/getJourneyNodeSchemas.ts)
-
-Retrieve schemas for multiple journey node types in a single batch operation.
-
-**Parameters:**
-- `realm` (string): The realm containing the journey nodes
-- `nodeTypes` (array): Array of node type names to retrieve schemas for (e.g., ['IncrementLoginCountNode', 'UsernameCollectorNode'])
-
-**Required Scopes:** `fr:am:*`
-
-**Returns:** Schema definitions for each requested node type with success/error counts
-
-**Implementation Notes:**
-- Batch operation - fetches all schemas in parallel
-- Uses `_action=schema` POST endpoint for each node type
-- Returns structured response with `results`, `successCount`, and `errorCount`
-- Individual node type failures don't stop the batch - errors are captured per result
-- URL-encodes node type names
-- Requires `accept-api-version: protocol=2.1,resource=1.0` header
-
-#### 22. `getAMScript`
+#### 21. `getAMScript`
 **File:** [src/tools/am/getAMScript.ts](src/tools/am/getAMScript.ts)
 
 Retrieve an AM script by its ID with automatic base64 decoding.

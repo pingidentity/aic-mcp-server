@@ -1,0 +1,24 @@
+{
+  "name": "getScriptedDecisionNodeBindings",
+  "title": "Get Scripted Decision Node Bindings",
+  "description": "Retrieve the available bindings (variables, functions) and allowed import libraries for Scripted Decision Node scripts. This is essential reference information when writing journey scripts - it shows what APIs and classes are available in the scripting environment.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm to query"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

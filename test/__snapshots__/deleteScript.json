@@ -1,7 +1,7 @@
 {
-  "name": "getAMScript",
-  "title": "Get AM Script",
-  "description": "Retrieve an AM script by its ID. Returns the complete script including name, description, language, and source code.",
+  "name": "deleteScript",
+  "title": "Delete AM Script",
+  "description": "Delete an AM script by its ID. Warning: This is a permanent deletion and cannot be undone. Ensure the script is not referenced by any journey nodes before deleting.",
   "scopes": [
     "fr:am:*"
   ],
@@ -55,7 +55,7 @@
         "effect": {
           "type": "refinement"
         },
-        "description": "The unique identifier of the script (UUID format, e.g., '01e1a3c0-038b-4c16-956a-6c9d89328cff')"
+        "description": "The unique identifier of the script to delete (UUID format)"
       },
       "~standard": {
         "version": 1,

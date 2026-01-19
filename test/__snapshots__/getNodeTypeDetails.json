@@ -1,0 +1,80 @@
+{
+  "name": "getNodeTypeDetails",
+  "title": "Get Node Type Details",
+  "description": "Get complete details (schema, default template, and outcomes) for one or more node types. Use this before building journeys to understand what configuration each node type requires and what outcomes it produces.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm to query"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "nodeTypes": {
+      "_def": {
+        "type": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "schema": {
+                  "_def": {
+                    "checks": [
+                      {
+                        "kind": "min",
+                        "value": 1,
+                        "message": "Value cannot be empty"
+                      }
+                    ],
+                    "typeName": "ZodString",
+                    "coerce": false
+                  },
+                  "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                  }
+                },
+                "typeName": "ZodEffects",
+                "effect": {
+                  "type": "refinement"
+                }
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "minLength": {
+          "value": 1
+        },
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Array of node type names to get details for (e.g., [\"UsernameCollectorNode\", \"PasswordCollectorNode\"])"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

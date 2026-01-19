@@ -270,7 +270,6 @@ Analyze authentication journeys with complete node details.
 |------|-------------|----------------|
 | `listJourneys` | List all authentication journeys in a realm | - `Show all journeys in alpha` <br> - `List authentication trees for bravo` <br> - `What journeys exist?` |
 | `getJourney` | Get journey with node schemas and configs **automatically included** | - `Show me the Login journey` <br> - `Get the Registration journey with all node details` <br> - `Display the PasswordReset journey configuration` |
-| `getJourneyNodeSchemas` | Batch retrieve schemas for multiple node types | - `Get schemas for IncrementLoginCountNode and DataStoreDecisionNode` <br> - `Show node type schemas for the collector nodes` |
 | `getAMScript` | Get AM script with automatic base64 decoding | - `Show me script 01e1a3c0-038b-4c16-956a-6c9d89328cff` <br> - `Get the decision node script` <br> - `Display the authentication script code` |
 
 **Key Feature**: The `getJourney` tool **automatically fetches and includes** all node schemas and configurations in parallel, so you get complete journey details in a single call - no need to manually fetch node information.
