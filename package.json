@@ -43,7 +43,7 @@
     "docker:run": "docker run --rm -i -e AIC_BASE_URL=${AIC_BASE_URL} pingidentity/aic-mcp-server:latest"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "keytar": "^7.9.0",
     "open": "^10.1.0",
     "zod": "^3.25.64"
