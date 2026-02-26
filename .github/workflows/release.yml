@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write # OIDC for npm trusted publishing
+  contents: write # Create GitHub releases + upload assets
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build
+      - run: npm test
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release tarball
+        run: |
+          tar -czf "aic-mcp-server-${{ github.ref_name }}.tar.gz" \
+            dist/ \
+            package.json \
+            package-lock.json \
+            README.md \
+            LICENSE
+
+      - name: Generate checksums
+        run: sha256sum "aic-mcp-server-${{ github.ref_name }}.tar.gz" > SHA256SUMS.txt
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            ${{ steps.version.outputs.prerelease == 'true' && '--prerelease' || '' }} \
+            "aic-mcp-server-${{ github.ref_name }}.tar.gz" \
+            SHA256SUMS.txt
+
+      - name: Publish to npm
+        run: |
+          npm publish ${{ steps.version.outputs.prerelease == 'true' && '--tag beta' || '' }} --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

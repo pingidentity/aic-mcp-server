@@ -40,6 +40,7 @@ fi
 NPM_VERSION="${VERSION#v}"
 
 # Add 'v' prefix for git tag if not present
+# The 'v' prefix is required to trigger the release workflow (on: push: tags: 'v*')
 if [[ ! $VERSION =~ ^v ]]; then
     GIT_TAG="v${VERSION}"
 else
@@ -105,6 +106,6 @@ git push origin main --follow-tags
 
 info "✓ Successfully created and pushed tag ${GIT_TAG}"
 echo ""
-info "Next step:"
-echo "  ./script/create-github-release ${GIT_TAG}"
+info "The release workflow will run automatically."
+info "Monitor: https://github.com/pingidentity/aic-mcp-server/actions"
 echo ""
