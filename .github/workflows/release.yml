@@ -63,6 +63,4 @@ jobs:
 
       - name: Publish to npm
         run: |
-          npm publish ${{ steps.version.outputs.prerelease == 'true' && '--tag beta' || '' }} --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm publish ${{ steps.version.outputs.prerelease == 'true' && '--tag beta' || '' }} --access public
