@@ -111,8 +111,7 @@ function startServerAndGetAuthCode(params: {
       const stateBuffer = Buffer.from(state);
       const receivedBuffer = Buffer.from(receivedState);
 
-      if (stateBuffer.length !== receivedBuffer.length ||
-          !crypto.timingSafeEqual(stateBuffer, receivedBuffer)) {
+      if (stateBuffer.length !== receivedBuffer.length || !crypto.timingSafeEqual(stateBuffer, receivedBuffer)) {
         res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(generateAuthResultPage(false, 'Invalid state parameter'));
         cleanup(new Error('CSRF protection failed: state mismatch'));
@@ -182,9 +181,9 @@ async function exchangeCodeForToken(params: {
   const response = await fetch(tokenUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/x-www-form-urlencoded'
     },
-    body,
+    body
   });
 
   if (!response.ok) {
@@ -195,7 +194,7 @@ async function exchangeCodeForToken(params: {
   const data = await response.json();
   return {
     accessToken: data.access_token,
-    expiresIn: data.expires_in,
+    expiresIn: data.expires_in
   };
 }
 
@@ -211,7 +210,7 @@ export async function executePkceFlow(params: PkceFlowParams): Promise<PkceFlowR
     clientId: params.clientId,
     aicBaseUrl: params.aicBaseUrl,
     onServerCreated: params.onServerCreated,
-    onServerClosed: params.onServerClosed,
+    onServerClosed: params.onServerClosed
   });
 
   return exchangeCodeForToken({
@@ -219,6 +218,6 @@ export async function executePkceFlow(params: PkceFlowParams): Promise<PkceFlowR
     code: authCode,
     codeVerifier: verifier,
     redirectUri: params.redirectUri,
-    clientId: params.clientId,
+    clientId: params.clientId
   });
 }

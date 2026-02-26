@@ -21,15 +21,17 @@ export const setVariableTool = {
   },
   inputSchema: {
     variableId: safePathSegmentSchema.describe('Variable ID (format: esv-*)'),
-    value: z.any().describe(
-      "Variable value as native type (NOT JSON string). Examples: string: 'hello', array: ['a','b'], object: {\"key\":\"val\"}, bool: true, int: 42, number: 3.14, list: 'a,b,c'. The tool handles JSON serialization internally for array/object types."
-    ),
-    type: z.enum(['string', 'array', 'object', 'bool', 'int', 'number', 'list']).describe(
-      "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Ping recommends using 'array' instead of 'list'."
-    ),
-    description: z.string().optional().describe(
-      "Optional description of the variable's purpose"
-    )
+    value: z
+      .any()
+      .describe(
+        "Variable value as native type (NOT JSON string). Examples: string: 'hello', array: ['a','b'], object: {\"key\":\"val\"}, bool: true, int: 42, number: 3.14, list: 'a,b,c'. The tool handles JSON serialization internally for array/object types."
+      ),
+    type: z
+      .enum(['string', 'array', 'object', 'bool', 'int', 'number', 'list'])
+      .describe(
+        "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Ping recommends using 'array' instead of 'list'."
+      ),
+    description: z.string().optional().describe("Optional description of the variable's purpose")
   },
   async toolFunction({
     variableId,
@@ -73,24 +75,25 @@ export const setVariableTool = {
 
       const url = `https://${aicBaseUrl}/environment/variables/${variableId}`;
 
-      const { data, response } = await makeAuthenticatedRequest(
-        url,
-        SCOPES,
-        {
-          method: 'PUT',
-          headers: {
-            'accept-api-version': 'resource=2.0'
-          },
-          body: JSON.stringify(requestBody)
-        }
-      );
+      const { response } = await makeAuthenticatedRequest(url, SCOPES, {
+        method: 'PUT',
+        headers: {
+          'accept-api-version': 'resource=2.0'
+        },
+        body: JSON.stringify(requestBody)
+      });
 
       const successMessage = `Set variable '${variableId}'. Pod restart required for changes to take effect.`;
 
-      return createToolResponse(formatSuccess({
-        _id: variableId,
-        message: successMessage
-      }, response));
+      return createToolResponse(
+        formatSuccess(
+          {
+            _id: variableId,
+            message: successMessage
+          },
+          response
+        )
+      );
     } catch (error: any) {
       return createToolResponse(`Failed to set variable '${variableId}': ${error.message}`);
     }

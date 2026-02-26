@@ -21,7 +21,7 @@ export const EXAMPLE_MANAGED_OBJECT_TYPES = [
   'alpha_group',
   'bravo_group',
   'alpha_organization',
-  'bravo_organization',
+  'bravo_organization'
 ];
 
 /**

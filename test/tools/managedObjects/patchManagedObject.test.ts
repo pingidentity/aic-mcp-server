@@ -20,7 +20,7 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '1',
-        operations: [],
+        operations: []
       });
 
       expect(getSpy()).toHaveBeenCalledWith(
@@ -35,7 +35,7 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '2',
-        operations: [],
+        operations: []
       });
 
       const callArgs = getSpy().mock.calls[0];
@@ -50,7 +50,7 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '1',
-        operations: [{ operation: 'replace', field: '/mail', value: 'new@test.com' }],
+        operations: [{ operation: 'replace', field: '/mail', value: 'new@test.com' }]
       });
 
       const callArgs = getSpy().mock.calls[0];
@@ -58,9 +58,7 @@ describe('patchManagedObject', () => {
       const requestBody = JSON.parse(requestOptions.body);
 
       // Verify operations are sent as-is, NOT transformed to op/path
-      expect(requestBody).toEqual([
-        { operation: 'replace', field: '/mail', value: 'new@test.com' }
-      ]);
+      expect(requestBody).toEqual([{ operation: 'replace', field: '/mail', value: 'new@test.com' }]);
       // Ensure no transformation happened
       expect(requestBody[0]).not.toHaveProperty('op');
       expect(requestBody[0]).not.toHaveProperty('path');
@@ -76,7 +74,7 @@ describe('patchManagedObject', () => {
         operations: [
           { operation: 'replace', field: '/givenName', value: 'Jane' },
           { operation: 'replace', field: '/sn', value: 'Doe' }
-        ],
+        ]
       });
 
       const callArgs = getSpy().mock.calls[0];
@@ -95,16 +93,14 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '1',
-        operations: [{ operation: 'remove', field: '/description' }],
+        operations: [{ operation: 'remove', field: '/description' }]
       });
 
       const callArgs = getSpy().mock.calls[0];
       const requestOptions = callArgs[2];
       const requestBody = JSON.parse(requestOptions.body);
 
-      expect(requestBody).toEqual([
-        { operation: 'remove', field: '/description' }
-      ]);
+      expect(requestBody).toEqual([{ operation: 'remove', field: '/description' }]);
       // Value should be omitted (undefined in input means it won't be in JSON)
       expect(requestBody[0]).not.toHaveProperty('value');
     });
@@ -114,14 +110,10 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '1',
-        operations: [],
+        operations: []
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idm:*'],
-        expect.any(Object)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.any(String), ['fr:idm:*'], expect.any(Object));
     });
   });
 
@@ -134,7 +126,7 @@ describe('patchManagedObject', () => {
             _id: params.objectId as string,
             _rev: '2',
             userName: 'test',
-            mail: 'new@test.com',
+            mail: 'new@test.com'
           });
         })
       );
@@ -143,7 +135,7 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '1',
-        operations: [{ operation: 'replace', field: '/mail', value: 'new@test.com' }],
+        operations: [{ operation: 'replace', field: '/mail', value: 'new@test.com' }]
       });
 
       expect(result.content[0].text).toContain('obj-123');
@@ -157,7 +149,7 @@ describe('patchManagedObject', () => {
         http.patch('https://*/openidm/managed/:objectType/:objectId', ({ params }) => {
           return HttpResponse.json({
             _id: params.objectId as string,
-            _rev: '2',
+            _rev: '2'
           });
         })
       );
@@ -166,7 +158,7 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '1',
-        operations: [],
+        operations: []
       });
 
       expect(result.content[0].type).toBe('text');
@@ -258,26 +250,26 @@ describe('patchManagedObject', () => {
         name: 'should handle 401 Unauthorized error',
         status: 401,
         body: { error: 'unauthorized', message: 'Invalid token' },
-        matcher: /401|[Uu]nauthorized/,
+        matcher: /401|[Uu]nauthorized/
       },
       {
         name: 'should handle 404 Not Found error',
         status: 404,
         body: { error: 'not_found', message: 'Object does not exist' },
-        matcher: /404|[Nn]ot [Ff]ound/,
+        matcher: /404|[Nn]ot [Ff]ound/
       },
       {
         name: 'should handle 412 Precondition Failed error (revision mismatch)',
         status: 412,
         body: { error: 'precondition_failed', message: 'The resource version does not match the version provided' },
-        matcher: /412|[Pp]recondition|[Rr]evision/,
+        matcher: /412|[Pp]recondition|[Rr]evision/
       },
       {
         name: 'should handle 400 Bad Request error (invalid patch)',
         status: 400,
         body: { error: 'bad_request', message: 'Invalid patch operation' },
-        matcher: /400|[Bb]ad [Rr]equest/,
-      },
+        matcher: /400|[Bb]ad [Rr]equest/
+      }
     ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.patch('https://*/openidm/managed/:objectType/:objectId', () => {
@@ -289,7 +281,7 @@ describe('patchManagedObject', () => {
         objectType: 'alpha_user',
         objectId: 'obj-123',
         revision: '1',
-        operations: [],
+        operations: []
       });
 
       expect(result.content[0].text).toContain('Failed to patch managed object');

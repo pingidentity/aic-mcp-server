@@ -60,8 +60,8 @@ describe('listNodeTypes', () => {
           return HttpResponse.json({
             result: [
               { _id: 'UsernameCollectorNode', name: 'Username Collector' },
-              { _id: 'PasswordCollectorNode', name: 'Password Collector' },
-            ],
+              { _id: 'PasswordCollectorNode', name: 'Password Collector' }
+            ]
           });
         })
       );
@@ -77,7 +77,7 @@ describe('listNodeTypes', () => {
       server.use(
         http.post('https://*/am/json/*/realm-config/authentication/authenticationtrees/nodes', () => {
           return HttpResponse.json({
-            result: [{ _id: 'TypeA' }],
+            result: [{ _id: 'TypeA' }]
           });
         })
       );

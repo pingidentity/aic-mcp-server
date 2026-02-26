@@ -8,7 +8,8 @@ const SCOPES = ['fr:am:*'];
 export const updateScriptTool = {
   name: 'updateScript',
   title: 'Update AM Script',
-  description: 'Update an existing Scripted Decision Node script. You can update any combination of name, description, or script content.',
+  description:
+    'Update an existing Scripted Decision Node script. You can update any combination of name, description, or script content.',
   scopes: SCOPES,
   annotations: {
     openWorldHint: true
@@ -18,9 +19,15 @@ export const updateScriptTool = {
     scriptId: safePathSegmentSchema.describe('The unique identifier of the script (UUID format)'),
     name: z.string().min(1).optional().describe('New name for the script'),
     description: z.string().optional().describe('New description for the script'),
-    script: z.string().min(1).optional().describe('New JavaScript source code for the script'),
+    script: z.string().min(1).optional().describe('New JavaScript source code for the script')
   },
-  async toolFunction({ realm, scriptId, name, description, script }: {
+  async toolFunction({
+    realm,
+    scriptId,
+    name,
+    description,
+    script
+  }: {
     realm: string;
     scriptId: string;
     name?: string;
@@ -38,7 +45,7 @@ export const updateScriptTool = {
       // Fetch current script
       const { data: fetchedScript } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'GET',
-        headers: AM_SCRIPT_HEADERS_V2,
+        headers: AM_SCRIPT_HEADERS_V2
       });
       const currentScript = fetchedScript as Record<string, unknown>;
 
@@ -46,7 +53,7 @@ export const updateScriptTool = {
       const updatedScript: Record<string, unknown> = {
         ...currentScript,
         name: name ?? currentScript.name,
-        description: description ?? currentScript.description,
+        description: description ?? currentScript.description
       };
 
       // If script content is being updated, encode it
@@ -59,7 +66,7 @@ export const updateScriptTool = {
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'PUT',
         headers: AM_SCRIPT_HEADERS_V2,
-        body: JSON.stringify(updatedScript),
+        body: JSON.stringify(updatedScript)
       });
 
       const scriptData = data as { _id: string; name: string };
@@ -67,11 +74,11 @@ export const updateScriptTool = {
 
       return createToolResponse(
         `Script "${scriptData.name}" updated successfully.\n` +
-        `Script ID: ${scriptData._id}\n` +
-        `Transaction ID: ${transactionId}`
+          `Script ID: ${scriptData._id}\n` +
+          `Transaction ID: ${transactionId}`
       );
     } catch (error: any) {
       return createToolResponse(`Failed to update script "${scriptId}" in realm "${realm}": ${error.message}`);
     }
-  },
+  }
 };

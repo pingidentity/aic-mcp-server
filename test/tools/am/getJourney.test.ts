@@ -33,14 +33,14 @@ describe('getJourney', () => {
         http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees/*', () => {
           return HttpResponse.json({
             _id: 'EmptyJourney',
-            nodes: {},
+            nodes: {}
           });
         })
       );
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'EmptyJourney',
+        journeyName: 'EmptyJourney'
       });
 
       const responseData = JSON.parse(result.content[0].text);
@@ -56,25 +56,25 @@ describe('getJourney', () => {
             _id: 'LoginJourney',
             nodes: {
               'node-1': { nodeType: 'UsernameCollectorNode' },
-              'node-2': { nodeType: 'PasswordCollectorNode' },
-            },
+              'node-2': { nodeType: 'PasswordCollectorNode' }
+            }
           });
         })
       );
 
       fetchNodeSchemasSpy.mockResolvedValue([
         { nodeType: 'UsernameCollectorNode', schema: { type: 'object' }, error: null },
-        { nodeType: 'PasswordCollectorNode', schema: { type: 'object' }, error: null },
+        { nodeType: 'PasswordCollectorNode', schema: { type: 'object' }, error: null }
       ]);
 
       fetchNodeConfigsSpy.mockResolvedValue([
         { nodeId: 'node-1', nodeType: 'UsernameCollectorNode', config: { _id: 'node-1' }, error: null },
-        { nodeId: 'node-2', nodeType: 'PasswordCollectorNode', config: { _id: 'node-2' }, error: null },
+        { nodeId: 'node-2', nodeType: 'PasswordCollectorNode', config: { _id: 'node-2' }, error: null }
       ]);
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'LoginJourney',
+        journeyName: 'LoginJourney'
       });
 
       expect(fetchNodeSchemasSpy).toHaveBeenCalledWith(
@@ -98,26 +98,26 @@ describe('getJourney', () => {
             nodes: {
               'node-1': { nodeType: 'UsernameCollectorNode' },
               'node-2': { nodeType: 'UsernameCollectorNode' },
-              'node-3': { nodeType: 'PasswordCollectorNode' },
-            },
+              'node-3': { nodeType: 'PasswordCollectorNode' }
+            }
           });
         })
       );
 
       fetchNodeSchemasSpy.mockResolvedValue([
         { nodeType: 'UsernameCollectorNode', schema: { type: 'object' }, error: null },
-        { nodeType: 'PasswordCollectorNode', schema: { type: 'object' }, error: null },
+        { nodeType: 'PasswordCollectorNode', schema: { type: 'object' }, error: null }
       ]);
 
       fetchNodeConfigsSpy.mockResolvedValue([
         { nodeId: 'node-1', nodeType: 'UsernameCollectorNode', config: {}, error: null },
         { nodeId: 'node-2', nodeType: 'UsernameCollectorNode', config: {}, error: null },
-        { nodeId: 'node-3', nodeType: 'PasswordCollectorNode', config: {}, error: null },
+        { nodeId: 'node-3', nodeType: 'PasswordCollectorNode', config: {}, error: null }
       ]);
 
       await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Journey',
+        journeyName: 'Journey'
       });
 
       // Should only request 2 unique node types, not 3
@@ -131,20 +131,16 @@ describe('getJourney', () => {
           return HttpResponse.json({
             _id: 'PageJourney',
             nodes: {
-              'page-node-1': { nodeType: 'PageNode' },
-            },
+              'page-node-1': { nodeType: 'PageNode' }
+            }
           });
         })
       );
 
       // First call for top-level nodes
       fetchNodeSchemasSpy
-        .mockResolvedValueOnce([
-          { nodeType: 'PageNode', schema: { type: 'object' }, error: null },
-        ])
-        .mockResolvedValueOnce([
-          { nodeType: 'NestedNode', schema: { type: 'object' }, error: null },
-        ]);
+        .mockResolvedValueOnce([{ nodeType: 'PageNode', schema: { type: 'object' }, error: null }])
+        .mockResolvedValueOnce([{ nodeType: 'NestedNode', schema: { type: 'object' }, error: null }]);
 
       // First call returns PageNode config with nested nodes
       fetchNodeConfigsSpy
@@ -154,20 +150,18 @@ describe('getJourney', () => {
             nodeType: 'PageNode',
             config: {
               _id: 'page-node-1',
-              nodes: [
-                { _id: 'nested-1', nodeType: 'NestedNode' },
-              ],
+              nodes: [{ _id: 'nested-1', nodeType: 'NestedNode' }]
             },
-            error: null,
-          },
+            error: null
+          }
         ])
         .mockResolvedValueOnce([
-          { nodeId: 'nested-1', nodeType: 'NestedNode', config: { _id: 'nested-1' }, error: null },
+          { nodeId: 'nested-1', nodeType: 'NestedNode', config: { _id: 'nested-1' }, error: null }
         ]);
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'PageJourney',
+        journeyName: 'PageJourney'
       });
 
       // Should have called fetchNodeConfigs twice - once for PageNode, once for nested
@@ -184,23 +178,23 @@ describe('getJourney', () => {
           return HttpResponse.json({
             _id: 'Journey',
             nodes: {
-              'node-1': { nodeType: 'TestNode' },
-            },
+              'node-1': { nodeType: 'TestNode' }
+            }
           });
         })
       );
 
       fetchNodeSchemasSpy.mockResolvedValue([
-        { nodeType: 'TestNode', schema: null, error: 'Schema fetch failed: 404' },
+        { nodeType: 'TestNode', schema: null, error: 'Schema fetch failed: 404' }
       ]);
 
       fetchNodeConfigsSpy.mockResolvedValue([
-        { nodeId: 'node-1', nodeType: 'TestNode', config: { _id: 'node-1' }, error: null },
+        { nodeId: 'node-1', nodeType: 'TestNode', config: { _id: 'node-1' }, error: null }
       ]);
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Journey',
+        journeyName: 'Journey'
       });
 
       expect(result.content[0].text).toContain('Failed to get journey');
@@ -213,23 +207,21 @@ describe('getJourney', () => {
           return HttpResponse.json({
             _id: 'Journey',
             nodes: {
-              'node-1': { nodeType: 'TestNode' },
-            },
+              'node-1': { nodeType: 'TestNode' }
+            }
           });
         })
       );
 
-      fetchNodeSchemasSpy.mockResolvedValue([
-        { nodeType: 'TestNode', schema: { type: 'object' }, error: null },
-      ]);
+      fetchNodeSchemasSpy.mockResolvedValue([{ nodeType: 'TestNode', schema: { type: 'object' }, error: null }]);
 
       fetchNodeConfigsSpy.mockResolvedValue([
-        { nodeId: 'node-1', nodeType: 'TestNode', config: null, error: 'Config fetch failed: 404' },
+        { nodeId: 'node-1', nodeType: 'TestNode', config: null, error: 'Config fetch failed: 404' }
       ]);
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Journey',
+        journeyName: 'Journey'
       });
 
       expect(result.content[0].text).toContain('Failed to get journey');
@@ -242,36 +234,31 @@ describe('getJourney', () => {
           return HttpResponse.json({
             _id: 'PageJourney',
             nodes: {
-              'page-node-1': { nodeType: 'PageNode' },
-            },
+              'page-node-1': { nodeType: 'PageNode' }
+            }
           });
         })
       );
 
       fetchNodeSchemasSpy
-        .mockResolvedValueOnce([
-          { nodeType: 'PageNode', schema: { type: 'object' }, error: null },
-        ])
-        .mockResolvedValueOnce([
-          { nodeType: 'NestedNode', schema: null, error: 'Nested schema failed: 404' },
-        ]);
+        .mockResolvedValueOnce([{ nodeType: 'PageNode', schema: { type: 'object' }, error: null }])
+        .mockResolvedValueOnce([{ nodeType: 'NestedNode', schema: null, error: 'Nested schema failed: 404' }]);
 
-      fetchNodeConfigsSpy
-        .mockResolvedValueOnce([
-          {
-            nodeId: 'page-node-1',
-            nodeType: 'PageNode',
-            config: {
-              _id: 'page-node-1',
-              nodes: [{ _id: 'nested-1', nodeType: 'NestedNode' }],
-            },
-            error: null,
+      fetchNodeConfigsSpy.mockResolvedValueOnce([
+        {
+          nodeId: 'page-node-1',
+          nodeType: 'PageNode',
+          config: {
+            _id: 'page-node-1',
+            nodes: [{ _id: 'nested-1', nodeType: 'NestedNode' }]
           },
-        ]);
+          error: null
+        }
+      ]);
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'PageJourney',
+        journeyName: 'PageJourney'
       });
 
       expect(result.content[0].text).toContain('Failed to get journey');
@@ -284,16 +271,14 @@ describe('getJourney', () => {
           return HttpResponse.json({
             _id: 'PageJourney',
             nodes: {
-              'page-node-1': { nodeType: 'PageNode' },
-            },
+              'page-node-1': { nodeType: 'PageNode' }
+            }
           });
         })
       );
 
       fetchNodeSchemasSpy
-        .mockResolvedValueOnce([
-          { nodeType: 'PageNode', schema: { type: 'object' }, error: null },
-        ])
+        .mockResolvedValueOnce([{ nodeType: 'PageNode', schema: { type: 'object' }, error: null }])
         .mockResolvedValueOnce([]);
 
       fetchNodeConfigsSpy
@@ -303,18 +288,18 @@ describe('getJourney', () => {
             nodeType: 'PageNode',
             config: {
               _id: 'page-node-1',
-              nodes: [{ _id: 'nested-1', nodeType: 'NestedNode' }],
+              nodes: [{ _id: 'nested-1', nodeType: 'NestedNode' }]
             },
-            error: null,
-          },
+            error: null
+          }
         ])
         .mockResolvedValueOnce([
-          { nodeId: 'nested-1', nodeType: 'NestedNode', config: null, error: 'Nested config failed: 404' },
+          { nodeId: 'nested-1', nodeType: 'NestedNode', config: null, error: 'Nested config failed: 404' }
         ]);
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'PageJourney',
+        journeyName: 'PageJourney'
       });
 
       expect(result.content[0].text).toContain('Failed to get journey');
@@ -333,7 +318,7 @@ describe('getJourney', () => {
 
       await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'LoginJourney',
+        journeyName: 'LoginJourney'
       });
 
       const [url, scopes, options] = getSpy().mock.calls[0];
@@ -351,7 +336,7 @@ describe('getJourney', () => {
 
       await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Journey With Spaces',
+        journeyName: 'Journey With Spaces'
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -366,22 +351,18 @@ describe('getJourney', () => {
         http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees/*', () => {
           return HttpResponse.json({
             _id: 'Journey',
-            nodes: { 'node-1': { nodeType: 'TestNode' } },
+            nodes: { 'node-1': { nodeType: 'TestNode' } }
           });
         })
       );
 
-      fetchNodeSchemasSpy.mockResolvedValue([
-        { nodeType: 'TestNode', schema: null, error: 'HTTP 404: Not Found' },
-      ]);
+      fetchNodeSchemasSpy.mockResolvedValue([{ nodeType: 'TestNode', schema: null, error: 'HTTP 404: Not Found' }]);
 
-      fetchNodeConfigsSpy.mockResolvedValue([
-        { nodeId: 'node-1', nodeType: 'TestNode', config: {}, error: null },
-      ]);
+      fetchNodeConfigsSpy.mockResolvedValue([{ nodeId: 'node-1', nodeType: 'TestNode', config: {}, error: null }]);
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Journey',
+        journeyName: 'Journey'
       });
 
       expect(result.content[0].text).toContain('[not_found]');
@@ -410,7 +391,7 @@ describe('getJourney', () => {
   describe('Error Handling', () => {
     it.each([
       { status: 401, desc: '401 Unauthorized', category: 'unauthorized' },
-      { status: 404, desc: '404 Not Found', category: 'not_found' },
+      { status: 404, desc: '404 Not Found', category: 'not_found' }
     ])('should handle $desc with error category', async ({ status, category }) => {
       server.use(
         http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees/*', () => {
@@ -420,7 +401,7 @@ describe('getJourney', () => {
 
       const result = await getJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'NonexistentJourney',
+        journeyName: 'NonexistentJourney'
       });
 
       expect(result.content[0].text).toContain('Failed to get journey');

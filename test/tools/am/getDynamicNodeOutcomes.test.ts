@@ -21,10 +21,8 @@ describe('getDynamicNodeOutcomes', () => {
         realm: 'alpha',
         nodeType: 'PageNode',
         config: {
-          nodes: [
-            { nodeType: 'UsernameCollectorNode', _properties: {} },
-          ],
-        },
+          nodes: [{ nodeType: 'UsernameCollectorNode', _properties: {} }]
+        }
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -37,10 +35,8 @@ describe('getDynamicNodeOutcomes', () => {
         realm: 'alpha',
         nodeType: 'PageNode',
         config: {
-          nodes: [
-            { _id: 'existing-id', nodeType: 'UsernameCollectorNode', _properties: {} },
-          ],
-        },
+          nodes: [{ _id: 'existing-id', nodeType: 'UsernameCollectorNode', _properties: {} }]
+        }
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -51,7 +47,7 @@ describe('getDynamicNodeOutcomes', () => {
       await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'ChoiceCollectorNode',
-        config: { choices: ['option1', 'option2'] },
+        config: { choices: ['option1', 'option2'] }
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -62,7 +58,7 @@ describe('getDynamicNodeOutcomes', () => {
       await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'ChoiceCollectorNode',
-        config: { choices: ['a'] },
+        config: { choices: ['a'] }
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -76,7 +72,7 @@ describe('getDynamicNodeOutcomes', () => {
       await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'PageNode',
-        config: {},
+        config: {}
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -87,7 +83,7 @@ describe('getDynamicNodeOutcomes', () => {
       await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'PageNode',
-        config: {},
+        config: {}
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -98,7 +94,7 @@ describe('getDynamicNodeOutcomes', () => {
       await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'Node With Spaces',
-        config: {},
+        config: {}
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -109,7 +105,7 @@ describe('getDynamicNodeOutcomes', () => {
       await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'ChoiceCollectorNode',
-        config: { choices: ['a', 'b'] },
+        config: { choices: ['a', 'b'] }
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -123,7 +119,7 @@ describe('getDynamicNodeOutcomes', () => {
       const result = await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'PageNode',
-        config: {},
+        config: {}
       });
 
       expect(result.content[0].text).toBeDefined();
@@ -153,7 +149,7 @@ describe('getDynamicNodeOutcomes', () => {
       const result = await getDynamicNodeOutcomesTool.toolFunction({
         realm: 'alpha',
         nodeType: 'PageNode',
-        config: {},
+        config: {}
       });
 
       expect(result.content[0].text).toContain('Failed to get dynamic outcomes');

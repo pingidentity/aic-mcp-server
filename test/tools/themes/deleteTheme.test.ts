@@ -17,14 +17,16 @@ describe('deleteTheme', () => {
   // ===== APPLICATION LOGIC TESTS (Complex Multi-Step Process) =====
   describe('Application Logic (Multi-Step Process)', () => {
     it('should fetch current theme config first', async () => {
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [{ _id: 'theme-123', name: 'TestTheme', isDefault: false }],
-        bravo: [],
-      }));
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [{ _id: 'theme-123', name: 'TestTheme', isDefault: false }],
+          bravo: []
+        })
+      );
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       // Our code GETs config before deleting
@@ -37,13 +39,13 @@ describe('deleteTheme', () => {
 
     it.each([
       { name: 'should validate config structure exists', config: { realm: {} as any } },
-      { name: 'should validate realm exists in config', config: buildRealmConfig({ bravo: [] }) },
+      { name: 'should validate realm exists in config', config: buildRealmConfig({ bravo: [] }) }
     ])('$name', async ({ config }) => {
       mockThemeConfigHandlers(config as any);
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Invalid theme configuration structure');
@@ -57,10 +59,10 @@ describe('deleteTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'FindMe', isDefault: false },
-                { _id: 'theme-456', name: 'NotMe', isDefault: false },
+                { _id: 'theme-456', name: 'NotMe', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -70,7 +72,7 @@ describe('deleteTheme', () => {
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       // Our code finds theme by _id and deletes the correct one
@@ -85,10 +87,10 @@ describe('deleteTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'FindByName', isDefault: false },
-                { _id: 'theme-456', name: 'OtherTheme', isDefault: false },
+                { _id: 'theme-456', name: 'OtherTheme', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -98,7 +100,7 @@ describe('deleteTheme', () => {
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'FindByName',
+        themeIdentifier: 'FindByName'
       });
 
       // Our code finds theme by name and deletes the correct one
@@ -111,18 +113,16 @@ describe('deleteTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ExistingTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ExistingTheme', isDefault: false }],
+              bravo: []
+            }
           });
         })
       );
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'nonexistent',
+        themeIdentifier: 'nonexistent'
       });
 
       expect(result.content[0].text).toContain('Theme not found');
@@ -137,17 +137,17 @@ describe('deleteTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-default', name: 'DefaultTheme', isDefault: true },
-                { _id: 'theme-other', name: 'OtherTheme', isDefault: false },
+                { _id: 'theme-other', name: 'OtherTheme', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         })
       );
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-default',
+        themeIdentifier: 'theme-default'
       });
 
       // Our code prevents deletion of default theme
@@ -155,9 +155,7 @@ describe('deleteTheme', () => {
       expect(result.content[0].text).toContain('DefaultTheme');
       expect(result.content[0].text).toContain('setDefaultTheme');
       // Should not make PUT call
-      const putCalls = getSpy().mock.calls.filter(
-        (call: any) => call[2] && call[2].method === 'PUT'
-      );
+      const putCalls = getSpy().mock.calls.filter((call: any) => call[2] && call[2].method === 'PUT');
       expect(putCalls.length).toBe(0);
     });
 
@@ -170,10 +168,10 @@ describe('deleteTheme', () => {
               alpha: [
                 { _id: 'theme-keep1', name: 'KeepTheme1', isDefault: true },
                 { _id: 'theme-delete', name: 'DeleteThis', isDefault: false },
-                { _id: 'theme-keep2', name: 'KeepTheme2', isDefault: false },
+                { _id: 'theme-keep2', name: 'KeepTheme2', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -184,7 +182,7 @@ describe('deleteTheme', () => {
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-delete',
+        themeIdentifier: 'theme-delete'
       });
 
       // Our code removes the theme from the array
@@ -204,10 +202,10 @@ describe('deleteTheme', () => {
               alpha: [
                 { _id: 'theme-1', name: 'Theme1', isDefault: true, customProp: 'value1' },
                 { _id: 'theme-2', name: 'Theme2', isDefault: false, customProp: 'value2' },
-                { _id: 'theme-delete', name: 'DeleteMe', isDefault: false },
+                { _id: 'theme-delete', name: 'DeleteMe', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -218,7 +216,7 @@ describe('deleteTheme', () => {
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-delete',
+        themeIdentifier: 'theme-delete'
       });
 
       // Our code preserves all properties of other themes
@@ -237,12 +235,10 @@ describe('deleteTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-alpha', name: 'AlphaTheme', isDefault: true },
-                { _id: 'theme-delete', name: 'DeleteThis', isDefault: false },
+                { _id: 'theme-delete', name: 'DeleteThis', isDefault: false }
               ],
-              bravo: [
-                { _id: 'theme-bravo', name: 'BravoTheme', isDefault: true },
-              ],
-            },
+              bravo: [{ _id: 'theme-bravo', name: 'BravoTheme', isDefault: true }]
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -253,7 +249,7 @@ describe('deleteTheme', () => {
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-delete',
+        themeIdentifier: 'theme-delete'
       });
 
       // Our code preserves bravo realm config
@@ -261,7 +257,7 @@ describe('deleteTheme', () => {
       expect(putBody.realm.bravo[0]).toEqual({
         _id: 'theme-bravo',
         name: 'BravoTheme',
-        isDefault: true,
+        isDefault: true
       });
       // Alpha realm should only have the non-deleted theme
       expect(putBody.realm.alpha).toHaveLength(1);
@@ -276,11 +272,9 @@ describe('deleteTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'TestTheme', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -290,13 +284,11 @@ describe('deleteTheme', () => {
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       // Our code GETs the entire config first
-      const getCalls = getSpy().mock.calls.filter(
-        (call: any) => !call[2] || !call[2].method
-      );
+      const getCalls = getSpy().mock.calls.filter((call: any) => !call[2] || !call[2].method);
       expect(getCalls.length).toBeGreaterThanOrEqual(1);
       expect(getCalls[0][0]).toContain('/openidm/config/ui/themerealm');
     });
@@ -306,11 +298,9 @@ describe('deleteTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'TestTheme', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -320,12 +310,10 @@ describe('deleteTheme', () => {
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
-      const putCalls = getSpy().mock.calls.filter(
-        (call: any) => call[2] && call[2].method === 'PUT'
-      );
+      const putCalls = getSpy().mock.calls.filter((call: any) => call[2] && call[2].method === 'PUT');
       expect(putCalls.length).toBeGreaterThanOrEqual(1);
       expect(putCalls[0][0]).toContain('/openidm/config/ui/themerealm');
     });
@@ -335,11 +323,9 @@ describe('deleteTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'TestTheme', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -349,7 +335,7 @@ describe('deleteTheme', () => {
 
       await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(getSpy()).toHaveBeenCalled();
@@ -367,11 +353,9 @@ describe('deleteTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'DeletedTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'DeletedTheme', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -381,7 +365,7 @@ describe('deleteTheme', () => {
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('theme-123');
@@ -393,11 +377,9 @@ describe('deleteTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-456', name: 'MyTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-456', name: 'MyTheme', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -407,7 +389,7 @@ describe('deleteTheme', () => {
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-456',
+        themeIdentifier: 'theme-456'
       });
 
       expect(result.content[0].text).toContain('Deleted theme');
@@ -430,10 +412,8 @@ describe('deleteTheme', () => {
           return HttpResponse.json({
             realm: {
               alpha: [],
-              bravo: [
-                { _id: 'theme-789', name: 'BravoTheme', isDefault: false },
-              ],
-            },
+              bravo: [{ _id: 'theme-789', name: 'BravoTheme', isDefault: false }]
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -444,7 +424,7 @@ describe('deleteTheme', () => {
       // Should not throw validation error for bravo realm
       const result = await deleteThemeTool.toolFunction({
         realm: 'bravo',
-        themeIdentifier: 'theme-789',
+        themeIdentifier: 'theme-789'
       });
 
       expect(result.content[0].text).toContain('Deleted theme');
@@ -461,16 +441,13 @@ describe('deleteTheme', () => {
     it('should handle 401 Unauthorized error on GET', async () => {
       server.use(
         http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json(
-            { error: 'Unauthorized' },
-            { status: 401 }
-          );
+          return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 });
         })
       );
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Failed to delete theme');
@@ -482,24 +459,19 @@ describe('deleteTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'TestTheme', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json(
-            { error: 'Unauthorized' },
-            { status: 401 }
-          );
+          return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 });
         })
       );
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Failed to delete theme');
@@ -515,7 +487,7 @@ describe('deleteTheme', () => {
 
       const result = await deleteThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Failed to delete theme');

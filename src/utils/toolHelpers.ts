@@ -14,15 +14,15 @@ export function getAllTools(): Tool[] {
   const isDockerMode = process.env.DOCKER_CONTAINER === 'true';
 
   const tools: Tool[] = [
-    ...Object.values(managedObjectTools) as Tool[],
-    ...Object.values(logTools) as Tool[],
-    ...Object.values(themeTools) as Tool[],
-    ...Object.values(esvTools) as Tool[],
+    ...(Object.values(managedObjectTools) as Tool[]),
+    ...(Object.values(logTools) as Tool[]),
+    ...(Object.values(themeTools) as Tool[]),
+    ...(Object.values(esvTools) as Tool[])
   ];
 
   // Only include AM tools in non-Docker mode (requires browser-based PKCE auth)
   if (!isDockerMode) {
-    tools.push(...Object.values(amTools) as Tool[]);
+    tools.push(...(Object.values(amTools) as Tool[]));
   }
 
   return tools;
@@ -34,7 +34,5 @@ export function getAllTools(): Tool[] {
  */
 export function getAllScopes(): string[] {
   const allTools = getAllTools();
-  return Array.from(
-    new Set(allTools.flatMap(tool => tool.scopes))
-  );
+  return Array.from(new Set(allTools.flatMap((tool) => tool.scopes)));
 }

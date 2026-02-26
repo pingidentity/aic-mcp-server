@@ -18,7 +18,7 @@ describe('setDefaultJourney', () => {
     it('should fetch current auth config first (GET then PUT)', async () => {
       await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Registration',
+        journeyName: 'Registration'
       });
 
       const calls = getSpy().mock.calls;
@@ -36,7 +36,7 @@ describe('setDefaultJourney', () => {
 
       await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Registration',
+        journeyName: 'Registration'
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[1][2].body);
@@ -52,7 +52,7 @@ describe('setDefaultJourney', () => {
 
       await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Registration',
+        journeyName: 'Registration'
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[1][2].body);
@@ -62,7 +62,7 @@ describe('setDefaultJourney', () => {
     it('should set orgConfig to journeyName', async () => {
       await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Registration',
+        journeyName: 'Registration'
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[1][2].body);
@@ -75,7 +75,7 @@ describe('setDefaultJourney', () => {
     it('should build URL for realm-config/authentication', async () => {
       await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -85,7 +85,7 @@ describe('setDefaultJourney', () => {
     it('should use correct headers with protocol=1.0,resource=1.0', async () => {
       await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -95,7 +95,7 @@ describe('setDefaultJourney', () => {
     it('should pass correct scopes', async () => {
       await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       const scopes = getSpy().mock.calls[0][1];
@@ -108,7 +108,7 @@ describe('setDefaultJourney', () => {
     it('should format success message with realm and journey name', async () => {
       const result = await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Registration',
+        journeyName: 'Registration'
       });
 
       expect(result.content[0].text).toContain('alpha');
@@ -141,7 +141,7 @@ describe('setDefaultJourney', () => {
 
       const result = await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       expect(result.content[0].text).toContain('Failed to set default journey');
@@ -156,7 +156,7 @@ describe('setDefaultJourney', () => {
 
       const result = await setDefaultJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       expect(result.content[0].text).toContain('Failed to set default journey');

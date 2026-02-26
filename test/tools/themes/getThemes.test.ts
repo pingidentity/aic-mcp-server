@@ -17,46 +17,34 @@ describe('getThemes', () => {
   describe('Request Construction', () => {
     it('should construct URL with realm parameter', async () => {
       await getThemesTool.toolFunction({
-        realm: 'alpha',
+        realm: 'alpha'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('realm=alpha'),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('realm=alpha'), expect.any(Array));
     });
 
     it('should construct URL with queryFilter true', async () => {
       await getThemesTool.toolFunction({
-        realm: 'alpha',
+        realm: 'alpha'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_queryFilter=true'),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('_queryFilter=true'), expect.any(Array));
     });
 
     it('should construct URL with fields parameter', async () => {
       await getThemesTool.toolFunction({
-        realm: 'alpha',
+        realm: 'alpha'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_fields=name%2CisDefault'),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('_fields=name%2CisDefault'), expect.any(Array));
     });
 
     it('should pass correct scopes to auth', async () => {
       await getThemesTool.toolFunction({
-        realm: 'alpha',
+        realm: 'alpha'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idm:*']
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.any(String), ['fr:idm:*']);
     });
   });
 
@@ -64,7 +52,7 @@ describe('getThemes', () => {
   describe('Response Handling', () => {
     it('should format response with theme count', async () => {
       const result = await getThemesTool.toolFunction({
-        realm: 'alpha',
+        realm: 'alpha'
       });
 
       // Our code adds a count message
@@ -78,13 +66,13 @@ describe('getThemes', () => {
         http.get('https://*/openidm/ui/theme/', () => {
           return HttpResponse.json({
             result: [],
-            resultCount: 0,
+            resultCount: 0
           });
         })
       );
 
       const result = await getThemesTool.toolFunction({
-        realm: 'alpha',
+        realm: 'alpha'
       });
 
       expect(result.content[0].text).toContain('Found 0 theme(s)');
@@ -101,13 +89,10 @@ describe('getThemes', () => {
     it('should accept all valid realm enum values', async () => {
       // Test 'bravo' realm
       await getThemesTool.toolFunction({
-        realm: 'bravo',
+        realm: 'bravo'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('realm=bravo'),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('realm=bravo'), expect.any(Array));
     });
   });
 
@@ -116,15 +101,12 @@ describe('getThemes', () => {
     it('should handle 401 Unauthorized error', async () => {
       server.use(
         http.get('https://*/openidm/ui/theme/', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
         })
       );
 
       const result = await getThemesTool.toolFunction({
-        realm: 'alpha',
+        realm: 'alpha'
       });
 
       expect(result.content[0].text).toContain('Failed to retrieve themes for realm "alpha"');

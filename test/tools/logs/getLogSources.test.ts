@@ -18,10 +18,9 @@ describe('getLogSources', () => {
     it('should build request with URL and scopes', async () => {
       await getLogSourcesTool.toolFunction();
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        'https://test.forgeblocks.com/monitoring/logs/sources',
-        ['fr:idc:monitoring:*']
-      );
+      expect(getSpy()).toHaveBeenCalledWith('https://test.forgeblocks.com/monitoring/logs/sources', [
+        'fr:idc:monitoring:*'
+      ]);
     });
   });
 
@@ -64,13 +63,13 @@ describe('getLogSources', () => {
       {
         name: 'should handle 401 Unauthorized error',
         status: 401,
-        body: { error: 'unauthorized', message: 'Invalid credentials' },
+        body: { error: 'unauthorized', message: 'Invalid credentials' }
       },
       {
         name: 'should handle 500 Internal Server Error',
         status: 500,
-        body: { error: 'internal_error', message: 'Server error' },
-      },
+        body: { error: 'internal_error', message: 'Server error' }
+      }
     ])('$name', async ({ status, body }) => {
       server.use(
         http.get('https://*/monitoring/logs/sources', () => {

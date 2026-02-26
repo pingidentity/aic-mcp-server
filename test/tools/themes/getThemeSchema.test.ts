@@ -8,7 +8,7 @@ vi.mock('../../../src/utils/apiHelpers.js', async () => {
   const actual = await vi.importActual('../../../src/utils/apiHelpers.js');
   return {
     ...actual,
-    makeAuthenticatedRequest: vi.fn(),
+    makeAuthenticatedRequest: vi.fn()
   };
 });
 
@@ -53,11 +53,7 @@ describe('getThemeSchema', () => {
     // Verify enum field documentation
     expect(schemaData.fields).toHaveProperty('journeyLayout');
     expect(schemaData.fields.journeyLayout).toHaveProperty('enum');
-    expect(schemaData.fields.journeyLayout.enum).toEqual([
-      'card',
-      'justified-left',
-      'justified-right'
-    ]);
+    expect(schemaData.fields.journeyLayout.enum).toEqual(['card', 'justified-left', 'justified-right']);
 
     // Verify important notes sections
     expect(schemaData.importantNotes).toHaveProperty('htmlCssFields');

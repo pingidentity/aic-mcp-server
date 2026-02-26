@@ -17,7 +17,7 @@ describe('deleteVariable', () => {
   describe('Request Construction', () => {
     it('should build request with URL, method, headers, and scopes', async () => {
       await deleteVariableTool.toolFunction({
-        variableId: 'esv-old-key',
+        variableId: 'esv-old-key'
       });
 
       expect(getSpy()).toHaveBeenCalledWith(
@@ -26,8 +26,8 @@ describe('deleteVariable', () => {
         expect.objectContaining({
           method: 'DELETE',
           headers: expect.objectContaining({
-            'accept-api-version': 'protocol=1.0,resource=1.0',
-          }),
+            'accept-api-version': 'protocol=1.0,resource=1.0'
+          })
         })
       );
     });
@@ -40,20 +40,17 @@ describe('deleteVariable', () => {
         http.delete('https://*/environment/variables/:variableId', ({ request, params }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
 
           return HttpResponse.json({
-            _id: params.variableId as string,
+            _id: params.variableId as string
           });
         })
       );
 
       const result = await deleteVariableTool.toolFunction({
-        variableId: 'esv-old-key',
+        variableId: 'esv-old-key'
       });
 
       expect(result.content[0].text).toContain('Deleted variable');
@@ -93,7 +90,7 @@ describe('deleteVariable', () => {
     it.each([
       { status: 401, body: { error: 'unauthorized', message: 'Invalid token' }, variableId: 'esv-test' },
       { status: 404, body: { code: 404, message: 'Variable not found' }, variableId: 'esv-nonexistent' },
-      { status: 403, body: { code: 403, message: 'Insufficient permissions' }, variableId: 'esv-protected' },
+      { status: 403, body: { code: 403, message: 'Insufficient permissions' }, variableId: 'esv-protected' }
     ])('handles $status errors', async ({ status, body, variableId }) => {
       server.use(
         http.delete('https://*/environment/variables/:variableId', () => {

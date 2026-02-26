@@ -21,7 +21,15 @@ export const updateThemeTool = {
     themeIdentifier: safePathSegmentSchema.describe('Theme ID or name'),
     themeUpdates: z.record(z.any()).describe('Object containing the fields to update (cannot update _id or isDefault)')
   },
-  async toolFunction({ realm, themeIdentifier, themeUpdates }: { realm: string; themeIdentifier: string; themeUpdates: Record<string, any> }) {
+  async toolFunction({
+    realm,
+    themeIdentifier,
+    themeUpdates
+  }: {
+    realm: string;
+    themeIdentifier: string;
+    themeUpdates: Record<string, any>;
+  }) {
     try {
       // Validate that themeUpdates don't contain protected fields
       if ('_id' in themeUpdates) {
@@ -29,7 +37,9 @@ export const updateThemeTool = {
       }
 
       if ('isDefault' in themeUpdates) {
-        return createToolResponse('Cannot update "isDefault" directly. Use the setDefaultTheme tool to change the default theme.');
+        return createToolResponse(
+          'Cannot update "isDefault" directly. Use the setDefaultTheme tool to change the default theme.'
+        );
       }
 
       // Get the current theme configuration
@@ -44,9 +54,7 @@ export const updateThemeTool = {
       const realmThemes = (config as any).realm[realm];
 
       // Find the theme by ID or name
-      const themeIndex = realmThemes.findIndex((t: any) =>
-        t._id === themeIdentifier || t.name === themeIdentifier
-      );
+      const themeIndex = realmThemes.findIndex((t: any) => t._id === themeIdentifier || t.name === themeIdentifier);
 
       if (themeIndex === -1) {
         return createToolResponse(`Theme not found: "${themeIdentifier}" in realm "${realm}"`);
@@ -60,7 +68,9 @@ export const updateThemeTool = {
       if (themeUpdates.name && themeUpdates.name !== originalName) {
         const duplicateTheme = realmThemes.find((t: any) => t.name === themeUpdates.name && t._id !== themeId);
         if (duplicateTheme) {
-          return createToolResponse(`Theme with name "${themeUpdates.name}" already exists in realm "${realm}". Choose a different name.`);
+          return createToolResponse(
+            `Theme with name "${themeUpdates.name}" already exists in realm "${realm}". Choose a different name.`
+          );
         }
       }
 
@@ -68,8 +78,8 @@ export const updateThemeTool = {
       const updatedTheme = {
         ...existingTheme,
         ...themeUpdates,
-        _id: themeId,  // Always preserve the ID
-        isDefault: existingTheme.isDefault  // Always preserve isDefault
+        _id: themeId, // Always preserve the ID
+        isDefault: existingTheme.isDefault // Always preserve isDefault
       };
 
       // Update the themes array
@@ -86,14 +96,10 @@ export const updateThemeTool = {
       };
 
       // PUT the updated configuration back
-      const { response } = await makeAuthenticatedRequest(
-        configUrl,
-        SCOPES,
-        {
-          method: 'PUT',
-          body: JSON.stringify(updatedConfig)
-        }
-      );
+      const { response } = await makeAuthenticatedRequest(configUrl, SCOPES, {
+        method: 'PUT',
+        body: JSON.stringify(updatedConfig)
+      });
 
       const themeName = updatedTheme.name;
       const successMessage = `Updated theme "${themeName}" (${themeId}) in realm "${realm}"`;

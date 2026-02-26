@@ -11,7 +11,8 @@ const SCOPES = ['fr:idm:*'];
 export const createThemeTool = {
   name: 'createTheme',
   title: 'Create Theme',
-  description: 'Create a new theme for a realm in PingOne AIC. IMPORTANT: Call getThemeSchema first to understand all available fields, their types, enum values, and requirements before creating a theme.',
+  description:
+    'Create a new theme for a realm in PingOne AIC. IMPORTANT: Call getThemeSchema first to understand all available fields, their types, enum values, and requirements before creating a theme.',
   scopes: SCOPES,
   annotations: {
     openWorldHint: true
@@ -43,7 +44,9 @@ export const createThemeTool = {
       // Check if theme with this name already exists
       const existingTheme = realmThemes.find((t: any) => t.name === themeName);
       if (existingTheme) {
-        return createToolResponse(`Theme with name "${themeName}" already exists in realm "${realm}". Use a different name or update the existing theme.`);
+        return createToolResponse(
+          `Theme with name "${themeName}" already exists in realm "${realm}". Use a different name or update the existing theme.`
+        );
       }
 
       // Generate UUID for the new theme
@@ -69,14 +72,10 @@ export const createThemeTool = {
       };
 
       // PUT the updated configuration back
-      const { response } = await makeAuthenticatedRequest(
-        configUrl,
-        SCOPES,
-        {
-          method: 'PUT',
-          body: JSON.stringify(updatedConfig)
-        }
-      );
+      const { response } = await makeAuthenticatedRequest(configUrl, SCOPES, {
+        method: 'PUT',
+        body: JSON.stringify(updatedConfig)
+      });
 
       const successMessage = `Created theme "${themeName}" (${themeId}) in realm "${realm}"`;
       return createToolResponse(formatSuccess({ _id: themeId, name: themeName, message: successMessage }, response));

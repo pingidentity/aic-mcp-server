@@ -34,7 +34,7 @@ export function createMockTokenStorage(): MockTokenStorage {
   return {
     getToken: vi.fn().mockResolvedValue(null),
     setToken: vi.fn().mockResolvedValue(undefined),
-    deleteToken: vi.fn().mockResolvedValue(undefined),
+    deleteToken: vi.fn().mockResolvedValue(undefined)
   };
 }
 
@@ -52,8 +52,8 @@ export function createMockMcpServer(): MockMcpServer {
   return {
     server: {
       elicitInput: vi.fn().mockResolvedValue({ action: 'accept' }),
-      notification: vi.fn().mockResolvedValue(undefined),
-    },
+      notification: vi.fn().mockResolvedValue(undefined)
+    }
   };
 }
 
@@ -73,7 +73,7 @@ export function createTestTokenData(overrides: Partial<TokenData> = {}): TokenDa
     accessToken: 'test-access-token',
     expiresAt: Date.now() + 3600000, // Expires in 1 hour
     aicBaseUrl: 'test.forgeblocks.com',
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -88,14 +88,14 @@ export const VALID_TOKEN_DATA = createTestTokenData();
  * Token that expired 1 hour ago
  */
 export const EXPIRED_TOKEN_DATA = createTestTokenData({
-  expiresAt: Date.now() - 3600000,
+  expiresAt: Date.now() - 3600000
 });
 
 /**
  * Token for a different AIC tenant
  */
 export const DIFFERENT_TENANT_TOKEN_DATA = createTestTokenData({
-  aicBaseUrl: 'different-tenant.forgeblocks.com',
+  aicBaseUrl: 'different-tenant.forgeblocks.com'
 });
 
 /**
@@ -107,7 +107,7 @@ export const MOCK_DEVICE_CODE_RESPONSE = {
   verification_uri: 'https://test.forgeblocks.com/device',
   verification_uri_complete: 'https://test.forgeblocks.com/device?user_code=TEST-CODE',
   expires_in: 600,
-  interval: 5,
+  interval: 5
 };
 
 /**
@@ -116,7 +116,7 @@ export const MOCK_DEVICE_CODE_RESPONSE = {
 export const MOCK_TOKEN_RESPONSE = {
   access_token: 'test-access-token',
   expires_in: 3600,
-  token_type: 'Bearer',
+  token_type: 'Bearer'
 };
 
 /**
@@ -170,6 +170,6 @@ export function setupAuthServiceTest() {
   // Return getter functions for accessing test state
   return {
     getBaseUrl: () => process.env.AIC_BASE_URL,
-    getDockerContainer: () => process.env.DOCKER_CONTAINER,
+    getDockerContainer: () => process.env.DOCKER_CONTAINER
   };
 }

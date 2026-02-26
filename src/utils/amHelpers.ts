@@ -19,7 +19,7 @@ const aicBaseUrl = process.env.AIC_BASE_URL;
  */
 export const AM_API_HEADERS = {
   'accept-api-version': 'protocol=2.1,resource=1.0',
-  'Content-Type': 'application/json',
+  'Content-Type': 'application/json'
 } as const;
 
 /**
@@ -28,7 +28,7 @@ export const AM_API_HEADERS = {
  */
 export const AM_SCRIPT_HEADERS = {
   'accept-api-version': 'protocol=1.0,resource=1.0',
-  'Content-Type': 'application/json',
+  'Content-Type': 'application/json'
 } as const;
 
 /**
@@ -37,7 +37,7 @@ export const AM_SCRIPT_HEADERS = {
  */
 export const AM_SCRIPT_HEADERS_V2 = {
   'accept-api-version': 'protocol=2.0,resource=1.0',
-  'Content-Type': 'application/json',
+  'Content-Type': 'application/json'
 } as const;
 
 /**
@@ -46,7 +46,7 @@ export const AM_SCRIPT_HEADERS_V2 = {
  */
 export const STATIC_NODE_IDS = {
   SUCCESS: '70e691a5-1e33-4ac3-a356-e7b6d60d92e0',
-  FAILURE: 'e301438c-0bd0-429c-ab0c-66126501069a',
+  FAILURE: 'e301438c-0bd0-429c-ab0c-66126501069a'
 } as const;
 
 /**
@@ -54,8 +54,8 @@ export const STATIC_NODE_IDS = {
  * These are transformed to real UUIDs before sending to AM.
  */
 export const CONNECTION_ALIASES: Record<string, string> = {
-  'success': STATIC_NODE_IDS.SUCCESS,
-  'failure': STATIC_NODE_IDS.FAILURE,
+  success: STATIC_NODE_IDS.SUCCESS,
+  failure: STATIC_NODE_IDS.FAILURE
 };
 
 /**
@@ -69,7 +69,7 @@ export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 export interface JourneyNodeInput {
   nodeType: string;
   displayName: string;
-  connections: Record<string, string>;  // outcomeId → targetNodeId or alias
+  connections: Record<string, string>; // outcomeId → targetNodeId or alias
   config: Record<string, any>;
 }
 
@@ -166,7 +166,10 @@ export function buildAMRealmUrl(realm: string, path: string): string {
  * // Returns URL for a specific node instance
  */
 export function buildAMJourneyNodesUrl(realm: string, nodeType: string, nodeId?: string): string {
-  const base = buildAMRealmUrl(realm, `realm-config/authentication/authenticationtrees/nodes/${encodeURIComponent(nodeType)}`);
+  const base = buildAMRealmUrl(
+    realm,
+    `realm-config/authentication/authenticationtrees/nodes/${encodeURIComponent(nodeType)}`
+  );
   return nodeId ? `${base}/${encodeURIComponent(nodeId)}` : base;
 }
 
@@ -182,11 +185,7 @@ export function buildAMJourneyNodesUrl(realm: string, nodeType: string, nodeId?:
  * const results = await fetchNodeSchemas('alpha', ['UsernameCollectorNode', 'PasswordCollectorNode'], ['fr:am:*']);
  * // Each result has { nodeType, schema, error }
  */
-export async function fetchNodeSchemas(
-  realm: string,
-  nodeTypes: string[],
-  scopes: string[]
-): Promise<SchemaResult[]> {
+export async function fetchNodeSchemas(realm: string, nodeTypes: string[], scopes: string[]): Promise<SchemaResult[]> {
   const schemaPromises = nodeTypes.map(async (nodeType) => {
     const url = `${buildAMJourneyNodesUrl(realm, nodeType)}?_action=schema`;
 
@@ -194,7 +193,7 @@ export async function fetchNodeSchemas(
       const { data } = await makeAuthenticatedRequest(url, scopes, {
         method: 'POST',
         headers: AM_API_HEADERS,
-        body: JSON.stringify({}),
+        body: JSON.stringify({})
       });
       return { nodeType, schema: data, error: null };
     } catch (error: any) {
@@ -234,7 +233,7 @@ export async function fetchNodeConfigs(
     try {
       const { data } = await makeAuthenticatedRequest(url, scopes, {
         method: 'GET',
-        headers: AM_API_HEADERS,
+        headers: AM_API_HEADERS
       });
       return { nodeId, nodeType, config: data, error: null };
     } catch (error: any) {
@@ -313,46 +312,48 @@ export async function fetchNodeTypeDetails(
 ): Promise<Record<string, NodeTypeDetailsResult>> {
   const results: Record<string, NodeTypeDetailsResult> = {};
 
-  await Promise.all(nodeTypes.map(async (nodeType) => {
-    const baseUrl = buildAMJourneyNodesUrl(realm, nodeType);
+  await Promise.all(
+    nodeTypes.map(async (nodeType) => {
+      const baseUrl = buildAMJourneyNodesUrl(realm, nodeType);
 
-    try {
-      // Fetch all three endpoints in parallel for this node type
-      const [schemaRes, templateRes, outcomesRes] = await Promise.all([
-        makeAuthenticatedRequest(`${baseUrl}?_action=schema`, scopes, {
-          method: 'POST',
-          headers: AM_API_HEADERS,
-          body: JSON.stringify({}),
-        }),
-        makeAuthenticatedRequest(`${baseUrl}?_action=template`, scopes, {
-          method: 'POST',
-          headers: AM_API_HEADERS,
-          body: JSON.stringify({}),
-        }),
-        makeAuthenticatedRequest(`${baseUrl}?_action=listOutcomes`, scopes, {
-          method: 'POST',
-          headers: AM_API_HEADERS,
-          body: JSON.stringify({}),
-        }),
-      ]);
+      try {
+        // Fetch all three endpoints in parallel for this node type
+        const [schemaRes, templateRes, outcomesRes] = await Promise.all([
+          makeAuthenticatedRequest(`${baseUrl}?_action=schema`, scopes, {
+            method: 'POST',
+            headers: AM_API_HEADERS,
+            body: JSON.stringify({})
+          }),
+          makeAuthenticatedRequest(`${baseUrl}?_action=template`, scopes, {
+            method: 'POST',
+            headers: AM_API_HEADERS,
+            body: JSON.stringify({})
+          }),
+          makeAuthenticatedRequest(`${baseUrl}?_action=listOutcomes`, scopes, {
+            method: 'POST',
+            headers: AM_API_HEADERS,
+            body: JSON.stringify({})
+          })
+        ]);
 
-      results[nodeType] = {
-        nodeType,
-        schema: schemaRes.data,
-        template: templateRes.data,
-        outcomes: outcomesRes.data as Array<{ id: string; displayName: string }>,
-        error: null,
-      };
-    } catch (error: any) {
-      results[nodeType] = {
-        nodeType,
-        schema: null,
-        template: null,
-        outcomes: null,
-        error: error.message,
-      };
-    }
-  }));
+        results[nodeType] = {
+          nodeType,
+          schema: schemaRes.data,
+          template: templateRes.data,
+          outcomes: outcomesRes.data as Array<{ id: string; displayName: string }>,
+          error: null
+        };
+      } catch (error: any) {
+        results[nodeType] = {
+          nodeType,
+          schema: null,
+          template: null,
+          outcomes: null,
+          error: error.message
+        };
+      }
+    })
+  );
 
   return results;
 }
@@ -367,7 +368,7 @@ export function buildStaticNodes(): Record<string, object> {
   return {
     startNode: { x: 50, y: 250 },
     [STATIC_NODE_IDS.SUCCESS]: { x: 550, y: 150 },
-    [STATIC_NODE_IDS.FAILURE]: { x: 550, y: 350 },
+    [STATIC_NODE_IDS.FAILURE]: { x: 550, y: 350 }
   };
 }
 
@@ -392,9 +393,7 @@ export function generateNodeIdMapping(journeyData: JourneyInput): Record<string,
     if (node.nodeType === 'PageNode' && Array.isArray(node.config?.nodes)) {
       for (const childNode of node.config.nodes) {
         if (childNode._id && !idMapping[childNode._id]) {
-          idMapping[childNode._id] = UUID_REGEX.test(childNode._id)
-            ? childNode._id
-            : randomUUID();
+          idMapping[childNode._id] = UUID_REGEX.test(childNode._id) ? childNode._id : randomUUID();
         }
       }
     }
@@ -415,10 +414,7 @@ export function validateConnectionTargets(journeyData: JourneyInput): {
   errors: string[];
 } {
   const errors: string[] = [];
-  const validTargets = new Set([
-    ...Object.keys(journeyData.nodes),
-    ...Object.keys(CONNECTION_ALIASES),
-  ]);
+  const validTargets = new Set([...Object.keys(journeyData.nodes), ...Object.keys(CONNECTION_ALIASES)]);
 
   // Check entryNodeId
   if (!journeyData.nodes[journeyData.entryNodeId]) {
@@ -443,7 +439,7 @@ export function validateConnectionTargets(journeyData: JourneyInput): {
 
   return {
     isValid: errors.length === 0,
-    errors,
+    errors
   };
 }
 
@@ -495,11 +491,11 @@ export function transformJourneyIds(
     // Transform PageNode child node IDs if present
     // Child nodes are internal to PageNode and not referenced elsewhere in the graph,
     // so we auto-generate UUIDs for any that don't have explicit _id values
-    let transformedConfig = { ...node.config };
+    const transformedConfig = { ...node.config };
     if (node.nodeType === 'PageNode' && Array.isArray(node.config?.nodes)) {
       transformedConfig.nodes = node.config.nodes.map((childNode: any) => ({
         ...childNode,
-        _id: childNode._id || randomUUID(),
+        _id: childNode._id || randomUUID()
       }));
     }
 
@@ -510,8 +506,8 @@ export function transformJourneyIds(
       connections: transformedConnections,
       config: {
         ...transformedConfig,
-        _id: newId,  // Inject the UUID into config
-      },
+        _id: newId // Inject the UUID into config
+      }
     };
   }
 
@@ -519,6 +515,6 @@ export function transformJourneyIds(
     _id: journeyName,
     entryNodeId: resolveId(journeyData.entryNodeId),
     nodes: transformedNodes,
-    staticNodes: buildStaticNodes(),
+    staticNodes: buildStaticNodes()
   };
 }

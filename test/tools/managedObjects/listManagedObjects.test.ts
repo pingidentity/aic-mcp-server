@@ -18,10 +18,7 @@ describe('listManagedObjects', () => {
     it('should build request with URL and scopes', async () => {
       await listManagedObjectsTool.toolFunction();
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        'https://test.forgeblocks.com/openidm/config/managed',
-        ['fr:idm:*']
-      );
+      expect(getSpy()).toHaveBeenCalledWith('https://test.forgeblocks.com/openidm/config/managed', ['fr:idm:*']);
     });
   });
 
@@ -71,13 +68,13 @@ describe('listManagedObjects', () => {
       {
         name: 'should handle 401 Unauthorized error',
         handler: () => new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 }),
-        matcher: /Error listing managed objects.*401/s,
+        matcher: /Error listing managed objects.*401/s
       },
       {
         name: 'should handle network error',
         handler: () => HttpResponse.error(),
-        matcher: /Error listing managed objects/i,
-      },
+        matcher: /Error listing managed objects/i
+      }
     ])('$name', async ({ handler, matcher }) => {
       server.use(http.get('https://*/openidm/config/managed', handler));
 

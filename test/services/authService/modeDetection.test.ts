@@ -11,9 +11,11 @@ const { MockFileStorage, MockKeychainStorage } = vi.hoisted(() => {
     constructor(filePath: string = '/app/tokens/token.json') {
       fileStorageCalls.push(filePath);
     }
-    async getToken() { return null; }
-    async setToken() { }
-    async deleteToken() { }
+    async getToken() {
+      return null;
+    }
+    async setToken() {}
+    async deleteToken() {}
   }
 
   // Mock KeychainStorage - tracks when it's instantiated
@@ -21,9 +23,11 @@ const { MockFileStorage, MockKeychainStorage } = vi.hoisted(() => {
     constructor(service = 'PingOneAIC_MCP_Server', account = 'user-token') {
       keychainStorageCalls.push({ service, account });
     }
-    async getToken() { return null; }
-    async setToken() { }
-    async deleteToken() { }
+    async getToken() {
+      return null;
+    }
+    async setToken() {}
+    async deleteToken() {}
   }
 
   return { MockFileStorage, MockKeychainStorage };
@@ -32,12 +36,12 @@ const { MockFileStorage, MockKeychainStorage } = vi.hoisted(() => {
 // Mock tokenStorage module to intercept storage constructor calls
 vi.mock('../../../src/services/tokenStorage.js', () => ({
   FileStorage: MockFileStorage,
-  KeychainStorage: MockKeychainStorage,
+  KeychainStorage: MockKeychainStorage
 }));
 
 // Mock 'open' to prevent browser launching during tests
 vi.mock('open', () => ({
-  default: vi.fn().mockResolvedValue(undefined),
+  default: vi.fn().mockResolvedValue(undefined)
 }));
 
 /**
@@ -114,10 +118,12 @@ describe('AuthService Mode Detection', () => {
       const { initAuthService } = await import('../../../src/services/authService.js');
       initAuthService([], {});
 
-      expect(keychainStorageCalls).toEqual([{
-        service: 'PingOneAIC_MCP_Server',
-        account: 'user-token',
-      }]);
+      expect(keychainStorageCalls).toEqual([
+        {
+          service: 'PingOneAIC_MCP_Server',
+          account: 'user-token'
+        }
+      ]);
     });
   });
 
@@ -139,10 +145,12 @@ describe('AuthService Mode Detection', () => {
       const { initAuthService } = await import('../../../src/services/authService.js');
       initAuthService([], {});
 
-      expect(keychainStorageCalls).toEqual([{
-        service: 'PingOneAIC_MCP_Server',
-        account: 'user-token',
-      }]);
+      expect(keychainStorageCalls).toEqual([
+        {
+          service: 'PingOneAIC_MCP_Server',
+          account: 'user-token'
+        }
+      ]);
     });
   });
 });

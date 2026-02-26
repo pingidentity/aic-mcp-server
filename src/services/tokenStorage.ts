@@ -112,21 +112,17 @@ export class FileStorage implements TokenStorage {
       const directory = path.dirname(this.filePath);
       await fs.mkdir(directory, {
         recursive: true,
-        mode: 0o700  // Owner execute/read/write only
+        mode: 0o700 // Owner execute/read/write only
       });
 
       // Enforce permissions even if directory already existed
       await fs.chmod(directory, 0o700);
 
       // Write JSON with pretty formatting
-      await fs.writeFile(
-        this.filePath,
-        JSON.stringify(data, null, 2),
-        {
-          encoding: 'utf-8',
-          mode: 0o600  // Owner read/write only
-        }
-      );
+      await fs.writeFile(this.filePath, JSON.stringify(data, null, 2), {
+        encoding: 'utf-8',
+        mode: 0o600 // Owner read/write only
+      });
     } catch (error) {
       console.error('Error storing token in file:', error);
       throw error;

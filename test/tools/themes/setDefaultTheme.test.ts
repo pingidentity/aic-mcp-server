@@ -17,17 +17,19 @@ describe('setDefaultTheme', () => {
   // ===== APPLICATION LOGIC TESTS =====
   describe('Application Logic', () => {
     it('should find theme by ID', async () => {
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [
-          { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-          { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
-        ],
-        bravo: [],
-      }));
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [
+            { _id: 'theme-123', name: 'TestTheme', isDefault: false },
+            { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
+          ],
+          bravo: []
+        })
+      );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('TestTheme');
@@ -35,17 +37,19 @@ describe('setDefaultTheme', () => {
     });
 
     it('should find theme by name', async () => {
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [
-          { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-          { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
-        ],
-        bravo: [],
-      }));
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [
+            { _id: 'theme-123', name: 'TestTheme', isDefault: false },
+            { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
+          ],
+          bravo: []
+        })
+      );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'TestTheme',
+        themeIdentifier: 'TestTheme'
       });
 
       expect(result.content[0].text).toContain('TestTheme');
@@ -53,14 +57,16 @@ describe('setDefaultTheme', () => {
     });
 
     it('should return error for theme not found', async () => {
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [{ _id: 'theme-456', name: 'CurrentDefault', isDefault: true }],
-        bravo: [],
-      }));
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [{ _id: 'theme-456', name: 'CurrentDefault', isDefault: true }],
+          bravo: []
+        })
+      );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'nonexistent',
+        themeIdentifier: 'nonexistent'
       });
 
       expect(result.content[0].text).toContain('not found');
@@ -76,10 +82,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -90,7 +96,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -107,10 +113,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -121,7 +127,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -145,10 +151,10 @@ describe('setDefaultTheme', () => {
                   logo: 'logo.png',
                   customField: 'customValue'
                 },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -159,7 +165,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -181,12 +187,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [
-                { _id: 'bravo-theme-1', name: 'BravoTheme', isDefault: true },
-              ],
-            },
+              bravo: [{ _id: 'bravo-theme-1', name: 'BravoTheme', isDefault: true }]
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -197,7 +201,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -216,10 +220,10 @@ describe('setDefaultTheme', () => {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
                 { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
-                { _id: 'theme-789', name: 'ThirdTheme', isDefault: false, customProp: 'value' },
+                { _id: 'theme-789', name: 'ThirdTheme', isDefault: false, customProp: 'value' }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -230,7 +234,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -253,10 +257,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -267,7 +271,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -278,13 +282,16 @@ describe('setDefaultTheme', () => {
 
     it.each([
       { name: 'should handle invalid config structure - missing realm property', config: { _id: 'ui/themerealm' } },
-      { name: 'should handle invalid config structure - missing specific realm', config: buildRealmConfig({ bravo: [] }) },
+      {
+        name: 'should handle invalid config structure - missing specific realm',
+        config: buildRealmConfig({ bravo: [] })
+      }
     ])('$name', async ({ config }) => {
       mockThemeConfigHandlers(config as any);
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Invalid theme configuration');
@@ -297,15 +304,15 @@ describe('setDefaultTheme', () => {
           return HttpResponse.json({
             realm: {
               alpha: [],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         })
       );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('not found');
@@ -321,10 +328,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'OtherTheme', isDefault: false },
+                { _id: 'theme-456', name: 'OtherTheme', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -335,7 +342,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -357,10 +364,10 @@ describe('setDefaultTheme', () => {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
                 { _id: 'theme-456', name: 'Default1', isDefault: true },
-                { _id: 'theme-789', name: 'Default2', isDefault: true },
+                { _id: 'theme-789', name: 'Default2', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -371,7 +378,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(capturedBody).not.toBeNull();
@@ -396,10 +403,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -409,13 +416,11 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       // Our code GETs the entire config first
-      const getCalls = getSpy().mock.calls.filter(
-        (call: any) => !call[2] || !call[2].method
-      );
+      const getCalls = getSpy().mock.calls.filter((call: any) => !call[2] || !call[2].method);
       expect(getCalls.length).toBeGreaterThanOrEqual(1);
       expect(getCalls[0][0]).toBe('https://test.forgeblocks.com/openidm/config/ui/themerealm');
     });
@@ -427,10 +432,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -440,12 +445,10 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
-      const putCalls = getSpy().mock.calls.filter(
-        (call: any) => call[2] && call[2].method === 'PUT'
-      );
+      const putCalls = getSpy().mock.calls.filter((call: any) => call[2] && call[2].method === 'PUT');
       expect(putCalls.length).toBeGreaterThanOrEqual(1);
       expect(putCalls[0][0]).toBe('https://test.forgeblocks.com/openidm/config/ui/themerealm');
     });
@@ -457,10 +460,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -470,12 +473,10 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
-      const putCalls = getSpy().mock.calls.filter(
-        (call: any) => call[2] && call[2].method === 'PUT'
-      );
+      const putCalls = getSpy().mock.calls.filter((call: any) => call[2] && call[2].method === 'PUT');
       expect(putCalls.length).toBeGreaterThanOrEqual(1);
       expect(putCalls[0][2].method).toBe('PUT');
     });
@@ -487,10 +488,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -500,7 +501,7 @@ describe('setDefaultTheme', () => {
 
       await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       // Both GET and PUT should use correct scopes
@@ -519,10 +520,10 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -532,7 +533,7 @@ describe('setDefaultTheme', () => {
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content).toHaveLength(1);
@@ -550,17 +551,17 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'AlreadyDefault', isDefault: true },
-                { _id: 'theme-456', name: 'OtherTheme', isDefault: false },
+                { _id: 'theme-456', name: 'OtherTheme', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         })
       );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content).toHaveLength(1);
@@ -570,9 +571,7 @@ describe('setDefaultTheme', () => {
       expect(responseText).toContain('AlreadyDefault');
 
       // Should NOT have made a PUT request
-      const putCalls = getSpy().mock.calls.filter(
-        (call: any) => call[2] && call[2].method === 'PUT'
-      );
+      const putCalls = getSpy().mock.calls.filter((call: any) => call[2] && call[2].method === 'PUT');
       expect(putCalls.length).toBe(0);
     });
   });
@@ -607,16 +606,13 @@ describe('setDefaultTheme', () => {
     it('should handle 401 Unauthorized error', async () => {
       server.use(
         http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json(
-            { error: 'Unauthorized' },
-            { status: 401 }
-          );
+          return HttpResponse.json({ error: 'Unauthorized' }, { status: 401 });
         })
       );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Failed to set default theme');
@@ -626,16 +622,13 @@ describe('setDefaultTheme', () => {
     it('should handle 404 Not Found error', async () => {
       server.use(
         http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json(
-            { error: 'Not Found' },
-            { status: 404 }
-          );
+          return HttpResponse.json({ error: 'Not Found' }, { status: 404 });
         })
       );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'nonexistent',
+        themeIdentifier: 'nonexistent'
       });
 
       expect(result.content[0].text).toContain('Failed to set default theme');
@@ -649,23 +642,20 @@ describe('setDefaultTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'TestTheme', isDefault: false },
-                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true },
+                { _id: 'theme-456', name: 'CurrentDefault', isDefault: true }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json(
-            { error: 'Internal Server Error' },
-            { status: 500 }
-          );
+          return HttpResponse.json({ error: 'Internal Server Error' }, { status: 500 });
         })
       );
 
       const result = await setDefaultThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Failed to set default theme');

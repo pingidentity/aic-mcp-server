@@ -20,12 +20,12 @@ describe('listJourneys', () => {
         if (url.includes('authenticationtrees/trees')) {
           return Promise.resolve({
             data: { result: [], resultCount: 0 },
-            response: mockResponse,
+            response: mockResponse
           });
         } else if (url.includes('realm-config/authentication')) {
           return Promise.resolve({
             data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
-            response: mockResponse,
+            response: mockResponse
           });
         }
         return Promise.reject(new Error('Unexpected URL'));
@@ -48,12 +48,12 @@ describe('listJourneys', () => {
         if (url.includes('authenticationtrees/trees')) {
           return Promise.resolve({
             data: { result: [], resultCount: 0 },
-            response: mockResponse,
+            response: mockResponse
           });
         } else if (url.includes('realm-config/authentication')) {
           return Promise.resolve({
             data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
-            response: mockResponse,
+            response: mockResponse
           });
         }
         return Promise.reject(new Error('Unexpected URL'));
@@ -82,16 +82,16 @@ describe('listJourneys', () => {
             data: {
               result: [
                 { _id: 'Login', description: 'Default login journey', enabled: true },
-                { _id: 'Registration', description: 'User registration', enabled: true },
+                { _id: 'Registration', description: 'User registration', enabled: true }
               ],
-              resultCount: 2,
+              resultCount: 2
             },
-            response: mockResponse,
+            response: mockResponse
           });
         } else if (url.includes('realm-config/authentication')) {
           return Promise.resolve({
             data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
-            response: mockResponse,
+            response: mockResponse
           });
         }
         return Promise.reject(new Error('Unexpected URL'));
@@ -112,12 +112,12 @@ describe('listJourneys', () => {
         if (url.includes('authenticationtrees/trees')) {
           return Promise.resolve({
             data: { result: [], resultCount: 0 },
-            response: mockResponse,
+            response: mockResponse
           });
         } else if (url.includes('realm-config/authentication')) {
           return Promise.resolve({
             data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
-            response: mockResponse,
+            response: mockResponse
           });
         }
         return Promise.reject(new Error('Unexpected URL'));
@@ -149,7 +149,7 @@ describe('listJourneys', () => {
   describe('Error Handling', () => {
     it.each([
       { status: 401, desc: '401 Unauthorized' },
-      { status: 404, desc: '404 Not Found' },
+      { status: 404, desc: '404 Not Found' }
     ])('should handle $desc from journeys endpoint', async ({ status }) => {
       getSpy().mockImplementation((url: string) => {
         if (url.includes('authenticationtrees/trees')) {
@@ -157,7 +157,7 @@ describe('listJourneys', () => {
         } else if (url.includes('realm-config/authentication')) {
           return Promise.resolve({
             data: { core: { orgConfig: 'Login', adminAuthModule: 'Login' } },
-            response: { headers: new Headers() },
+            response: { headers: new Headers() }
           });
         }
         return Promise.reject(new Error('Unexpected URL'));

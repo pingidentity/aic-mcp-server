@@ -22,13 +22,13 @@ describe('getManagedObject', () => {
         assert: ({ url, scopes }: any) => {
           expect(url).toBe('https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123');
           expect(scopes).toEqual(['fr:idm:*']);
-        },
+        }
       },
       {
         name: 'passes correct scopes to auth',
         input: { objectType: 'alpha_user', objectId: 'obj-123' },
-        assert: ({ scopes }: any) => expect(scopes).toEqual(['fr:idm:*']),
-      },
+        assert: ({ scopes }: any) => expect(scopes).toEqual(['fr:idm:*'])
+      }
     ];
 
     it.each(requestCases)('$name', async ({ input, assert }) => {
@@ -46,10 +46,7 @@ describe('getManagedObject', () => {
         http.get('https://*/openidm/managed/:objectType/:objectId', ({ request, params }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
 
           return HttpResponse.json({
@@ -58,14 +55,14 @@ describe('getManagedObject', () => {
             userName: 'test',
             mail: 'test@example.com',
             givenName: 'Test',
-            sn: 'User',
+            sn: 'User'
           });
         })
       );
 
       const result = await getManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectId: 'obj-123',
+        objectId: 'obj-123'
       });
 
       expect(result.content[0].text).toContain('obj-123');
@@ -109,14 +106,14 @@ describe('getManagedObject', () => {
         name: 'handles 401 Unauthorized error',
         status: 401,
         body: { error: 'unauthorized', message: 'Invalid token' },
-        matcher: /401|[Uu]nauthorized/,
+        matcher: /401|[Uu]nauthorized/
       },
       {
         name: 'handles 404 Not Found error',
         status: 404,
         body: { error: 'not_found', message: 'Object does not exist' },
-        matcher: /404|[Nn]ot [Ff]ound/,
-      },
+        matcher: /404|[Nn]ot [Ff]ound/
+      }
     ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.get('https://*/openidm/managed/:objectType/:objectId', () => {
@@ -126,7 +123,7 @@ describe('getManagedObject', () => {
 
       const result = await getManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectId: status === 404 ? 'nonexistent' : 'obj-123',
+        objectId: status === 404 ? 'nonexistent' : 'obj-123'
       });
 
       expect(result.content[0].text).toContain('Failed to retrieve managed object');

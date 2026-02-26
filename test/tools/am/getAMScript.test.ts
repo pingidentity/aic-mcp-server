@@ -18,7 +18,7 @@ describe('getAMScript', () => {
     it('should build URL with realm and script ID', async () => {
       await getAMScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       const [url, scopes, options] = getSpy().mock.calls[0];
@@ -30,7 +30,7 @@ describe('getAMScript', () => {
     it('should URL-encode script ID', async () => {
       await getAMScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script with spaces',
+        scriptId: 'script with spaces'
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -50,14 +50,14 @@ describe('getAMScript', () => {
             _id: 'script-123',
             name: 'TestScript',
             script: base64Content,
-            language: 'JAVASCRIPT',
+            language: 'JAVASCRIPT'
           });
         })
       );
 
       const result = await getAMScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       const responseData = JSON.parse(result.content[0].text);
@@ -73,14 +73,14 @@ describe('getAMScript', () => {
             description: 'A test script',
             script: Buffer.from('test').toString('base64'),
             language: 'JAVASCRIPT',
-            context: 'AUTHENTICATION_TREE_DECISION_NODE',
+            context: 'AUTHENTICATION_TREE_DECISION_NODE'
           });
         })
       );
 
       const result = await getAMScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       const responseData = JSON.parse(result.content[0].text);
@@ -98,14 +98,14 @@ describe('getAMScript', () => {
             _id: 'script-123',
             name: 'TestScript',
             script: 'not-base64-content!!!',
-            language: 'JAVASCRIPT',
+            language: 'JAVASCRIPT'
           });
         })
       );
 
       const result = await getAMScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       const responseData = JSON.parse(result.content[0].text);
@@ -119,14 +119,14 @@ describe('getAMScript', () => {
           return HttpResponse.json({
             _id: 'script-123',
             name: 'EmptyScript',
-            language: 'JAVASCRIPT',
+            language: 'JAVASCRIPT'
           });
         })
       );
 
       const result = await getAMScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       const responseData = JSON.parse(result.content[0].text);
@@ -157,7 +157,7 @@ describe('getAMScript', () => {
   describe('Error Handling', () => {
     it.each([
       { status: 401, desc: '401 Unauthorized' },
-      { status: 404, desc: '404 Not Found' },
+      { status: 404, desc: '404 Not Found' }
     ])('should handle $desc', async ({ status }) => {
       server.use(
         http.get('https://*/am/json/*/scripts/*', () => {
@@ -167,7 +167,7 @@ describe('getAMScript', () => {
 
       const result = await getAMScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'nonexistent',
+        scriptId: 'nonexistent'
       });
 
       expect(result.content[0].text).toContain('Failed to get script');

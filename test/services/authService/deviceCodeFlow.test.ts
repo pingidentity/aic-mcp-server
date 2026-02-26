@@ -5,7 +5,7 @@ import {
   createMockMcpServer,
   setupAuthServiceTest,
   MOCK_DEVICE_CODE_RESPONSE,
-  MOCK_TOKEN_RESPONSE,
+  MOCK_TOKEN_RESPONSE
 } from '../../helpers/authServiceTestHelper.js';
 import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
@@ -25,12 +25,12 @@ const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
   FileStorage: MockStorage,
-  KeychainStorage: MockStorage,
+  KeychainStorage: MockStorage
 }));
 
 // Mock 'open' to prevent browser launching during tests
 vi.mock('open', () => ({
-  default: vi.fn().mockResolvedValue(undefined),
+  default: vi.fn().mockResolvedValue(undefined)
 }));
 
 /**
@@ -271,7 +271,7 @@ describe('AuthService Device Code Flow', () => {
           return HttpResponse.json({
             access_token: 'mock-scoped-token',
             expires_in: 3600,
-            token_type: 'Bearer',
+            token_type: 'Bearer'
           });
         })
       );
@@ -295,34 +295,25 @@ describe('AuthService Device Code Flow', () => {
     it.each([
       {
         name: 'continues on authorization_pending and eventually succeeds',
-        polls: [
-          { error: 'authorization_pending', status: 400 },
-          { tokenResponse: MOCK_TOKEN_RESPONSE },
-        ],
-        expectedError: null,
+        polls: [{ error: 'authorization_pending', status: 400 }, { tokenResponse: MOCK_TOKEN_RESPONSE }],
+        expectedError: null
       },
       {
         name: 'throws on access_denied',
-        polls: [
-          { error: 'access_denied', error_description: 'User denied authorization', status: 400 },
-        ],
-        expectedError: 'Device code polling failed: access_denied',
+        polls: [{ error: 'access_denied', error_description: 'User denied authorization', status: 400 }],
+        expectedError: 'Device code polling failed: access_denied'
       },
       {
         name: 'throws on invalid_grant',
-        polls: [
-          { error: 'invalid_grant', error_description: 'Device code is invalid', status: 400 },
-        ],
-        expectedError: 'Device code polling failed: invalid_grant',
+        polls: [{ error: 'invalid_grant', error_description: 'Device code is invalid', status: 400 }],
+        expectedError: 'Device code polling failed: invalid_grant'
       },
       {
         name: 'throws on timeout/expired code',
-        polls: [
-          { error: 'authorization_pending', status: 400, repeat: true },
-        ],
+        polls: [{ error: 'authorization_pending', status: 400, repeat: true }],
         shortExpiry: { expires_in: 10, interval: 2 },
-        expectedError: 'Device code expired - authentication timed out',
-      },
+        expectedError: 'Device code expired - authentication timed out'
+      }
     ])('$name', async ({ polls, expectedError, shortExpiry }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], { mcpServer: mockMcpServer });
@@ -355,7 +346,7 @@ describe('AuthService Device Code Flow', () => {
           return HttpResponse.json({
             access_token: 'mock-scoped-token',
             expires_in: 3600,
-            token_type: 'Bearer',
+            token_type: 'Bearer'
           });
         })
       );
@@ -365,10 +356,7 @@ describe('AuthService Device Code Flow', () => {
 
       if (expectedError) {
         const expiryMs = (shortExpiry?.expires_in ?? deviceResponse.expires_in) * 1000 + 1000;
-        await Promise.all([
-          vi.advanceTimersByTimeAsync(expiryMs),
-          expect(tokenPromise).rejects.toThrow(expectedError),
-        ]);
+        await Promise.all([vi.advanceTimersByTimeAsync(expiryMs), expect(tokenPromise).rejects.toThrow(expectedError)]);
       } else {
         await vi.advanceTimersByTimeAsync(deviceResponse.interval * 1000);
         await vi.advanceTimersByTimeAsync(deviceResponse.interval * 1000);
@@ -453,10 +441,7 @@ describe('AuthService Device Code Flow', () => {
           const params = new URLSearchParams(body);
 
           if (params.get('grant_type') === 'urn:ietf:params:oauth:grant-type:device_code') {
-            return HttpResponse.json(
-              { error: 'access_denied' },
-              { status: 400 }
-            );
+            return HttpResponse.json({ error: 'access_denied' }, { status: 400 });
           }
 
           return HttpResponse.json(MOCK_TOKEN_RESPONSE);
@@ -467,10 +452,7 @@ describe('AuthService Device Code Flow', () => {
       await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
 
       // Advance timers and verify rejection simultaneously to prevent unhandled rejection
-      await Promise.all([
-        vi.advanceTimersByTimeAsync(5000),
-        expect(tokenPromise).rejects.toThrow()
-      ]);
+      await Promise.all([vi.advanceTimersByTimeAsync(5000), expect(tokenPromise).rejects.toThrow()]);
 
       // Verifier should be cleared even on error
       const authService = getAuthService() as any;
@@ -504,8 +486,8 @@ describe('AuthService Device Code Flow', () => {
       expect(storage._mockSetToken()).toHaveBeenCalledTimes(1);
       expect(storage._mockSetToken()).toHaveBeenCalledWith({
         accessToken: MOCK_TOKEN_RESPONSE.access_token,
-        expiresAt: mockNow + (MOCK_TOKEN_RESPONSE.expires_in * 1000),
-        aicBaseUrl: 'test.forgeblocks.com',
+        expiresAt: mockNow + MOCK_TOKEN_RESPONSE.expires_in * 1000,
+        aicBaseUrl: 'test.forgeblocks.com'
       });
     });
 
@@ -607,7 +589,7 @@ describe('AuthService Device Code Flow', () => {
           return HttpResponse.json({
             access_token: 'mock-scoped-token',
             expires_in: 3600,
-            token_type: 'Bearer',
+            token_type: 'Bearer'
           });
         })
       );
@@ -691,10 +673,7 @@ describe('AuthService Device Code Flow', () => {
       await vi.waitFor(() => expect(mockMcpServer.server.elicitInput).toHaveBeenCalled());
 
       // Advance timers and verify rejection simultaneously to prevent unhandled rejection
-      await Promise.all([
-        vi.advanceTimersByTimeAsync(5000),
-        expect(tokenPromise).rejects.toThrow('Disk full')
-      ]);
+      await Promise.all([vi.advanceTimersByTimeAsync(5000), expect(tokenPromise).rejects.toThrow('Disk full')]);
     });
 
     it('should log errors to console', async () => {
@@ -711,10 +690,7 @@ describe('AuthService Device Code Flow', () => {
 
       await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Device code authentication failed:',
-        expect.any(Error)
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Device code authentication failed:', expect.any(Error));
 
       consoleErrorSpy.mockRestore();
     });

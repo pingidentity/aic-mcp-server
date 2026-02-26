@@ -51,7 +51,7 @@ describe('getScriptedDecisionNodeBindings', () => {
         http.get('https://*/am/json/*/contexts/*', () => {
           return HttpResponse.json({
             bindings: [{ name: 'outcome', type: 'java.lang.String' }],
-            allowedImports: ['java.lang.Math'],
+            allowedImports: ['java.lang.Math']
           });
         })
       );

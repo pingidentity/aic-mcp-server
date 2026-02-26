@@ -27,9 +27,7 @@ export const listManagedObjectsTool = {
       // Extract just the names
       const objectNames = (config.objects || []).map((obj: any) => obj.name);
 
-      return createToolResponse(
-        JSON.stringify({ managedObjectTypes: objectNames }, null, 2)
-      );
+      return createToolResponse(JSON.stringify({ managedObjectTypes: objectNames }, null, 2));
     } catch (error: any) {
       return createToolResponse(`Error listing managed objects: ${error.message}`);
     }

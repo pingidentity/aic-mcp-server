@@ -18,7 +18,7 @@ describe('deleteJourney', () => {
     it('should build URL with encoded journeyName', async () => {
       await deleteJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       const [url, scopes] = getSpy().mock.calls[0];
@@ -29,7 +29,7 @@ describe('deleteJourney', () => {
     it('should use DELETE method', async () => {
       await deleteJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -39,7 +39,7 @@ describe('deleteJourney', () => {
     it('should include AM_API_HEADERS', async () => {
       await deleteJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -49,7 +49,7 @@ describe('deleteJourney', () => {
     it('should URL-encode journeyName with special characters', async () => {
       await deleteJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Copy of Login',
+        journeyName: 'Copy of Login'
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -62,7 +62,7 @@ describe('deleteJourney', () => {
     it('should format success message mentioning node cleanup', async () => {
       const result = await deleteJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
 
       expect(result.content[0].text).toContain('Login');
@@ -95,7 +95,7 @@ describe('deleteJourney', () => {
 
       const result = await deleteJourneyTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'NonexistentJourney',
+        journeyName: 'NonexistentJourney'
       });
 
       expect(result.content[0].text).toContain('[not_found]');

@@ -18,28 +18,44 @@ export const queryManagedObjectsTool = {
     openWorldHint: true
   },
   inputSchema: {
-    objectType: z.string().min(1).describe(
-      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
-    ),
-    queryFilter: z.string().max(1000).optional().describe(
-      'CREST query filter expression. IMPORTANT: Call getManagedObjectSchema first to discover available fields. ' +
-      'Operators: eq, co, sw, gt, ge, lt, le, pr (present), ! (NOT). Boolean: and, or. Quote strings. ' +
-      'If omitted, returns all objects up to pageSize. ' +
-      'Examples: FIELD eq "value" | FIELD sw "prefix" | (FIELD1 eq "a") and (FIELD2 co "b") | FIELD pr\n' +
-      'Docs: https://docs.pingidentity.com/pingoneaic/latest/developer-docs/crest/query.html#crest-query-queryFilter'
-    ),
-    pageSize: z.number().int().min(1).max(250).optional().describe(
-      'Number of objects to return per page (default: 50)'
-    ),
-    pagedResultsCookie: z.string().optional().describe(
-      'Pagination cookie from previous response to retrieve next page'
-    ),
-    sortKeys: z.string().max(500).optional().describe(
-      'Comma-separated field names to sort by. Prefix with "-" for descending. Example: "FIELD1,-FIELD2"'
-    ),
-    fields: z.string().max(500).optional().describe(
-      'Comma-separated field names to return. If omitted, returns all fields. Example: "FIELD1,FIELD2,_id"'
-    ),
+    objectType: z
+      .string()
+      .min(1)
+      .describe(
+        `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+      ),
+    queryFilter: z
+      .string()
+      .max(1000)
+      .optional()
+      .describe(
+        'CREST query filter expression. IMPORTANT: Call getManagedObjectSchema first to discover available fields. ' +
+          'Operators: eq, co, sw, gt, ge, lt, le, pr (present), ! (NOT). Boolean: and, or. Quote strings. ' +
+          'If omitted, returns all objects up to pageSize. ' +
+          'Examples: FIELD eq "value" | FIELD sw "prefix" | (FIELD1 eq "a") and (FIELD2 co "b") | FIELD pr\n' +
+          'Docs: https://docs.pingidentity.com/pingoneaic/latest/developer-docs/crest/query.html#crest-query-queryFilter'
+      ),
+    pageSize: z
+      .number()
+      .int()
+      .min(1)
+      .max(250)
+      .optional()
+      .describe('Number of objects to return per page (default: 50)'),
+    pagedResultsCookie: z
+      .string()
+      .optional()
+      .describe('Pagination cookie from previous response to retrieve next page'),
+    sortKeys: z
+      .string()
+      .max(500)
+      .optional()
+      .describe('Comma-separated field names to sort by. Prefix with "-" for descending. Example: "FIELD1,-FIELD2"'),
+    fields: z
+      .string()
+      .max(500)
+      .optional()
+      .describe('Comma-separated field names to return. If omitted, returns all fields. Example: "FIELD1,FIELD2,_id"')
   },
   async toolFunction({
     objectType,

@@ -20,7 +20,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'node-123',
-        config: { prop: 'value' },
+        config: { prop: 'value' }
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -33,7 +33,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'correct-id',
-        config: { _id: 'wrong-id', prop: 'value' },
+        config: { _id: 'wrong-id', prop: 'value' }
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -50,7 +50,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'node-123',
-        config: { prop: 'value' },
+        config: { prop: 'value' }
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -62,7 +62,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'node-123',
-        config: {},
+        config: {}
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -74,7 +74,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'node-123',
-        config: {},
+        config: {}
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -86,7 +86,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'node-123',
-        config: {},
+        config: {}
       });
 
       const scopes = getSpy().mock.calls[0][1];
@@ -101,7 +101,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'node-123',
-        config: {},
+        config: {}
       });
 
       expect(result.content[0].text).toContain('node-123');
@@ -143,7 +143,7 @@ describe('updateJourneyNode', () => {
         realm: 'alpha',
         nodeType: 'ScriptedDecisionNode',
         nodeId: 'nonexistent',
-        config: {},
+        config: {}
       });
 
       expect(result.content[0].text).toContain('[not_found]');

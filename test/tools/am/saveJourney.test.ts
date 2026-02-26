@@ -1,14 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { saveJourneyTool } from '../../../src/tools/am/saveJourney.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
 import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import {
-  UUID_REGEX,
-  STATIC_NODE_IDS,
-  JourneyInput,
-} from '../../../src/utils/amHelpers.js';
+import { UUID_REGEX, STATIC_NODE_IDS, JourneyInput } from '../../../src/utils/amHelpers.js';
 
 describe('saveJourney', () => {
   const getSpy = setupTestEnvironment();
@@ -16,31 +12,31 @@ describe('saveJourney', () => {
   const simpleJourneyData: JourneyInput = {
     entryNodeId: 'login',
     nodes: {
-      'login': {
+      login: {
         nodeType: 'UsernameCollectorNode',
         displayName: 'Collect Username',
         connections: { outcome: 'success' },
-        config: { prop: 'value' },
-      },
-    },
+        config: { prop: 'value' }
+      }
+    }
   };
 
   const multiNodeJourneyData: JourneyInput = {
     entryNodeId: 'collector',
     nodes: {
-      'collector': {
+      collector: {
         nodeType: 'UsernameCollectorNode',
         displayName: 'Username',
         connections: { outcome: 'decision' },
-        config: {},
+        config: {}
       },
-      'decision': {
+      decision: {
         nodeType: 'DataStoreDecisionNode',
         displayName: 'Data Store',
         connections: { true: 'success', false: 'failure' },
-        config: {},
-      },
-    },
+        config: {}
+      }
+    }
   };
 
   // ===== SNAPSHOT TEST =====
@@ -57,14 +53,14 @@ describe('saveJourney', () => {
         journeyData: {
           entryNodeId: 'nonexistent',
           nodes: {
-            'login': {
+            login: {
               nodeType: 'UsernameCollectorNode',
               displayName: 'Login',
               connections: { outcome: 'success' },
-              config: {},
-            },
-          },
-        },
+              config: {}
+            }
+          }
+        }
       });
 
       expect(result.content[0].text).toContain('Invalid journey structure');
@@ -78,14 +74,14 @@ describe('saveJourney', () => {
         journeyData: {
           entryNodeId: 'login',
           nodes: {
-            'login': {
+            login: {
               nodeType: 'UsernameCollectorNode',
               displayName: 'Login',
               connections: { outcome: 'login' },
-              config: {},
-            },
-          },
-        },
+              config: {}
+            }
+          }
+        }
       });
 
       expect(result.content[0].text).toContain('Invalid journey structure');
@@ -96,7 +92,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -110,7 +106,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -122,7 +118,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: multiNodeJourneyData,
+        journeyData: multiNodeJourneyData
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -140,7 +136,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: multiNodeJourneyData,
+        journeyData: multiNodeJourneyData
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -155,7 +151,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -168,7 +164,7 @@ describe('saveJourney', () => {
         realm: 'alpha',
         journeyName: 'TestJourney',
         description: 'A test journey',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -179,7 +175,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -190,7 +186,7 @@ describe('saveJourney', () => {
       const result = await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const text = result.content[0].text;
@@ -205,7 +201,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'Copy of Login',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -216,7 +212,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -227,7 +223,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -238,7 +234,7 @@ describe('saveJourney', () => {
       await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       const scopes = getSpy().mock.calls[0][1];
@@ -281,7 +277,7 @@ describe('saveJourney', () => {
       const result = await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       expect(result.content[0].text).toContain('[unauthorized]');
@@ -298,7 +294,7 @@ describe('saveJourney', () => {
       const result = await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       expect(result.content[0].text).toContain('[invalid_request]');
@@ -314,7 +310,7 @@ describe('saveJourney', () => {
       const result = await saveJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
-        journeyData: simpleJourneyData,
+        journeyData: simpleJourneyData
       });
 
       expect(result.content[0].text).toContain('[transient]');

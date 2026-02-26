@@ -23,14 +23,14 @@ export const REALMS = ['alpha', 'bravo'] as const;
  */
 export function isValidPathSegment(value: string): boolean {
   const dangerousPatterns = [
-    /\.\./,           // Parent directory (..)
-    /[\/\\]/,         // Path separators (/ or \)
-    /%2e/i,           // URL-encoded dot
-    /%2f/i,           // URL-encoded forward slash
-    /%5c/i,           // URL-encoded backslash
+    /\.\./, // Parent directory (..)
+    /[\/\\]/, // Path separators (/ or \)
+    /%2e/i, // URL-encoded dot
+    /%2f/i, // URL-encoded forward slash
+    /%5c/i // URL-encoded backslash
   ];
 
-  return !dangerousPatterns.some(pattern => pattern.test(value));
+  return !dangerousPatterns.some((pattern) => pattern.test(value));
 }
 
 /**
@@ -42,11 +42,12 @@ export function isValidPathSegment(value: string): boolean {
  *
  * Use this for any user input that will be interpolated into URL paths.
  */
-export const safePathSegmentSchema = z.string()
-  .min(1, "Value cannot be empty")
-  .refine(val => val.trim().length > 0, {
-    message: "Value cannot be empty or whitespace"
+export const safePathSegmentSchema = z
+  .string()
+  .min(1, 'Value cannot be empty')
+  .refine((val) => val.trim().length > 0, {
+    message: 'Value cannot be empty or whitespace'
   })
   .refine(isValidPathSegment, {
-    message: "Value must not contain path traversal characters (/, \\, ..) or URL-encoded equivalents"
+    message: 'Value must not contain path traversal characters (/, \\, ..) or URL-encoded equivalents'
   });

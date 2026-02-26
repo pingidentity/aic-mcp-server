@@ -19,7 +19,7 @@ describe('createScript', () => {
       await createScriptTool.toolFunction({
         realm: 'alpha',
         name: 'TestScript',
-        script: 'console.log("test");',
+        script: 'console.log("test");'
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -31,7 +31,7 @@ describe('createScript', () => {
       await createScriptTool.toolFunction({
         realm: 'alpha',
         name: 'TestScript',
-        script: 'console.log("test");',
+        script: 'console.log("test");'
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -42,7 +42,7 @@ describe('createScript', () => {
       await createScriptTool.toolFunction({
         realm: 'alpha',
         name: 'TestScript',
-        script: 'console.log("test");',
+        script: 'console.log("test");'
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -53,7 +53,7 @@ describe('createScript', () => {
       await createScriptTool.toolFunction({
         realm: 'alpha',
         name: 'TestScript',
-        script: 'console.log("test");',
+        script: 'console.log("test");'
       });
 
       const scopes = getSpy().mock.calls[0][1];
@@ -69,7 +69,7 @@ describe('createScript', () => {
       await createScriptTool.toolFunction({
         realm: 'alpha',
         name: 'TestScript',
-        script: scriptContent,
+        script: scriptContent
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -81,7 +81,7 @@ describe('createScript', () => {
       await createScriptTool.toolFunction({
         realm: 'alpha',
         name: 'TestScript',
-        script: 'console.log("test");',
+        script: 'console.log("test");'
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -113,7 +113,7 @@ describe('createScript', () => {
   describe('Error Handling', () => {
     it.each([
       { status: 401, desc: '401 Unauthorized' },
-      { status: 400, desc: '400 Bad Request' },
+      { status: 400, desc: '400 Bad Request' }
     ])('should handle $desc', async ({ status }) => {
       server.use(
         http.post('https://*/am/json/*/scripts', () => {
@@ -124,7 +124,7 @@ describe('createScript', () => {
       const result = await createScriptTool.toolFunction({
         realm: 'alpha',
         name: 'TestScript',
-        script: 'code',
+        script: 'code'
       });
 
       expect(result.content[0].text).toContain('Failed to create script');

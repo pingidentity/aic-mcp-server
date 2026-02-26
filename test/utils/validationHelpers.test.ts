@@ -24,7 +24,7 @@ describe('validationHelpers', () => {
       { value: '%2e%2e', expected: false },
       { value: '%2E%2E', expected: false },
       { value: 'foo%2fbar', expected: false },
-      { value: 'foo%5cbar', expected: false },
+      { value: 'foo%5cbar', expected: false }
     ])('isValidPathSegment("$value") should return $expected', ({ value, expected }) => {
       expect(isValidPathSegment(value)).toBe(expected);
     });
@@ -48,19 +48,16 @@ describe('validationHelpers', () => {
       'obj\\123',
       '%2e%2e%2fadmin',
       'obj%2f123',
-      'obj%5c123',
+      'obj%5c123'
     ])('should reject path traversal: "%s"', (value) => {
       expect(() => safePathSegmentSchema.parse(value)).toThrow(/path traversal/);
     });
 
-    it.each([
-      'valid-object-123',
-      'obj_test',
-      'uuid-1234-5678-90ab-cdef',
-      'alpha_user',
-      'a',
-    ])('should accept valid value: "%s"', (value) => {
-      expect(safePathSegmentSchema.parse(value)).toBe(value);
-    });
+    it.each(['valid-object-123', 'obj_test', 'uuid-1234-5678-90ab-cdef', 'alpha_user', 'a'])(
+      'should accept valid value: "%s"',
+      (value) => {
+        expect(safePathSegmentSchema.parse(value)).toBe(value);
+      }
+    );
   });
 });

@@ -23,10 +23,10 @@ initAuthService(allScopes, {
 });
 
 // Register all tools
-allTools.forEach(tool => {
+allTools.forEach((tool) => {
   const toolConfig: ToolConfig = {
     title: tool.title,
-    description: tool.description,
+    description: tool.description
   };
 
   // Only add inputSchema if it exists (some tools like getLogSources don't have one)

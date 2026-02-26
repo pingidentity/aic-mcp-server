@@ -5,7 +5,7 @@ import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import * as amHelpers from '../../../src/utils/amHelpers.js';
 
 describe('getNodeTypeDetails', () => {
-  const getSpy = setupTestEnvironment();
+  setupTestEnvironment();
   let fetchNodeTypeDetailsSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -30,31 +30,27 @@ describe('getNodeTypeDetails', () => {
           schema: { type: 'object' },
           template: { _id: '' },
           outcomes: [{ id: 'outcome', displayName: 'Outcome' }],
-          error: null,
-        },
+          error: null
+        }
       });
 
       await getNodeTypeDetailsTool.toolFunction({
         realm: 'alpha',
-        nodeTypes: ['UsernameCollectorNode'],
+        nodeTypes: ['UsernameCollectorNode']
       });
 
-      expect(fetchNodeTypeDetailsSpy).toHaveBeenCalledWith(
-        'alpha',
-        ['UsernameCollectorNode'],
-        ['fr:am:*']
-      );
+      expect(fetchNodeTypeDetailsSpy).toHaveBeenCalledWith('alpha', ['UsernameCollectorNode'], ['fr:am:*']);
     });
 
     it('should fetch details for all requested node types', async () => {
       fetchNodeTypeDetailsSpy.mockResolvedValue({
         TypeA: { nodeType: 'TypeA', schema: {}, template: {}, outcomes: [], error: null },
-        TypeB: { nodeType: 'TypeB', schema: {}, template: {}, outcomes: [], error: null },
+        TypeB: { nodeType: 'TypeB', schema: {}, template: {}, outcomes: [], error: null }
       });
 
       const result = await getNodeTypeDetailsTool.toolFunction({
         realm: 'alpha',
-        nodeTypes: ['TypeA', 'TypeB'],
+        nodeTypes: ['TypeA', 'TypeB']
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -65,12 +61,12 @@ describe('getNodeTypeDetails', () => {
     it('should handle partial failures gracefully', async () => {
       fetchNodeTypeDetailsSpy.mockResolvedValue({
         TypeA: { nodeType: 'TypeA', schema: {}, template: {}, outcomes: [], error: null },
-        TypeB: { nodeType: 'TypeB', schema: null, template: null, outcomes: null, error: 'Fetch failed' },
+        TypeB: { nodeType: 'TypeB', schema: null, template: null, outcomes: null, error: 'Fetch failed' }
       });
 
       const result = await getNodeTypeDetailsTool.toolFunction({
         realm: 'alpha',
-        nodeTypes: ['TypeA', 'TypeB'],
+        nodeTypes: ['TypeA', 'TypeB']
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -82,12 +78,12 @@ describe('getNodeTypeDetails', () => {
       fetchNodeTypeDetailsSpy.mockResolvedValue({
         TypeA: { nodeType: 'TypeA', schema: {}, template: {}, outcomes: [], error: null },
         TypeB: { nodeType: 'TypeB', schema: null, template: null, outcomes: null, error: 'error' },
-        TypeC: { nodeType: 'TypeC', schema: {}, template: {}, outcomes: [], error: null },
+        TypeC: { nodeType: 'TypeC', schema: {}, template: {}, outcomes: [], error: null }
       });
 
       const result = await getNodeTypeDetailsTool.toolFunction({
         realm: 'alpha',
-        nodeTypes: ['TypeA', 'TypeB', 'TypeC'],
+        nodeTypes: ['TypeA', 'TypeB', 'TypeC']
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -100,12 +96,12 @@ describe('getNodeTypeDetails', () => {
   describe('Response Handling', () => {
     it('should format response with results object', async () => {
       fetchNodeTypeDetailsSpy.mockResolvedValue({
-        TypeA: { nodeType: 'TypeA', schema: {}, template: {}, outcomes: [], error: null },
+        TypeA: { nodeType: 'TypeA', schema: {}, template: {}, outcomes: [], error: null }
       });
 
       const result = await getNodeTypeDetailsTool.toolFunction({
         realm: 'alpha',
-        nodeTypes: ['TypeA'],
+        nodeTypes: ['TypeA']
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -115,12 +111,12 @@ describe('getNodeTypeDetails', () => {
 
     it('should include error details for failed fetches', async () => {
       fetchNodeTypeDetailsSpy.mockResolvedValue({
-        TypeA: { nodeType: 'TypeA', schema: null, template: null, outcomes: null, error: 'Network error' },
+        TypeA: { nodeType: 'TypeA', schema: null, template: null, outcomes: null, error: 'Network error' }
       });
 
       const result = await getNodeTypeDetailsTool.toolFunction({
         realm: 'alpha',
-        nodeTypes: ['TypeA'],
+        nodeTypes: ['TypeA']
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -147,7 +143,7 @@ describe('getNodeTypeDetails', () => {
 
       const result = await getNodeTypeDetailsTool.toolFunction({
         realm: 'alpha',
-        nodeTypes: ['TypeA'],
+        nodeTypes: ['TypeA']
       });
 
       expect(result.content[0].text).toContain('Failed to get node type details');

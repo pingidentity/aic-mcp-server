@@ -15,7 +15,7 @@ import {
   fetchNodeTypeDetails,
   STATIC_NODE_IDS,
   UUID_REGEX,
-  JourneyInput,
+  JourneyInput
 } from '../../src/utils/amHelpers.js';
 
 describe('amHelpers', () => {
@@ -153,13 +153,13 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'login',
         nodes: {
-          'login': {
+          login: {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { outcome: 'success' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const mapping = generateNodeIdMapping(journeyData);
       expect(mapping['login']).toBeDefined();
@@ -175,9 +175,9 @@ describe('amHelpers', () => {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { outcome: 'success' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const mapping = generateNodeIdMapping(journeyData);
       expect(mapping[existingUuid]).toBe(existingUuid);
@@ -187,17 +187,15 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'page',
         nodes: {
-          'page': {
+          page: {
             nodeType: 'PageNode',
             displayName: 'Page',
             connections: { outcome: 'success' },
             config: {
-              nodes: [
-                { _id: 'child-1', nodeType: 'UsernameCollectorNode' },
-              ],
-            },
-          },
-        },
+              nodes: [{ _id: 'child-1', nodeType: 'UsernameCollectorNode' }]
+            }
+          }
+        }
       };
       const mapping = generateNodeIdMapping(journeyData);
       expect(mapping['child-1']).toBeDefined();
@@ -209,17 +207,15 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'page',
         nodes: {
-          'page': {
+          page: {
             nodeType: 'PageNode',
             displayName: 'Page',
             connections: { outcome: 'success' },
             config: {
-              nodes: [
-                { _id: childUuid, nodeType: 'UsernameCollectorNode' },
-              ],
-            },
-          },
-        },
+              nodes: [{ _id: childUuid, nodeType: 'UsernameCollectorNode' }]
+            }
+          }
+        }
       };
       const mapping = generateNodeIdMapping(journeyData);
       expect(mapping[childUuid]).toBe(childUuid);
@@ -229,17 +225,15 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'page',
         nodes: {
-          'page': {
+          page: {
             nodeType: 'PageNode',
             displayName: 'Page',
             connections: { outcome: 'success' },
             config: {
-              nodes: [
-                { nodeType: 'UsernameCollectorNode' },
-              ],
-            },
-          },
-        },
+              nodes: [{ nodeType: 'UsernameCollectorNode' }]
+            }
+          }
+        }
       };
       const mapping = generateNodeIdMapping(journeyData);
       // Only the top-level 'page' node should be in the mapping
@@ -249,7 +243,7 @@ describe('amHelpers', () => {
     it('should handle empty nodes object', () => {
       const journeyData: JourneyInput = {
         entryNodeId: '',
-        nodes: {},
+        nodes: {}
       };
       const mapping = generateNodeIdMapping(journeyData);
       expect(mapping).toEqual({});
@@ -262,13 +256,13 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'login',
         nodes: {
-          'login': {
+          login: {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { outcome: 'success' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(true);
@@ -279,13 +273,13 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'nonexistent',
         nodes: {
-          'login': {
+          login: {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { outcome: 'success' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(false);
@@ -296,13 +290,13 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'login',
         nodes: {
-          'login': {
+          login: {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { outcome: 'nonexistent-node' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(false);
@@ -313,13 +307,13 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'login',
         nodes: {
-          'login': {
+          login: {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { true: 'Success', false: 'Failure' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(true);
@@ -329,13 +323,13 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'login',
         nodes: {
-          'login': {
+          login: {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { outcome: 'login' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(false);
@@ -346,13 +340,13 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'nonexistent',
         nodes: {
-          'login': {
+          login: {
             nodeType: 'UsernameCollectorNode',
             displayName: 'Login',
             connections: { outcome: 'unknown1', other: 'unknown2' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(false);
@@ -363,19 +357,19 @@ describe('amHelpers', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'a',
         nodes: {
-          'a': {
+          a: {
             nodeType: 'Node',
             displayName: 'A',
             connections: { outcome: 'b' },
-            config: {},
+            config: {}
           },
-          'b': {
+          b: {
             nodeType: 'Node',
             displayName: 'B',
             connections: { outcome: 'success' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(true);
@@ -384,7 +378,7 @@ describe('amHelpers', () => {
     it('should handle empty nodes object', () => {
       const journeyData: JourneyInput = {
         entryNodeId: 'nonexistent',
-        nodes: {},
+        nodes: {}
       };
       const result = validateConnectionTargets(journeyData);
       expect(result.isValid).toBe(false);
@@ -397,23 +391,23 @@ describe('amHelpers', () => {
     const baseJourney: JourneyInput = {
       entryNodeId: 'login',
       nodes: {
-        'login': {
+        login: {
           nodeType: 'UsernameCollectorNode',
           displayName: 'Login',
           connections: { outcome: 'password' },
-          config: { prop: 'value' },
+          config: { prop: 'value' }
         },
-        'password': {
+        password: {
           nodeType: 'PasswordCollectorNode',
           displayName: 'Password',
           connections: { outcome: 'success' },
-          config: {},
-        },
-      },
+          config: {}
+        }
+      }
     };
 
     it('should transform node keys to UUIDs', () => {
-      const mapping = { 'login': 'uuid-1', 'password': 'uuid-2' };
+      const mapping = { login: 'uuid-1', password: 'uuid-2' };
       const result = transformJourneyIds('TestJourney', baseJourney, mapping);
       expect(result.nodes['uuid-1']).toBeDefined();
       expect(result.nodes['uuid-2']).toBeDefined();
@@ -421,19 +415,19 @@ describe('amHelpers', () => {
     });
 
     it('should transform entryNodeId to UUID', () => {
-      const mapping = { 'login': 'uuid-1', 'password': 'uuid-2' };
+      const mapping = { login: 'uuid-1', password: 'uuid-2' };
       const result = transformJourneyIds('TestJourney', baseJourney, mapping);
       expect(result.entryNodeId).toBe('uuid-1');
     });
 
     it('should transform connection targets to UUIDs', () => {
-      const mapping = { 'login': 'uuid-1', 'password': 'uuid-2' };
+      const mapping = { login: 'uuid-1', password: 'uuid-2' };
       const result = transformJourneyIds('TestJourney', baseJourney, mapping);
       expect(result.nodes['uuid-1'].connections.outcome).toBe('uuid-2');
     });
 
     it('should resolve "success"/"failure" aliases to static node IDs', () => {
-      const mapping = { 'login': 'uuid-1', 'password': 'uuid-2' };
+      const mapping = { login: 'uuid-1', password: 'uuid-2' };
       const result = transformJourneyIds('TestJourney', baseJourney, mapping);
       expect(result.nodes['uuid-2'].connections.outcome).toBe(STATIC_NODE_IDS.SUCCESS);
     });
@@ -442,22 +436,22 @@ describe('amHelpers', () => {
       const journey: JourneyInput = {
         entryNodeId: 'node',
         nodes: {
-          'node': {
+          node: {
             nodeType: 'Node',
             displayName: 'Node',
             connections: { true: 'SUCCESS', false: 'FAILURE' },
-            config: {},
-          },
-        },
+            config: {}
+          }
+        }
       };
-      const mapping = { 'node': 'uuid-1' };
+      const mapping = { node: 'uuid-1' };
       const result = transformJourneyIds('Test', journey, mapping);
       expect(result.nodes['uuid-1'].connections.true).toBe(STATIC_NODE_IDS.SUCCESS);
       expect(result.nodes['uuid-1'].connections.false).toBe(STATIC_NODE_IDS.FAILURE);
     });
 
     it('should inject _id into node config', () => {
-      const mapping = { 'login': 'uuid-1', 'password': 'uuid-2' };
+      const mapping = { login: 'uuid-1', password: 'uuid-2' };
       const result = transformJourneyIds('TestJourney', baseJourney, mapping);
       expect(result.nodes['uuid-1'].config._id).toBe('uuid-1');
     });
@@ -466,26 +460,24 @@ describe('amHelpers', () => {
       const journey: JourneyInput = {
         entryNodeId: 'page',
         nodes: {
-          'page': {
+          page: {
             nodeType: 'PageNode',
             displayName: 'Page',
             connections: { outcome: 'success' },
             config: {
-              nodes: [
-                { _id: 'child-1', nodeType: 'UsernameCollectorNode', _properties: {} },
-              ],
-            },
-          },
-        },
+              nodes: [{ _id: 'child-1', nodeType: 'UsernameCollectorNode', _properties: {} }]
+            }
+          }
+        }
       };
-      const mapping = { 'page': 'uuid-page' };
+      const mapping = { page: 'uuid-page' };
       const result = transformJourneyIds('Test', journey, mapping);
       // Child nodes should have _id preserved or assigned
       expect(result.nodes['uuid-page'].config.nodes[0]._id).toBeDefined();
     });
 
     it('should include staticNodes in output', () => {
-      const mapping = { 'login': 'uuid-1', 'password': 'uuid-2' };
+      const mapping = { login: 'uuid-1', password: 'uuid-2' };
       const result = transformJourneyIds('TestJourney', baseJourney, mapping);
       expect(result.staticNodes).toBeDefined();
       expect(result.staticNodes).toHaveProperty('startNode');
@@ -509,7 +501,7 @@ describe('amHelpers', () => {
     it('should fetch schemas in parallel', async () => {
       spy.mockResolvedValue({
         data: { type: 'object', properties: {} },
-        response: new Response(),
+        response: new Response()
       });
 
       const results = await fetchNodeSchemas('alpha', ['TypeA', 'TypeB'], ['fr:am:*']);
@@ -523,7 +515,7 @@ describe('amHelpers', () => {
       spy
         .mockResolvedValueOnce({
           data: { type: 'object' },
-          response: new Response(),
+          response: new Response()
         })
         .mockRejectedValueOnce(new Error('404 Not Found'));
 
@@ -551,14 +543,14 @@ describe('amHelpers', () => {
     it('should fetch configs in parallel', async () => {
       spy.mockResolvedValue({
         data: { _id: 'node-1', prop: 'val' },
-        response: new Response(),
+        response: new Response()
       });
 
       const results = await fetchNodeConfigs(
         'alpha',
         [
           { nodeId: 'node-1', nodeType: 'TypeA' },
-          { nodeId: 'node-2', nodeType: 'TypeB' },
+          { nodeId: 'node-2', nodeType: 'TypeB' }
         ],
         ['fr:am:*']
       );
@@ -567,11 +559,7 @@ describe('amHelpers', () => {
     });
 
     it('should handle missing nodeType', async () => {
-      const results = await fetchNodeConfigs(
-        'alpha',
-        [{ nodeId: 'node-1', nodeType: '' }],
-        ['fr:am:*']
-      );
+      const results = await fetchNodeConfigs('alpha', [{ nodeId: 'node-1', nodeType: '' }], ['fr:am:*']);
       expect(results[0].error).toBe('Missing nodeType');
       expect(results[0].config).toBeNull();
     });
@@ -593,7 +581,7 @@ describe('amHelpers', () => {
     it('should fetch schema, template, and outcomes in parallel for each type', async () => {
       spy.mockResolvedValue({
         data: { type: 'object' },
-        response: new Response(),
+        response: new Response()
       });
 
       const results = await fetchNodeTypeDetails('alpha', ['TypeA'], ['fr:am:*']);
@@ -614,7 +602,7 @@ describe('amHelpers', () => {
     it('should return results keyed by nodeType', async () => {
       spy.mockResolvedValue({
         data: { type: 'object' },
-        response: new Response(),
+        response: new Response()
       });
 
       const results = await fetchNodeTypeDetails('alpha', ['TypeA', 'TypeB'], ['fr:am:*']);

@@ -18,10 +18,10 @@ describe('deleteScript', () => {
     it('should build URL with encoded scriptId', async () => {
       await deleteScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
-      const [url, scopes, options] = getSpy().mock.calls[0];
+      const [url, scopes] = getSpy().mock.calls[0];
       expect(url).toContain('/am/json/alpha/scripts/script-123');
       expect(scopes).toEqual(['fr:am:*']);
     });
@@ -29,7 +29,7 @@ describe('deleteScript', () => {
     it('should use DELETE method', async () => {
       await deleteScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -39,7 +39,7 @@ describe('deleteScript', () => {
     it('should include AM_SCRIPT_HEADERS_V2', async () => {
       await deleteScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -49,7 +49,7 @@ describe('deleteScript', () => {
     it('should URL-encode scriptId with special characters', async () => {
       await deleteScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script with spaces',
+        scriptId: 'script with spaces'
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -62,7 +62,7 @@ describe('deleteScript', () => {
     it('should format success message with scriptId and transaction ID', async () => {
       const result = await deleteScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       expect(result.content[0].text).toContain('script-123');
@@ -88,7 +88,7 @@ describe('deleteScript', () => {
   describe('Error Handling', () => {
     it.each([
       { status: 401, desc: '401 Unauthorized' },
-      { status: 404, desc: '404 Not Found' },
+      { status: 404, desc: '404 Not Found' }
     ])('should handle $desc', async ({ status }) => {
       server.use(
         http.delete('https://*/am/json/*/scripts/*', () => {
@@ -98,7 +98,7 @@ describe('deleteScript', () => {
 
       const result = await deleteScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'nonexistent',
+        scriptId: 'nonexistent'
       });
 
       expect(result.content[0].text).toContain('Failed to delete script');

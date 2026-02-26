@@ -11,25 +11,22 @@ export function validateAuthHeader(request: Request): HttpResponse<string> | nul
   const authHeader = request.headers.get('Authorization');
 
   if (!authHeader) {
-    return new HttpResponse(
-      JSON.stringify({ error: 'unauthorized', message: 'Missing Authorization header' }),
-      { status: 401 }
-    );
+    return new HttpResponse(JSON.stringify({ error: 'unauthorized', message: 'Missing Authorization header' }), {
+      status: 401
+    });
   }
 
   if (!authHeader.startsWith('Bearer ')) {
-    return new HttpResponse(
-      JSON.stringify({ error: 'unauthorized', message: 'Invalid Authorization header format' }),
-      { status: 401 }
-    );
+    return new HttpResponse(JSON.stringify({ error: 'unauthorized', message: 'Invalid Authorization header format' }), {
+      status: 401
+    });
   }
 
   const token = authHeader.substring(7); // Remove 'Bearer ' prefix
   if (!token || token !== 'mock-scoped-token') {
-    return new HttpResponse(
-      JSON.stringify({ error: 'unauthorized', message: 'Invalid or expired token' }),
-      { status: 401 }
-    );
+    return new HttpResponse(JSON.stringify({ error: 'unauthorized', message: 'Invalid or expired token' }), {
+      status: 401
+    });
   }
 
   return null; // Valid auth
@@ -45,7 +42,7 @@ export const handlers = [
       return HttpResponse.json({
         access_token: 'mock-primary-token',
         expires_in: 3600,
-        token_type: 'Bearer',
+        token_type: 'Bearer'
       });
     }
 
@@ -57,31 +54,22 @@ export const handlers = [
 
       // Validate parameters
       if (!subjectToken || subjectToken !== 'mock-token') {
-        return new HttpResponse(
-          JSON.stringify({ error: 'invalid_token' }),
-          { status: 401 }
-        );
+        return new HttpResponse(JSON.stringify({ error: 'invalid_token' }), { status: 401 });
       }
 
       if (clientId !== 'AICMCPExchangeClient') {
-        return new HttpResponse(
-          JSON.stringify({ error: 'invalid_client' }),
-          { status: 400 }
-        );
+        return new HttpResponse(JSON.stringify({ error: 'invalid_client' }), { status: 400 });
       }
 
       if (!requestedScopes) {
-        return new HttpResponse(
-          JSON.stringify({ error: 'invalid_scope' }),
-          { status: 400 }
-        );
+        return new HttpResponse(JSON.stringify({ error: 'invalid_scope' }), { status: 400 });
       }
 
       return HttpResponse.json({
         access_token: 'mock-scoped-token',
         expires_in: 3600,
         token_type: 'Bearer',
-        scope: requestedScopes, // Echo back the requested scopes
+        scope: requestedScopes // Echo back the requested scopes
       });
     }
 
@@ -100,7 +88,7 @@ export const handlers = [
       result: mockManagedObjects.slice(0, pageSize),
       resultCount: mockManagedObjects.length,
       totalPagedResults: mockManagedObjects.length,
-      pagedResultsCookie: null,
+      pagedResultsCookie: null
     });
   }),
 
@@ -117,7 +105,7 @@ export const handlers = [
     const authError = validateAuthHeader(request);
     if (authError) return authError;
 
-    const body = await request.json() as Record<string, any>;
+    const body = (await request.json()) as Record<string, any>;
     return HttpResponse.json({ _id: 'new-id', _rev: '1', ...body });
   }),
 
@@ -152,7 +140,7 @@ export const handlers = [
 
     return HttpResponse.json({
       result: mockThemes,
-      resultCount: mockThemes.length,
+      resultCount: mockThemes.length
     });
   }),
 
@@ -175,7 +163,7 @@ export const handlers = [
     const authError = validateAuthHeader(request);
     if (authError) return authError;
 
-    const body = await request.json() as Record<string, any>;
+    const body = (await request.json()) as Record<string, any>;
     return HttpResponse.json({ _id: 'theme-new', ...body });
   }),
 
@@ -201,7 +189,7 @@ export const handlers = [
     return HttpResponse.json({
       result: mockVariables,
       resultCount: mockVariables.length,
-      totalPagedResults: mockVariables.length,
+      totalPagedResults: mockVariables.length
     });
   }),
 
@@ -216,7 +204,7 @@ export const handlers = [
     const authError = validateAuthHeader(request);
     if (authError) return authError;
 
-    const body = await request.json() as Record<string, any>;
+    const body = (await request.json()) as Record<string, any>;
     return HttpResponse.json({ _id: params.variableId, ...body });
   }),
 
@@ -242,7 +230,7 @@ export const handlers = [
     return HttpResponse.json({
       result: [],
       resultCount: 0,
-      totalPagedResults: 0,
+      totalPagedResults: 0
     });
   }),
 
@@ -253,7 +241,7 @@ export const handlers = [
 
     return HttpResponse.json({
       result: [],
-      resultCount: 0,
+      resultCount: 0
     });
   }),
 
@@ -264,7 +252,7 @@ export const handlers = [
 
     return HttpResponse.json({
       _id: 'Login',
-      nodes: {},
+      nodes: {}
     });
   }),
 
@@ -275,7 +263,7 @@ export const handlers = [
 
     return HttpResponse.json({
       type: 'object',
-      properties: {},
+      properties: {}
     });
   }),
 
@@ -286,7 +274,7 @@ export const handlers = [
 
     return HttpResponse.json({
       _id: 'node-123',
-      nodeType: 'TestNode',
+      nodeType: 'TestNode'
     });
   }),
 
@@ -299,7 +287,7 @@ export const handlers = [
       _id: 'script-123',
       name: 'TestScript',
       script: '',
-      language: 'JAVASCRIPT',
+      language: 'JAVASCRIPT'
     });
   }),
 
@@ -388,5 +376,5 @@ export const handlers = [
     if (authError) return authError;
 
     return HttpResponse.json({ core: { orgConfig: 'NewDefault', adminAuthModule: 'Login' } });
-  }),
+  })
 ];
