@@ -34,9 +34,7 @@ export const setDefaultThemeTool = {
       const realmThemes = (config as any).realm[realm];
 
       // Find the theme by ID or name
-      const themeIndex = realmThemes.findIndex((t: any) =>
-        t._id === themeIdentifier || t.name === themeIdentifier
-      );
+      const themeIndex = realmThemes.findIndex((t: any) => t._id === themeIdentifier || t.name === themeIdentifier);
 
       if (themeIndex === -1) {
         return createToolResponse(`Theme not found: "${themeIdentifier}" in realm "${realm}"`);
@@ -67,17 +65,15 @@ export const setDefaultThemeTool = {
       };
 
       // PUT the updated configuration back
-      const { response } = await makeAuthenticatedRequest(
-        configUrl,
-        SCOPES,
-        {
-          method: 'PUT',
-          body: JSON.stringify(updatedConfig)
-        }
-      );
+      const { response } = await makeAuthenticatedRequest(configUrl, SCOPES, {
+        method: 'PUT',
+        body: JSON.stringify(updatedConfig)
+      });
 
       const successMessage = `Set theme "${themeName}" (${themeId}) as default for realm "${realm}"`;
-      return createToolResponse(formatSuccess({ _id: themeId, name: themeName, isDefault: true, message: successMessage }, response));
+      return createToolResponse(
+        formatSuccess({ _id: themeId, name: themeName, isDefault: true, message: successMessage }, response)
+      );
     } catch (error: any) {
       return createToolResponse(`Failed to set default theme in realm "${realm}": ${error.message}`);
     }

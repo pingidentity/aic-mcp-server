@@ -35,12 +35,16 @@ export const getThemeTool = {
       }
 
       if (resultCount > 1) {
-        return createToolResponse(`Multiple themes found matching "${themeIdentifier}" in realm "${realm}". This should not happen - please report this issue.`);
+        return createToolResponse(
+          `Multiple themes found matching "${themeIdentifier}" in realm "${realm}". This should not happen - please report this issue.`
+        );
       }
 
       return createToolResponse(formatSuccess(results[0], response));
     } catch (error: any) {
-      return createToolResponse(`Failed to retrieve theme "${themeIdentifier}" from realm "${realm}": ${error.message}`);
+      return createToolResponse(
+        `Failed to retrieve theme "${themeIdentifier}" from realm "${realm}": ${error.message}`
+      );
     }
   }
 };

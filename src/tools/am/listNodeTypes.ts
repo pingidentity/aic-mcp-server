@@ -9,7 +9,8 @@ const SCOPES = ['fr:am:*'];
 export const listNodeTypesTool = {
   name: 'listNodeTypes',
   title: 'List AM Node Types',
-  description: 'Discover all available authentication node types in a realm. Returns node type metadata including ID, name, and tags. Use this to understand what node types can be used when building journeys.',
+  description:
+    'Discover all available authentication node types in a realm. Returns node type metadata including ID, name, and tags. Use this to understand what node types can be used when building journeys.',
   scopes: SCOPES,
   annotations: {
     readOnlyHint: true,
@@ -25,7 +26,7 @@ export const listNodeTypesTool = {
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'POST',
         headers: AM_API_HEADERS,
-        body: JSON.stringify({}),
+        body: JSON.stringify({})
       });
 
       // Extract the result array and format response
@@ -33,12 +34,12 @@ export const listNodeTypesTool = {
       const formattedResponse = {
         realm,
         nodeTypes,
-        count: nodeTypes.length,
+        count: nodeTypes.length
       };
 
       return createToolResponse(formatSuccess(formattedResponse, response));
     } catch (error: any) {
       return createToolResponse(`Failed to list node types in realm "${realm}": ${error.message}`);
     }
-  },
+  }
 };

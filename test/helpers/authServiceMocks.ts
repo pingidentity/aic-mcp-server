@@ -8,13 +8,17 @@ type Mock = any;
 export function createHoistedMockStorage(vi: any) {
   let instance: any;
 
+  const setInstance = (inst: any) => {
+    instance = inst;
+  };
+
   class MockStorage {
     private mockGetToken = vi.fn();
     private mockSetToken = vi.fn();
     private mockDeleteToken = vi.fn();
 
     constructor() {
-      instance = this;
+      setInstance(this);
     }
 
     async getToken() {

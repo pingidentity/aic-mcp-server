@@ -200,6 +200,7 @@ The server uses **OAuth 2.0 PKCE flow** for secure user authentication:
 **Docker Deployment**: Uses OAuth 2.0 Device Code Flow with ephemeral token storage (tokens deleted on container restart).
 
 **Security Features**:
+
 - User-based actions provide complete audit trail
 - All actions traceable to authenticated users for compliance
 
@@ -216,49 +217,49 @@ The server provides tools for AI agents to interact with your PingOne AIC enviro
 
 Generic CRUD operations for **any managed object type** in your environment.
 
-| Tool | Description | Usage Examples |
-|------|-------------|----------------|
-| `listManagedObjects` | Discover all managed object types in your environment | - `What object types are available?` <br> - `List all managed objects` <br> - `Show me what types I can work with` |
-| `getManagedObjectSchema` | Get schema definition for an object type | - `What fields are required for alpha_user?` <br> - `Show me the schema for bravo_role` <br> - `What properties does alpha_group have?` |
-| `queryManagedObjects` | Query objects with filters, pagination, sorting | - `Find users with email @example.com` <br> - `List all roles sorted by name` <br> - `Show me the first 10 alpha_groups` |
-| `getManagedObject` | Retrieve an object's complete profile | - `Get user xyz123` <br> - `Show me the details for role abc456` <br> - `Display the profile for alpha_user xyz` |
-| `createManagedObject` | Create a new managed object | - `Create user jsmith` <br> - `Add a new admin role` <br> - `Create a bravo_group called Developers` |
-| `patchManagedObject` | Update object fields | - `Update user xyz123 email to new@example.com` <br> - `Change role description` <br> - `Modify the alpha_group name` |
-| `deleteManagedObject` | Delete an object | - `Delete user xyz123` <br> - `Remove role abc456` <br> - `Delete the test group` |
+| Tool                     | Description                                           | Usage Examples                                                                                                                          |
+| ------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `listManagedObjects`     | Discover all managed object types in your environment | - `What object types are available?` <br> - `List all managed objects` <br> - `Show me what types I can work with`                      |
+| `getManagedObjectSchema` | Get schema definition for an object type              | - `What fields are required for alpha_user?` <br> - `Show me the schema for bravo_role` <br> - `What properties does alpha_group have?` |
+| `queryManagedObjects`    | Query objects with filters, pagination, sorting       | - `Find users with email @example.com` <br> - `List all roles sorted by name` <br> - `Show me the first 10 alpha_groups`                |
+| `getManagedObject`       | Retrieve an object's complete profile                 | - `Get user xyz123` <br> - `Show me the details for role abc456` <br> - `Display the profile for alpha_user xyz`                        |
+| `createManagedObject`    | Create a new managed object                           | - `Create user jsmith` <br> - `Add a new admin role` <br> - `Create a bravo_group called Developers`                                    |
+| `patchManagedObject`     | Update object fields                                  | - `Update user xyz123 email to new@example.com` <br> - `Change role description` <br> - `Modify the alpha_group name`                   |
+| `deleteManagedObject`    | Delete an object                                      | - `Delete user xyz123` <br> - `Remove role abc456` <br> - `Delete the test group`                                                       |
 
 ### Themes
 
 Customize login and account page appearance.
 
-| Tool | Description | Usage Examples |
-|------|-------------|----------------|
-| `getThemeSchema` | Get complete theme schema documentation | - `Show me available theme customizations` <br> - `What fields can I set on a theme?` <br> - `Display the theme configuration options` |
-| `getThemes` | List all themes in a realm | - `Show themes in alpha realm` <br> - `List all available themes` <br> - `What themes exist in bravo?` |
-| `getTheme` | Get a theme's complete configuration | - `Get the Corporate Brand theme` <br> - `Show me theme xyz123` <br> - `Display the Dark Mode theme settings` |
-| `createTheme` | Create a new theme | - `Create theme called Dark Mode` <br> - `Add new theme with blue color scheme` <br> - `Create a Corporate Brand theme with our colors` |
-| `updateTheme` | Update theme properties | - `Change Corporate Brand logo` <br> - `Update theme colors` <br> - `Modify the Dark Mode background color` |
-| `deleteTheme` | Delete a theme | - `Delete Test Theme` <br> - `Remove theme xyz123` <br> - `Delete the old branding theme` |
-| `setDefaultTheme` | Set a theme as the realm default | - `Set Corporate Brand as default` <br> - `Make Dark Mode the default theme` <br> - `Use the new theme as default for alpha` |
+| Tool              | Description                             | Usage Examples                                                                                                                          |
+| ----------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `getThemeSchema`  | Get complete theme schema documentation | - `Show me available theme customizations` <br> - `What fields can I set on a theme?` <br> - `Display the theme configuration options`  |
+| `getThemes`       | List all themes in a realm              | - `Show themes in alpha realm` <br> - `List all available themes` <br> - `What themes exist in bravo?`                                  |
+| `getTheme`        | Get a theme's complete configuration    | - `Get the Corporate Brand theme` <br> - `Show me theme xyz123` <br> - `Display the Dark Mode theme settings`                           |
+| `createTheme`     | Create a new theme                      | - `Create theme called Dark Mode` <br> - `Add new theme with blue color scheme` <br> - `Create a Corporate Brand theme with our colors` |
+| `updateTheme`     | Update theme properties                 | - `Change Corporate Brand logo` <br> - `Update theme colors` <br> - `Modify the Dark Mode background color`                             |
+| `deleteTheme`     | Delete a theme                          | - `Delete Test Theme` <br> - `Remove theme xyz123` <br> - `Delete the old branding theme`                                               |
+| `setDefaultTheme` | Set a theme as the realm default        | - `Set Corporate Brand as default` <br> - `Make Dark Mode the default theme` <br> - `Use the new theme as default for alpha`            |
 
 ### Logging
 
 Query and analyze authentication and activity logs.
 
-| Tool | Description | Usage Examples |
-|------|-------------|----------------|
-| `getLogSources` | List available log sources | - `What log sources are available?` <br> - `Show me all log types` <br> - `Display available logging sources` |
-| `queryLogs` | Query logs with time range, source, and content filters | - `Show ERROR logs from last 2 hours` <br> - `Find login failures for user jsmith` <br> - `Get logs for transaction xyz` |
+| Tool            | Description                                             | Usage Examples                                                                                                           |
+| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `getLogSources` | List available log sources                              | - `What log sources are available?` <br> - `Show me all log types` <br> - `Display available logging sources`            |
+| `queryLogs`     | Query logs with time range, source, and content filters | - `Show ERROR logs from last 2 hours` <br> - `Find login failures for user jsmith` <br> - `Get logs for transaction xyz` |
 
 ### ESVs (Environment Secrets and Variables)
 
 Manage environment secrets and variables.
 
-| Tool | Description | Usage Examples |
-|------|-------------|----------------|
-| `queryESVs` | Query variables or secrets by ID pattern | - `List all environment variables` <br> - `Find variables starting with esv-prod` <br> - `Show me all secrets in the environment` |
-| `getVariable` | Retrieve a variable with decoded value | - `Get esv-database-url` <br> - `Show me the API key variable` <br> - `Display the value of esv-config` |
-| `setVariable` | Create or update a variable | - `Create variable esv-api-key` <br> - `Update esv-max-connections to 100` <br> - `Set esv-endpoint to https://api.example.com` |
-| `deleteVariable` | Delete a variable | - `Delete esv-old-config` <br> - `Remove variable xyz` <br> - `Delete the deprecated esv-legacy-url` |
+| Tool             | Description                              | Usage Examples                                                                                                                    |
+| ---------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `queryESVs`      | Query variables or secrets by ID pattern | - `List all environment variables` <br> - `Find variables starting with esv-prod` <br> - `Show me all secrets in the environment` |
+| `getVariable`    | Retrieve a variable with decoded value   | - `Get esv-database-url` <br> - `Show me the API key variable` <br> - `Display the value of esv-config`                           |
+| `setVariable`    | Create or update a variable              | - `Create variable esv-api-key` <br> - `Update esv-max-connections to 100` <br> - `Set esv-endpoint to https://api.example.com`   |
+| `deleteVariable` | Delete a variable                        | - `Delete esv-old-config` <br> - `Remove variable xyz` <br> - `Delete the deprecated esv-legacy-url`                              |
 
 ### AM Journeys (Not available when using Docker)
 
@@ -266,11 +267,11 @@ Manage environment secrets and variables.
 
 Analyze authentication journeys with complete node details.
 
-| Tool | Description | Usage Examples |
-|------|-------------|----------------|
-| `listJourneys` | List all authentication journeys in a realm | - `Show all journeys in alpha` <br> - `List authentication trees for bravo` <br> - `What journeys exist?` |
-| `getJourney` | Get journey with node schemas and configs **automatically included** | - `Show me the Login journey` <br> - `Get the Registration journey with all node details` <br> - `Display the PasswordReset journey configuration` |
-| `getAMScript` | Get AM script with automatic base64 decoding | - `Show me script 01e1a3c0-038b-4c16-956a-6c9d89328cff` <br> - `Get the decision node script` <br> - `Display the authentication script code` |
+| Tool           | Description                                                          | Usage Examples                                                                                                                                     |
+| -------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `listJourneys` | List all authentication journeys in a realm                          | - `Show all journeys in alpha` <br> - `List authentication trees for bravo` <br> - `What journeys exist?`                                          |
+| `getJourney`   | Get journey with node schemas and configs **automatically included** | - `Show me the Login journey` <br> - `Get the Registration journey with all node details` <br> - `Display the PasswordReset journey configuration` |
+| `getAMScript`  | Get AM script with automatic base64 decoding                         | - `Show me script 01e1a3c0-038b-4c16-956a-6c9d89328cff` <br> - `Get the decision node script` <br> - `Display the authentication script code`      |
 
 **Key Feature**: The `getJourney` tool **automatically fetches and includes** all node schemas and configurations in parallel, so you get complete journey details in a single call - no need to manually fetch node information.
 
@@ -327,15 +328,19 @@ The PingOne AIC MCP Server implements multiple security layers:
 <summary><h2>Troubleshooting</h2></summary>
 
 ### "FATAL: AIC_BASE_URL environment variable is not set"
+
 Set the `AIC_BASE_URL` environment variable in your MCP client configuration to your PingOne AIC tenant URL (e.g., `your-tenant.forgeblocks.com` or `https://your-tenant.forgeblocks.com`).
 
 ### "Port 3000 is already in use"
+
 Another service is using port 3000 (required for OAuth redirect). Stop that service and try again.
 
 ### "Browser doesn't open during authentication"
+
 Check that the `open` package has permissions to launch your browser, or manually navigate to the URL shown in the error message.
 
 ### Docker: "URL not displayed during authentication"
+
 Your MCP client may not support form elicitation yet. Use the local deployment method instead.
 
 </details>
@@ -433,4 +438,3 @@ We welcome your feedback! Please use this repository's [issue tracker](https://g
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-

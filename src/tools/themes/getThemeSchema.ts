@@ -9,7 +9,8 @@ const SCOPES: string[] = [];
 export const getThemeSchemaTool = {
   name: 'getThemeSchema',
   title: 'Get Theme Schema',
-  description: 'Get comprehensive schema documentation for PingOne AIC themes including the expected payload structure, field types, enum values, and constraints. Use this before creating or updating themes to understand requirements.',
+  description:
+    'Get comprehensive schema documentation for PingOne AIC themes including the expected payload structure, field types, enum values, and constraints. Use this before creating or updating themes to understand requirements.',
   scopes: SCOPES,
   annotations: {
     readOnlyHint: true
@@ -18,7 +19,8 @@ export const getThemeSchemaTool = {
   async toolFunction() {
     const schema = {
       schemaVersion: '1.0',
-      description: 'PingOne Advanced Identity Cloud theme configuration schema. A theme object contains styling and configuration for authentication journeys and account pages.',
+      description:
+        'PingOne Advanced Identity Cloud theme configuration schema. A theme object contains styling and configuration for authentication journeys and account pages.',
 
       themeStructure: {
         description: 'Complete theme object structure with all available fields',
@@ -172,7 +174,8 @@ export const getThemeSchemaTool = {
         fontFamily: {
           type: 'string',
           required: false,
-          description: 'Font family for all text. Use standard fonts (Arial, Helvetica) or Google Font names (Open Sans, Roboto, etc.)',
+          description:
+            'Font family for all text. Use standard fonts (Arial, Helvetica) or Google Font names (Open Sans, Roboto, etc.)',
           default: 'Open Sans',
           examples: ['Open Sans', 'Roboto', 'Arial', 'Helvetica', 'PT Sans', 'Noto Sans']
         },
@@ -252,10 +255,7 @@ export const getThemeSchemaTool = {
           description: 'Favicon for all journey and account pages. Supports hosted URLs or base64 data URIs.',
           localizable: true,
           default: '',
-          examples: [
-            'https://example.com/favicon.ico',
-            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
-          ]
+          examples: ['https://example.com/favicon.ico', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...']
         },
 
         // Journey Pages - Page Background
@@ -273,10 +273,7 @@ export const getThemeSchemaTool = {
           format: 'URL or base64 data URI',
           description: 'Optional background image for journey pages. Supports hosted URLs or base64 data URIs.',
           default: '',
-          examples: [
-            'https://example.com/background.jpg',
-            'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA...'
-          ]
+          examples: ['https://example.com/background.jpg', 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA...']
         },
 
         // Journey Pages - Sign-in Card
@@ -480,7 +477,8 @@ export const getThemeSchemaTool = {
           type: 'string',
           required: false,
           format: 'HTML string or localized object',
-          description: 'HTML/CSS content for justified panel. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
+          description:
+            'HTML/CSS content for justified panel. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
           htmlSupport: true,
           localizable: true,
           default: '',
@@ -513,7 +511,8 @@ export const getThemeSchemaTool = {
           type: 'string',
           required: false,
           format: 'HTML string or localized object',
-          description: 'HTML/CSS content for header. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
+          description:
+            'HTML/CSS content for header. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
           htmlSupport: true,
           localizable: true,
           default: '<div class="d-flex justify-content-center py-4 flex-grow-1">Header Content</div>',
@@ -553,7 +552,8 @@ export const getThemeSchemaTool = {
           type: 'string',
           required: false,
           format: 'HTML string or localized object',
-          description: 'HTML/CSS content for footer. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
+          description:
+            'HTML/CSS content for footer. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
           htmlSupport: true,
           localizable: true,
           default: '<div class="d-flex justify-content-center py-4 w-100"><span>© 2021 My Company</span></div>',
@@ -833,7 +833,8 @@ export const getThemeSchemaTool = {
           type: 'string',
           required: false,
           format: 'URL, base64 data URI, or localized object',
-          description: 'Account page expanded logo (when navigation is expanded). Supports hosted URLs or base64 data URIs.',
+          description:
+            'Account page expanded logo (when navigation is expanded). Supports hosted URLs or base64 data URIs.',
           localizable: true,
           default: '',
           examples: [
@@ -855,7 +856,8 @@ export const getThemeSchemaTool = {
           type: 'string',
           required: false,
           format: 'URL, base64 data URI, or localized object',
-          description: 'Account page collapsed logo (when navigation is collapsed). Supports hosted URLs or base64 data URIs.',
+          description:
+            'Account page collapsed logo (when navigation is collapsed). Supports hosted URLs or base64 data URIs.',
           localizable: true,
           default: '',
           examples: [
@@ -903,7 +905,8 @@ export const getThemeSchemaTool = {
           type: 'string',
           required: false,
           format: 'HTML string or localized object',
-          description: 'HTML/CSS content for account footer. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
+          description:
+            'HTML/CSS content for account footer. Supports Bootstrap 4 classes and inline styles only. External CSS/fonts will not load.',
           htmlSupport: true,
           localizable: true,
           default: '<div class="d-flex justify-content-center py-4 w-100"><span>© 2021 My Company</span></div>',
@@ -935,7 +938,15 @@ export const getThemeSchemaTool = {
           },
           default: {
             personalInformation: { enabled: true },
-            accountSecurity: { enabled: true, subsections: { username: { enabled: true }, password: { enabled: true }, twoStepVerification: { enabled: true }, securityQuestions: { enabled: false } } },
+            accountSecurity: {
+              enabled: true,
+              subsections: {
+                username: { enabled: true },
+                password: { enabled: true },
+                twoStepVerification: { enabled: true },
+                securityQuestions: { enabled: false }
+              }
+            },
             social: { enabled: false },
             trustedDevices: { enabled: true },
             oauthApplications: { enabled: false },
@@ -950,15 +961,38 @@ export const getThemeSchemaTool = {
         htmlCssFields: {
           description: 'HTML content fields support Bootstrap 4 classes and inline CSS only',
           fields: ['journeyHeader', 'journeyFooter', 'journeyJustifiedContent', 'accountFooter'],
-          supported: ['Bootstrap 4 CSS classes', 'Inline CSS (style attribute)', 'SVG elements', 'Data URIs for images'],
-          notSupported: ['External CSS files (<link>)', 'External fonts (@import, <link>)', 'JavaScript', '<script> tags'],
-          example: '<div class="d-flex justify-content-center" style="background: #f5f5f5; padding: 20px;"><h1>Welcome</h1></div>'
+          supported: [
+            'Bootstrap 4 CSS classes',
+            'Inline CSS (style attribute)',
+            'SVG elements',
+            'Data URIs for images'
+          ],
+          notSupported: [
+            'External CSS files (<link>)',
+            'External fonts (@import, <link>)',
+            'JavaScript',
+            '<script> tags'
+          ],
+          example:
+            '<div class="d-flex justify-content-center" style="background: #f5f5f5; padding: 20px;"><h1>Welcome</h1></div>'
         },
 
         localization: {
           description: 'Many fields support localization via object format with locale keys',
           format: '{ "en": "English value", "fr": "French value", "de": "German value" }',
-          fields: ['favicon', 'logo', 'logoAltText', 'logoProfile', 'logoProfileAltText', 'logoProfileCollapsed', 'logoProfileCollapsedAltText', 'journeyHeader', 'journeyFooter', 'journeyJustifiedContent', 'accountFooter'],
+          fields: [
+            'favicon',
+            'logo',
+            'logoAltText',
+            'logoProfile',
+            'logoProfileAltText',
+            'logoProfileCollapsed',
+            'logoProfileCollapsedAltText',
+            'journeyHeader',
+            'journeyFooter',
+            'journeyJustifiedContent',
+            'accountFooter'
+          ],
           example: { en: 'Welcome', fr: 'Bienvenue', de: 'Willkommen' }
         },
 
@@ -992,7 +1026,12 @@ export const getThemeSchemaTool = {
 
         enumFields: {
           journeyLayout: ['card', 'justified-left', 'justified-right'],
-          journeySignInButtonPosition: ['flex-column', 'justify-content-center', 'justify-content-start', 'justify-content-end'],
+          journeySignInButtonPosition: [
+            'flex-column',
+            'justify-content-center',
+            'justify-content-start',
+            'justify-content-end'
+          ],
           journeyFocusElement: ['header', 'headerFirstStep', 'content']
         },
 

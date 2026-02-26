@@ -17,7 +17,7 @@ describe('getVariable', () => {
   describe('Request Construction', () => {
     it('should build request with URL, headers, and scopes', async () => {
       await getVariableTool.toolFunction({
-        variableId: 'esv-api-key',
+        variableId: 'esv-api-key'
       });
 
       expect(getSpy()).toHaveBeenCalledWith(
@@ -25,8 +25,8 @@ describe('getVariable', () => {
         ['fr:idc:esv:read'],
         expect.objectContaining({
           headers: expect.objectContaining({
-            'accept-api-version': 'resource=2.0',
-          }),
+            'accept-api-version': 'resource=2.0'
+          })
         })
       );
     });
@@ -39,21 +39,18 @@ describe('getVariable', () => {
         http.get('https://*/environment/variables/*', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
           return HttpResponse.json({
             _id: 'esv-test',
             valueBase64: 'aGVsbG8gd29ybGQ=', // "hello world" in base64
-            expressionType: 'string',
+            expressionType: 'string'
           });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-test',
+        variableId: 'esv-test'
       });
 
       const responseText = result.content[0].text;
@@ -68,21 +65,18 @@ describe('getVariable', () => {
         http.get('https://*/environment/variables/*', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
           return HttpResponse.json({
             _id: 'esv-test',
             valueBase64: 'dGVzdA==', // "test" in base64
-            expressionType: 'string',
+            expressionType: 'string'
           });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-test',
+        variableId: 'esv-test'
       });
 
       const responseText = result.content[0].text;
@@ -100,20 +94,17 @@ describe('getVariable', () => {
         http.get('https://*/environment/variables/*', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
           return HttpResponse.json({
             _id: 'esv-test',
-            expressionType: 'string',
+            expressionType: 'string'
           });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-test',
+        variableId: 'esv-test'
       });
 
       const responseText = result.content[0].text;
@@ -130,10 +121,7 @@ describe('getVariable', () => {
         http.get('https://*/environment/variables/*', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
           return HttpResponse.json({
             _id: 'esv-test',
@@ -141,13 +129,13 @@ describe('getVariable', () => {
             expressionType: 'string',
             description: 'Test variable',
             lastChangeDate: '2025-01-11T10:00:00Z',
-            lastChangedBy: 'user-123',
+            lastChangedBy: 'user-123'
           });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-test',
+        variableId: 'esv-test'
       });
 
       const responseText = result.content[0].text;
@@ -174,21 +162,18 @@ describe('getVariable', () => {
         http.get('https://*/environment/variables/*', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
           return HttpResponse.json({
             _id: 'esv-test',
             valueBase64: base64Json,
-            expressionType: 'object',
+            expressionType: 'object'
           });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-test',
+        variableId: 'esv-test'
       });
 
       const responseText = result.content[0].text;
@@ -207,21 +192,18 @@ describe('getVariable', () => {
         http.get('https://*/environment/variables/*', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
           return HttpResponse.json({
             _id: 'esv-test',
             valueBase64: base64Array,
-            expressionType: 'array',
+            expressionType: 'array'
           });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-test',
+        variableId: 'esv-test'
       });
 
       const responseText = result.content[0].text;
@@ -258,15 +240,14 @@ describe('getVariable', () => {
     it('should handle 401 Unauthorized error', async () => {
       server.use(
         http.get('https://*/environment/variables/*', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }), {
+            status: 401
+          });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-api-key',
+        variableId: 'esv-api-key'
       });
 
       const responseText = result.content[0].text;
@@ -277,15 +258,14 @@ describe('getVariable', () => {
     it('should handle 404 Not Found error', async () => {
       server.use(
         http.get('https://*/environment/variables/*', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'not_found', message: 'Variable not found' }),
-            { status: 404 }
-          );
+          return new HttpResponse(JSON.stringify({ error: 'not_found', message: 'Variable not found' }), {
+            status: 404
+          });
         })
       );
 
       const result = await getVariableTool.toolFunction({
-        variableId: 'esv-nonexistent',
+        variableId: 'esv-nonexistent'
       });
 
       const responseText = result.content[0].text;

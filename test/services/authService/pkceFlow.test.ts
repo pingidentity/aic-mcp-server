@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import {
-  setupAuthServiceTest,
-  MOCK_TOKEN_RESPONSE,
-} from '../../helpers/authServiceTestHelper.js';
+import { setupAuthServiceTest, MOCK_TOKEN_RESPONSE } from '../../helpers/authServiceTestHelper.js';
 import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
 // Track mock storage instance
@@ -23,7 +20,7 @@ const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
   FileStorage: MockStorage,
-  KeychainStorage: MockStorage,
+  KeychainStorage: MockStorage
 }));
 
 // Create a persistent mock for 'open' that we can access
@@ -31,14 +28,14 @@ const mockOpen = vi.fn().mockResolvedValue(undefined);
 
 // Mock 'open' to prevent browser launching during tests
 vi.mock('open', () => ({
-  default: mockOpen,
+  default: mockOpen
 }));
 
 // Mock http module for createServer
 const mockServerInstance = {
   listen: vi.fn(),
   close: vi.fn(),
-  on: vi.fn(),
+  on: vi.fn()
 };
 
 let mockRequestHandler: any = null;
@@ -47,7 +44,7 @@ vi.mock('http', () => ({
   createServer: vi.fn((handler) => {
     mockRequestHandler = handler;
     return mockServerInstance;
-  }),
+  })
 }));
 
 // Helper to create mock request/response objects with proper headers
@@ -68,12 +65,14 @@ function createMockRedirect(url: string) {
  * Helper to set up PKCE flow and extract state parameter
  * Reduces boilerplate in tests that need to send custom redirects
  */
-async function setupPkceFlowTest(options: {
-  setupTokenEndpoint?: boolean;
-  scopes?: string[];
-  tokenResponse?: any;
-  customTokenHandler?: (request: Request) => Response | Promise<Response>;
-} = {}) {
+async function setupPkceFlowTest(
+  options: {
+    setupTokenEndpoint?: boolean;
+    scopes?: string[];
+    tokenResponse?: any;
+    customTokenHandler?: (request: Request) => Response | Promise<Response>;
+  } = {}
+) {
   const scopes = options.scopes || ['fr:idm:*'];
 
   vi.resetModules();
@@ -88,9 +87,7 @@ async function setupPkceFlowTest(options: {
       })
     );
   } else if (options.customTokenHandler) {
-    server.use(
-      http.post('https://*/am/oauth2/access_token', ({ request }) => options.customTokenHandler!(request))
-    );
+    server.use(http.post('https://*/am/oauth2/access_token', ({ request }) => options.customTokenHandler!(request)));
   }
 
   // Start authentication flow
@@ -210,7 +207,9 @@ describe('AuthService PKCE Flow', () => {
       const state = url.searchParams.get('state');
 
       // Simulate OAuth redirect with state parameter
-      const { req: mockReq, res: mockRes } = createMockRedirect(`http://localhost:3000?code=test-auth-code&state=${state}`);
+      const { req: mockReq, res: mockRes } = createMockRedirect(
+        `http://localhost:3000?code=test-auth-code&state=${state}`
+      );
       mockRequestHandler(mockReq, mockRes);
 
       await tokenPromise;
@@ -223,9 +222,7 @@ describe('AuthService PKCE Flow', () => {
       expect(codeChallenge).toMatch(/^[A-Za-z0-9_-]+$/);
 
       const crypto = await import('crypto');
-      const expectedChallenge = crypto.createHash('sha256')
-        .update(codeVerifier!)
-        .digest('base64url');
+      const expectedChallenge = crypto.createHash('sha256').update(codeVerifier!).digest('base64url');
       expect(codeChallenge).toBe(expectedChallenge);
     });
 
@@ -256,7 +253,9 @@ describe('AuthService PKCE Flow', () => {
       let url = new URL(authUrl);
       const state1 = url.searchParams.get('state');
 
-      const { req: mockReq1, res: mockRes1 } = createMockRedirect(`http://localhost:3000?code=test-auth-code-1&state=${state1}`);
+      const { req: mockReq1, res: mockRes1 } = createMockRedirect(
+        `http://localhost:3000?code=test-auth-code-1&state=${state1}`
+      );
       mockRequestHandler(mockReq1, mockRes1);
 
       await promise1;
@@ -285,7 +284,9 @@ describe('AuthService PKCE Flow', () => {
       url = new URL(authUrl);
       const state2 = url.searchParams.get('state');
 
-      const { req: mockReq2, res: mockRes2 } = createMockRedirect(`http://localhost:3000?code=test-auth-code-2&state=${state2}`);
+      const { req: mockReq2, res: mockRes2 } = createMockRedirect(
+        `http://localhost:3000?code=test-auth-code-2&state=${state2}`
+      );
       mockRequestHandler(mockReq2, mockRes2);
 
       await promise2;
@@ -413,7 +414,7 @@ describe('AuthService PKCE Flow', () => {
       const customTokenResponse = {
         access_token: 'custom-access-token',
         expires_in: 7200,
-        token_type: 'Bearer',
+        token_type: 'Bearer'
       };
 
       const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
@@ -427,7 +428,7 @@ describe('AuthService PKCE Flow', () => {
       const storage = getStorage();
       expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
-          accessToken: 'custom-access-token',
+          accessToken: 'custom-access-token'
         })
       );
     });
@@ -470,8 +471,8 @@ describe('AuthService PKCE Flow', () => {
       const storage = getStorage();
       expect(storage._mockSetToken()).toHaveBeenCalledWith({
         accessToken: MOCK_TOKEN_RESPONSE.access_token,
-        expiresAt: mockNow + (MOCK_TOKEN_RESPONSE.expires_in * 1000),
-        aicBaseUrl: 'test.forgeblocks.com',
+        expiresAt: mockNow + MOCK_TOKEN_RESPONSE.expires_in * 1000,
+        aicBaseUrl: 'test.forgeblocks.com'
       });
     });
 
@@ -482,7 +483,7 @@ describe('AuthService PKCE Flow', () => {
       const customTokenResponse = {
         access_token: 'test-token',
         expires_in: 7200, // 2 hours
-        token_type: 'Bearer',
+        token_type: 'Bearer'
       };
 
       const { tokenPromise, sendRedirect } = await setupPkceFlowTest({
@@ -496,7 +497,7 @@ describe('AuthService PKCE Flow', () => {
       const storage = getStorage();
       expect(storage._mockSetToken()).toHaveBeenCalledWith(
         expect.objectContaining({
-          expiresAt: mockNow + 7200000, // 2 hours in milliseconds
+          expiresAt: mockNow + 7200000 // 2 hours in milliseconds
         })
       );
     });
@@ -557,33 +558,41 @@ describe('AuthService PKCE Flow', () => {
       {
         name: 'should close server on error (no state parameter)',
         trigger: async (tokenPromise: Promise<any>) => {
-          const mockReq = { url: 'http://localhost:3000?code=test-code', headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' } };
+          const mockReq = {
+            url: 'http://localhost:3000?code=test-code',
+            headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' }
+          };
           const mockRes = { end: vi.fn(), writeHead: vi.fn() };
           mockRequestHandler(mockReq, mockRes);
           await expect(tokenPromise).rejects.toThrow('CSRF protection failed: state parameter missing');
         },
-        expectClose: true,
+        expectClose: true
       },
       {
         name: 'should close server on error (invalid state parameter)',
         needsState: true,
         trigger: async (tokenPromise: Promise<any>) => {
-          const mockReq = { url: 'http://localhost:3000?code=test-code&state=invalid-state', headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' } };
+          const mockReq = {
+            url: 'http://localhost:3000?code=test-code&state=invalid-state',
+            headers: { referer: 'https://test.forgeblocks.com/am/oauth2/authorize' }
+          };
           const mockRes = { end: vi.fn(), writeHead: vi.fn() };
           mockRequestHandler(mockReq, mockRes);
           await expect(tokenPromise).rejects.toThrow('CSRF protection failed: state mismatch');
         },
-        expectClose: true,
+        expectClose: true
       },
       {
         name: 'should close server on error (no code parameter)',
         needsState: true,
         trigger: async (tokenPromise: Promise<any>, _: any, state: string) => {
-          const { req: mockReq, res: mockRes } = createMockRedirect(`http://localhost:3000?error=access_denied&state=${state}`);
+          const { req: mockReq, res: mockRes } = createMockRedirect(
+            `http://localhost:3000?error=access_denied&state=${state}`
+          );
           mockRequestHandler(mockReq, mockRes);
           await expect(tokenPromise).rejects.toThrow('Authorization code not found in redirect.');
         },
-        expectClose: true,
+        expectClose: true
       },
       {
         name: 'should close server on server error',
@@ -592,7 +601,7 @@ describe('AuthService PKCE Flow', () => {
           errorHandler(new Error('Port already in use'));
         },
         expectedMessage: 'Port already in use',
-        expectClose: true,
+        expectClose: true
       },
       {
         name: 'should propagate server errors',
@@ -601,8 +610,8 @@ describe('AuthService PKCE Flow', () => {
           errorHandler(new Error('Server startup failed'));
         },
         expectedMessage: 'Server startup failed',
-        expectClose: false,
-      },
+        expectClose: false
+      }
     ])('$name', async ({ setupErrorHandler, trigger, expectedMessage, expectClose, needsState }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});
@@ -724,7 +733,9 @@ describe('AuthService PKCE Flow', () => {
     it('should reject subdomain attack attempt', async () => {
       const { tokenPromise, sendRedirect } = await setupPkceFlowTest();
 
-      const { mockRes } = sendRedirect({ referer: 'https://evil.test.forgeblocks.com.attacker.com/am/oauth2/authorize' });
+      const { mockRes } = sendRedirect({
+        referer: 'https://evil.test.forgeblocks.com.attacker.com/am/oauth2/authorize'
+      });
 
       await expect(tokenPromise).rejects.toThrow('Origin validation failed: hostname mismatch');
       expect(mockServerInstance.close).toHaveBeenCalled();

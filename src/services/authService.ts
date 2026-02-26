@@ -27,7 +27,7 @@ const CLOCK_SKEW_BUFFER_MS = 60 * 1000; // 60 seconds
  */
 export interface AuthServiceConfig {
   allowCachedOnFirstRequest?: boolean;
-  mcpServer?: any;  // MCP server instance for device code flow elicitation
+  mcpServer?: any; // MCP server instance for device code flow elicitation
 }
 
 /**
@@ -55,9 +55,7 @@ class AuthService {
 
     this.useDeviceCode = inDocker;
 
-    this.storage = inDocker
-      ? new FileStorage('/app/tokens/token.json')
-      : new KeychainStorage();
+    this.storage = inDocker ? new FileStorage('/app/tokens/token.json') : new KeychainStorage();
   }
 
   /**
@@ -67,8 +65,7 @@ class AuthService {
    * @returns Primary access token with all scopes
    */
   private async getPrimaryToken(): Promise<string> {
-    const shouldSkipCache = !this.hasAuthenticatedThisSession
-      && !this.config.allowCachedOnFirstRequest;
+    const shouldSkipCache = !this.hasAuthenticatedThisSession && !this.config.allowCachedOnFirstRequest;
 
     if (!shouldSkipCache) {
       // Try to get token from storage
@@ -79,7 +76,9 @@ class AuthService {
 
           // Check if token is for the current tenant
           if (aicBaseUrl !== AIC_BASE_URL) {
-            console.error(`Cached token is for different tenant (${aicBaseUrl}), current tenant is ${AIC_BASE_URL}. Re-authenticating...`);
+            console.error(
+              `Cached token is for different tenant (${aicBaseUrl}), current tenant is ${AIC_BASE_URL}. Re-authenticating...`
+            );
             // Token is for different tenant, proceed to get new token
           }
           // Check if token is still valid (and for correct tenant)
@@ -120,10 +119,7 @@ class AuthService {
    * @param requestedScopes - Specific scopes needed for this operation
    * @returns Scoped access token
    */
-  private async exchangeToken(
-    primaryToken: string,
-    requestedScopes: string[]
-  ): Promise<string> {
+  private async exchangeToken(primaryToken: string, requestedScopes: string[]): Promise<string> {
     const params = new URLSearchParams();
     params.append('grant_type', 'urn:ietf:params:oauth:grant-type:token-exchange');
     params.append('subject_token', primaryToken);
@@ -135,9 +131,9 @@ class AuthService {
     const response = await fetch(TOKEN_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: params,
+      body: params
     });
 
     if (!response.ok) {
@@ -217,8 +213,12 @@ class AuthService {
         redirectUri: REDIRECT_URI,
         redirectPort: REDIRECT_URI_PORT,
         aicBaseUrl: AIC_BASE_URL!,
-        onServerCreated: (server) => { this.redirectServer = server; },
-        onServerClosed: () => { this.redirectServer = null; },
+        onServerCreated: (server) => {
+          this.redirectServer = server;
+        },
+        onServerClosed: () => {
+          this.redirectServer = null;
+        }
       });
 
       const expiresAt = Date.now() + expiresIn * 1000;
@@ -227,7 +227,7 @@ class AuthService {
         const tokenData: TokenData = {
           accessToken,
           expiresAt,
-          aicBaseUrl: AIC_BASE_URL!,
+          aicBaseUrl: AIC_BASE_URL!
         };
         await this.storage.setToken(tokenData);
       } catch (error) {
@@ -253,9 +253,13 @@ class AuthService {
     }
 
     const verifierState = {
-      set: (value: string) => { this.deviceCodeVerifier = value; },
+      set: (value: string) => {
+        this.deviceCodeVerifier = value;
+      },
       get: () => this.deviceCodeVerifier,
-      clear: () => { this.deviceCodeVerifier = undefined; },
+      clear: () => {
+        this.deviceCodeVerifier = undefined;
+      }
     };
 
     const tokenData = await runDeviceFlow({
@@ -265,7 +269,7 @@ class AuthService {
       tokenUrl: TOKEN_URL,
       storage: this.storage,
       mcpServer: this.mcpServer,
-      verifierState,
+      verifierState
     });
 
     this.hasAuthenticatedThisSession = true;
@@ -296,10 +300,7 @@ let instance: AuthService;
  * @param allScopes - All OAuth scopes needed by the application
  * @param config - Optional configuration for AuthService behavior
  */
-export function initAuthService(
-  allScopes: string[],
-  config: AuthServiceConfig = {}
-): void {
+export function initAuthService(allScopes: string[], config: AuthServiceConfig = {}): void {
   instance = new AuthService(allScopes, config);
 }
 

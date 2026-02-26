@@ -17,18 +17,29 @@ export const queryESVsTool = {
   },
   inputSchema: {
     type: z.enum(['variable', 'secret']).describe('Type of ESV to query'),
-    queryTerm: z.string().max(100).optional().describe(
-      'Search term to filter by ID. If omitted, returns all ESVs up to pageSize'
-    ),
-    pageSize: z.number().int().min(1).max(100).optional().describe(
-      'Number of results to return per page (default: 50)'
-    ),
-    pagedResultsCookie: z.string().optional().describe(
-      'Pagination cookie from previous response to retrieve next page'
-    ),
-    sortKeys: z.string().max(200).optional().describe(
-      'Comma-separated field names to sort by. Prefix with "-" for descending. Example: "_id,-lastChangeDate"'
-    ),
+    queryTerm: z
+      .string()
+      .max(100)
+      .optional()
+      .describe('Search term to filter by ID. If omitted, returns all ESVs up to pageSize'),
+    pageSize: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe('Number of results to return per page (default: 50)'),
+    pagedResultsCookie: z
+      .string()
+      .optional()
+      .describe('Pagination cookie from previous response to retrieve next page'),
+    sortKeys: z
+      .string()
+      .max(200)
+      .optional()
+      .describe(
+        'Comma-separated field names to sort by. Prefix with "-" for descending. Example: "_id,-lastChangeDate"'
+      )
   },
   async toolFunction({
     type,
@@ -68,15 +79,11 @@ export const queryESVsTool = {
         url.searchParams.append('_sortKeys', sortKeys);
       }
 
-      const { data, response } = await makeAuthenticatedRequest(
-        url.toString(),
-        SCOPES,
-        {
-          headers: {
-            'accept-api-version': 'resource=2.0'
-          }
+      const { data, response } = await makeAuthenticatedRequest(url.toString(), SCOPES, {
+        headers: {
+          'accept-api-version': 'resource=2.0'
         }
-      );
+      });
 
       return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {

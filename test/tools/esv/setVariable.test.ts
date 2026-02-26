@@ -19,7 +19,7 @@ describe('setVariable', () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-api-key',
         value: 'secret',
-        type: 'string',
+        type: 'string'
       });
 
       expect(getSpy()).toHaveBeenCalledWith(
@@ -28,8 +28,8 @@ describe('setVariable', () => {
         expect.objectContaining({
           method: 'PUT',
           headers: expect.objectContaining({
-            'accept-api-version': 'resource=2.0',
-          }),
+            'accept-api-version': 'resource=2.0'
+          })
         })
       );
     });
@@ -44,12 +44,12 @@ describe('setVariable', () => {
       { type: 'object', value: { key: 'value' }, expected: '{"key":"value"}' },
       { type: 'bool', value: true, expected: 'true' },
       { type: 'int', value: 42, expected: '42' },
-      { type: 'number', value: 3.14, expected: '3.14' },
+      { type: 'number', value: 3.14, expected: '3.14' }
     ])('should encode $type correctly', async ({ type, value, expected }) => {
       await setVariableTool.toolFunction({
         variableId: 'esv-test',
         value: value as any,
-        type: type as any,
+        type: type as any
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -64,7 +64,7 @@ describe('setVariable', () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-test',
         value: 'x',
-        type: 'string',
+        type: 'string'
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -76,7 +76,7 @@ describe('setVariable', () => {
         variableId: 'esv-test',
         value: 'x',
         type: 'string',
-        description: 'Test var',
+        description: 'Test var'
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -87,7 +87,7 @@ describe('setVariable', () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-test',
         value: 'x',
-        type: 'string',
+        type: 'string'
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -98,7 +98,7 @@ describe('setVariable', () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-test',
         value: 'x',
-        type: 'string',
+        type: 'string'
       });
 
       const requestBody = JSON.parse(getSpy().mock.calls[0][2].body);
@@ -113,13 +113,10 @@ describe('setVariable', () => {
         http.put('https://*/environment/variables/*', ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
           return HttpResponse.json({
-            _id: 'esv-api-key',
+            _id: 'esv-api-key'
           });
         })
       );
@@ -127,7 +124,7 @@ describe('setVariable', () => {
       const result = await setVariableTool.toolFunction({
         variableId: 'esv-api-key',
         value: 'secret',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;
@@ -174,7 +171,7 @@ describe('setVariable', () => {
       const result = await setVariableTool.toolFunction({
         variableId: 'invalid-id',
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;
@@ -188,7 +185,7 @@ describe('setVariable', () => {
       const result = await setVariableTool.toolFunction({
         variableId: 'no-prefix',
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;
@@ -201,7 +198,7 @@ describe('setVariable', () => {
       const result = await setVariableTool.toolFunction({
         variableId: 'esv-UPPERCASE',
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;
@@ -214,7 +211,7 @@ describe('setVariable', () => {
       const result = await setVariableTool.toolFunction({
         variableId: 'esv-test@#$',
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;
@@ -226,7 +223,7 @@ describe('setVariable', () => {
       const result = await setVariableTool.toolFunction({
         variableId: 'esv-' + 'a'.repeat(121),
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;
@@ -239,7 +236,7 @@ describe('setVariable', () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-a',
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       expect(getSpy()).toHaveBeenCalled();
@@ -249,7 +246,7 @@ describe('setVariable', () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-' + 'a'.repeat(120),
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       expect(getSpy()).toHaveBeenCalled();
@@ -259,7 +256,7 @@ describe('setVariable', () => {
       await setVariableTool.toolFunction({
         variableId: 'esv-test_var-123',
         value: 'test',
-        type: 'string',
+        type: 'string'
       });
 
       expect(getSpy()).toHaveBeenCalled();
@@ -273,17 +270,16 @@ describe('setVariable', () => {
     it('should handle 401 Unauthorized error', async () => {
       server.use(
         http.put('https://*/environment/variables/*', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify({ error: 'unauthorized', message: 'Invalid credentials' }), {
+            status: 401
+          });
         })
       );
 
       const result = await setVariableTool.toolFunction({
         variableId: 'esv-test',
         value: 'x',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;
@@ -294,17 +290,14 @@ describe('setVariable', () => {
     it('should handle 400 Bad Request error', async () => {
       server.use(
         http.put('https://*/environment/variables/*', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'bad_request', message: 'Type mismatch' }),
-            { status: 400 }
-          );
+          return new HttpResponse(JSON.stringify({ error: 'bad_request', message: 'Type mismatch' }), { status: 400 });
         })
       );
 
       const result = await setVariableTool.toolFunction({
         variableId: 'esv-test',
         value: 'x',
-        type: 'string',
+        type: 'string'
       });
 
       const responseText = result.content[0].text;

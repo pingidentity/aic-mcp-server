@@ -19,53 +19,53 @@ describe('queryLogs', () => {
       {
         name: 'should encode sources as comma-separated',
         input: { sources: ['am-authentication', 'idm-activity'] },
-        expected: 'source=am-authentication%2Cidm-activity',
+        expected: 'source=am-authentication%2Cidm-activity'
       },
       {
         name: 'should handle single source',
         input: { sources: ['am-authentication'] },
-        expected: 'source=am-authentication',
+        expected: 'source=am-authentication'
       },
       {
         name: 'should encode beginTime parameter',
         input: { sources: ['am-authentication'], beginTime: '2025-01-11T10:00:00Z' },
-        expected: 'beginTime=2025-01-11T10%3A00%3A00Z',
+        expected: 'beginTime=2025-01-11T10%3A00%3A00Z'
       },
       {
         name: 'should encode endTime parameter',
         input: { sources: ['am-authentication'], endTime: '2025-01-11T11:00:00Z' },
-        expected: 'endTime=2025-01-11T11%3A00%3A00Z',
+        expected: 'endTime=2025-01-11T11%3A00%3A00Z'
       },
       {
         name: 'should add transactionId parameter',
         input: { sources: ['am-authentication'], transactionId: 'txn-12345' },
-        expected: 'transactionId=txn-12345',
+        expected: 'transactionId=txn-12345'
       },
       {
         name: 'should encode queryFilter parameter',
         input: { sources: ['am-authentication'], queryFilter: '/payload/level eq "ERROR"' },
-        expected: '_queryFilter=%2Fpayload%2Flevel+eq+%22ERROR%22',
+        expected: '_queryFilter=%2Fpayload%2Flevel+eq+%22ERROR%22'
       },
       {
         name: 'should add pagedResultsCookie parameter',
         input: { sources: ['am-authentication'], pagedResultsCookie: 'cookie-xyz' },
-        expected: '_pagedResultsCookie=cookie-xyz',
+        expected: '_pagedResultsCookie=cookie-xyz'
       },
       {
         name: 'should use provided pageSize',
         input: { sources: ['am-authentication'], pageSize: 50 },
-        expected: '_pageSize=50',
+        expected: '_pageSize=50'
       },
       {
         name: 'should default pageSize to 100',
         input: { sources: ['am-authentication'] },
-        expected: '_pageSize=100',
+        expected: '_pageSize=100'
       },
       {
         name: 'should clamp pageSize to maximum 1000',
         input: { sources: ['am-authentication'], pageSize: 1500 },
-        expected: '_pageSize=1000',
-      },
+        expected: '_pageSize=1000'
+      }
     ])('$name', async ({ input, expected }) => {
       await queryLogsTool.toolFunction(input as any);
 
@@ -80,10 +80,7 @@ describe('queryLogs', () => {
 
       const options = getSpy().mock.calls[0][2];
       expect(options?.method).toBeUndefined(); // No method specified means GET
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idc:monitoring:*']
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.any(String), ['fr:idc:monitoring:*']);
     });
   });
 
@@ -151,11 +148,7 @@ describe('queryLogs', () => {
     });
 
     it('should accept sources array with multiple elements', () => {
-      const result = queryLogsTool.inputSchema.sources.parse([
-        'am-authentication',
-        'idm-activity',
-        'am-everything'
-      ]);
+      const result = queryLogsTool.inputSchema.sources.parse(['am-authentication', 'idm-activity', 'am-everything']);
       expect(result).toHaveLength(3);
     });
 
@@ -196,18 +189,18 @@ describe('queryLogs', () => {
       {
         name: 'should handle 401 Unauthorized error',
         status: 401,
-        body: { error: 'unauthorized', message: 'Invalid credentials' },
+        body: { error: 'unauthorized', message: 'Invalid credentials' }
       },
       {
         name: 'should handle 400 Bad Request error',
         status: 400,
-        body: { error: 'bad_request', message: 'Invalid query filter syntax' },
+        body: { error: 'bad_request', message: 'Invalid query filter syntax' }
       },
       {
         name: 'should handle 500 Internal Server Error',
         status: 500,
-        body: { error: 'internal_error', message: 'Server error' },
-      },
+        body: { error: 'internal_error', message: 'Server error' }
+      }
     ])('$name', async ({ status, body }) => {
       server.use(
         http.get('https://*/monitoring/logs', () => {

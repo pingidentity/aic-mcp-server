@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
     env: {
-      AIC_BASE_URL: 'test.forgeblocks.com',
+      AIC_BASE_URL: 'test.forgeblocks.com'
     },
     coverage: {
       provider: 'v8',
@@ -14,9 +14,9 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.d.ts',
-        'src/**/index.ts',       // Re-export files
-      ],
+        'src/**/index.ts' // Re-export files
+      ]
       // No thresholds initially - we'll add them as we build coverage
-    },
-  },
+    }
+  }
 });

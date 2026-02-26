@@ -16,15 +16,15 @@ describe('deleteJourneyNodes', () => {
     it('should execute deletes for all nodes', async () => {
       getSpy().mockResolvedValue({
         data: null,
-        response: new Response(null, { status: 204 }),
+        response: new Response(null, { status: 204 })
       });
 
       const result = await deleteJourneyNodesTool.toolFunction({
         realm: 'alpha',
         nodes: [
           { nodeType: 'TypeA', nodeId: 'node-1' },
-          { nodeType: 'TypeB', nodeId: 'node-2' },
-        ],
+          { nodeType: 'TypeB', nodeId: 'node-2' }
+        ]
       });
 
       expect(getSpy()).toHaveBeenCalledTimes(2);
@@ -37,15 +37,15 @@ describe('deleteJourneyNodes', () => {
         .mockRejectedValueOnce(new Error('400 Bad Request'))
         .mockResolvedValueOnce({
           data: null,
-          response: new Response(null, { status: 204 }),
+          response: new Response(null, { status: 204 })
         });
 
       const result = await deleteJourneyNodesTool.toolFunction({
         realm: 'alpha',
         nodes: [
           { nodeType: 'TypeA', nodeId: 'fail-me' },
-          { nodeType: 'TypeB', nodeId: 'succeed' },
-        ],
+          { nodeType: 'TypeB', nodeId: 'succeed' }
+        ]
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -57,11 +57,11 @@ describe('deleteJourneyNodes', () => {
         .mockRejectedValueOnce(new Error('400 Bad Request'))
         .mockResolvedValueOnce({
           data: null,
-          response: new Response(null, { status: 204 }),
+          response: new Response(null, { status: 204 })
         })
         .mockResolvedValueOnce({
           data: null,
-          response: new Response(null, { status: 204 }),
+          response: new Response(null, { status: 204 })
         });
 
       const result = await deleteJourneyNodesTool.toolFunction({
@@ -69,8 +69,8 @@ describe('deleteJourneyNodes', () => {
         nodes: [
           { nodeType: 'TypeA', nodeId: 'fail-me' },
           { nodeType: 'TypeB', nodeId: 'succeed-1' },
-          { nodeType: 'TypeC', nodeId: 'succeed-2' },
-        ],
+          { nodeType: 'TypeC', nodeId: 'succeed-2' }
+        ]
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -83,9 +83,7 @@ describe('deleteJourneyNodes', () => {
 
       const result = await deleteJourneyNodesTool.toolFunction({
         realm: 'alpha',
-        nodes: [
-          { nodeType: 'TypeA', nodeId: 'node-1' },
-        ],
+        nodes: [{ nodeType: 'TypeA', nodeId: 'node-1' }]
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -96,7 +94,7 @@ describe('deleteJourneyNodes', () => {
     it('should return results for all nodes', async () => {
       getSpy().mockResolvedValue({
         data: null,
-        response: new Response(null, { status: 204 }),
+        response: new Response(null, { status: 204 })
       });
 
       const result = await deleteJourneyNodesTool.toolFunction({
@@ -104,8 +102,8 @@ describe('deleteJourneyNodes', () => {
         nodes: [
           { nodeType: 'TypeA', nodeId: 'node-1' },
           { nodeType: 'TypeB', nodeId: 'node-2' },
-          { nodeType: 'TypeC', nodeId: 'node-3' },
-        ],
+          { nodeType: 'TypeC', nodeId: 'node-3' }
+        ]
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -119,14 +117,12 @@ describe('deleteJourneyNodes', () => {
     it('should build correct URLs for each node', async () => {
       getSpy().mockResolvedValue({
         data: null,
-        response: new Response(null, { status: 204 }),
+        response: new Response(null, { status: 204 })
       });
 
       await deleteJourneyNodesTool.toolFunction({
         realm: 'alpha',
-        nodes: [
-          { nodeType: 'UsernameCollectorNode', nodeId: 'node-1' },
-        ],
+        nodes: [{ nodeType: 'UsernameCollectorNode', nodeId: 'node-1' }]
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -137,14 +133,12 @@ describe('deleteJourneyNodes', () => {
     it('should use DELETE method for each node', async () => {
       getSpy().mockResolvedValue({
         data: null,
-        response: new Response(null, { status: 204 }),
+        response: new Response(null, { status: 204 })
       });
 
       await deleteJourneyNodesTool.toolFunction({
         realm: 'alpha',
-        nodes: [
-          { nodeType: 'TypeA', nodeId: 'node-1' },
-        ],
+        nodes: [{ nodeType: 'TypeA', nodeId: 'node-1' }]
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -154,14 +148,12 @@ describe('deleteJourneyNodes', () => {
     it('should include AM_API_HEADERS', async () => {
       getSpy().mockResolvedValue({
         data: null,
-        response: new Response(null, { status: 204 }),
+        response: new Response(null, { status: 204 })
       });
 
       await deleteJourneyNodesTool.toolFunction({
         realm: 'alpha',
-        nodes: [
-          { nodeType: 'TypeA', nodeId: 'node-1' },
-        ],
+        nodes: [{ nodeType: 'TypeA', nodeId: 'node-1' }]
       });
 
       const options = getSpy().mock.calls[0][2];
@@ -174,14 +166,12 @@ describe('deleteJourneyNodes', () => {
     it('should format response with results array', async () => {
       getSpy().mockResolvedValue({
         data: null,
-        response: new Response(null, { status: 204 }),
+        response: new Response(null, { status: 204 })
       });
 
       const result = await deleteJourneyNodesTool.toolFunction({
         realm: 'alpha',
-        nodes: [
-          { nodeType: 'TypeA', nodeId: 'node-1' },
-        ],
+        nodes: [{ nodeType: 'TypeA', nodeId: 'node-1' }]
       });
 
       const parsed = JSON.parse(result.content[0].text);
@@ -209,7 +199,7 @@ describe('deleteJourneyNodes', () => {
       getSpy()
         .mockResolvedValueOnce({
           data: null,
-          response: new Response(null, { status: 204 }),
+          response: new Response(null, { status: 204 })
         })
         .mockRejectedValueOnce(new Error('500 Internal Server Error'));
 
@@ -217,8 +207,8 @@ describe('deleteJourneyNodes', () => {
         realm: 'alpha',
         nodes: [
           { nodeType: 'TypeA', nodeId: 'node-ok' },
-          { nodeType: 'TypeB', nodeId: 'node-fail' },
-        ],
+          { nodeType: 'TypeB', nodeId: 'node-fail' }
+        ]
       });
 
       const parsed = JSON.parse(result.content[0].text);

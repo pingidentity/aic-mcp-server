@@ -12,17 +12,20 @@ const SCOPES = ['fr:idm:*'];
 export const getManagedObjectTool = {
   name: 'getManagedObject',
   title: 'Get Managed Object',
-  description: 'Retrieve a managed object\'s complete profile by ID in PingOne AIC',
+  description: "Retrieve a managed object's complete profile by ID in PingOne AIC",
   scopes: SCOPES,
   annotations: {
     readOnlyHint: true,
     openWorldHint: true
   },
   inputSchema: {
-    objectType: z.string().min(1).describe(
-      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
-    ),
-    objectId: safePathSegmentSchema.describe('The object\'s unique identifier (_id)'),
+    objectType: z
+      .string()
+      .min(1)
+      .describe(
+        `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+      ),
+    objectId: safePathSegmentSchema.describe("The object's unique identifier (_id)")
   },
   async toolFunction({ objectType, objectId }: { objectType: string; objectId: string }) {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${objectId}`;

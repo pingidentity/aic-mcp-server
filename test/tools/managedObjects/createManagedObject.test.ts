@@ -20,7 +20,7 @@ describe('createManagedObject', () => {
         name: 'constructs URL with objectType and action',
         input: { objectType: 'alpha_user', objectData: { userName: 'test' } },
         assert: ({ url }: any) =>
-          expect(url).toBe('https://test.forgeblocks.com/openidm/managed/alpha_user?_action=create'),
+          expect(url).toBe('https://test.forgeblocks.com/openidm/managed/alpha_user?_action=create')
       },
       {
         name: 'sends objectData in request body',
@@ -28,13 +28,13 @@ describe('createManagedObject', () => {
         assert: ({ options }: any) => {
           const requestBody = JSON.parse(options.body);
           expect(requestBody).toEqual({ userName: 'test', mail: 'test@example.com' });
-        },
+        }
       },
       {
         name: 'passes correct scopes to auth',
         input: { objectType: 'alpha_user', objectData: { userName: 'test' } },
-        assert: ({ scopes }: any) => expect(scopes).toEqual(['fr:idm:*']),
-      },
+        assert: ({ scopes }: any) => expect(scopes).toEqual(['fr:idm:*'])
+      }
     ];
 
     it.each(requestCases)('$name', async ({ input, assert }) => {
@@ -52,10 +52,7 @@ describe('createManagedObject', () => {
         http.post('https://*/openidm/managed/:objectType', async ({ request }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
 
           return HttpResponse.json({
@@ -64,14 +61,14 @@ describe('createManagedObject', () => {
             userName: 'test',
             mail: 'test@example.com',
             givenName: 'Test',
-            sn: 'User',
+            sn: 'User'
           });
         })
       );
 
       const result = await createManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectData: { userName: 'test' },
+        objectData: { userName: 'test' }
       });
 
       expect(result.content[0].text).toContain('new-id-123');
@@ -82,7 +79,7 @@ describe('createManagedObject', () => {
     it('should format successful response', async () => {
       const result = await createManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectData: { userName: 'test' },
+        objectData: { userName: 'test' }
       });
 
       expect(result.content[0].type).toBe('text');
@@ -127,20 +124,20 @@ describe('createManagedObject', () => {
         name: 'handles 401 Unauthorized error',
         status: 401,
         body: { error: 'unauthorized', message: 'Invalid token' },
-        matcher: /401|[Uu]nauthorized/,
+        matcher: /401|[Uu]nauthorized/
       },
       {
         name: 'handles 400 Bad Request error',
         status: 400,
         body: { error: 'bad_request', message: 'Missing required field: userName' },
-        matcher: /400|[Bb]ad [Rr]equest|Missing required field/,
+        matcher: /400|[Bb]ad [Rr]equest|Missing required field/
       },
       {
         name: 'handles 409 Conflict error',
         status: 409,
         body: { error: 'conflict', message: 'Object with userName "existing" already exists' },
-        matcher: /409|[Cc]onflict/,
-      },
+        matcher: /409|[Cc]onflict/
+      }
     ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.post('https://*/openidm/managed/:objectType', () => {
@@ -150,7 +147,7 @@ describe('createManagedObject', () => {
 
       const result = await createManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectData: { userName: 'test' },
+        objectData: { userName: 'test' }
       });
 
       expect(result.content[0].text).toContain('Failed to create managed object');

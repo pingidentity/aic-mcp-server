@@ -18,9 +18,12 @@ export const getManagedObjectSchemaTool = {
     openWorldHint: true
   },
   inputSchema: {
-    objectType: z.string().min(1).describe(
-      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
-    ),
+    objectType: z
+      .string()
+      .min(1)
+      .describe(
+        `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+      )
   },
   async toolFunction({ objectType }: { objectType: string }) {
     const url = `https://${aicBaseUrl}/openidm/config/managed`;

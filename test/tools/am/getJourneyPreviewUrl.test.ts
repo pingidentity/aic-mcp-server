@@ -26,7 +26,7 @@ describe('getJourneyPreviewUrl', () => {
     it('should generate URL for specific journey', async () => {
       const result = await getJourneyPreviewUrlTool.toolFunction({
         realm: 'alpha',
-        journeyName: 'Login',
+        journeyName: 'Login'
       });
       const parsed = JSON.parse(result.content[0].text);
 
@@ -40,7 +40,7 @@ describe('getJourneyPreviewUrl', () => {
     it('should URL-encode journey names with special characters', async () => {
       const result = await getJourneyPreviewUrlTool.toolFunction({
         realm: 'bravo',
-        journeyName: 'Copy of Login',
+        journeyName: 'Copy of Login'
       });
       const parsed = JSON.parse(result.content[0].text);
 

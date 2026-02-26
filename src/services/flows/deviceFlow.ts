@@ -45,13 +45,13 @@ async function requestDeviceCode(params: {
     client_id: params.clientId,
     scope: params.scopes.join(' '),
     code_challenge: challenge,
-    code_challenge_method: 'S256',
+    code_challenge_method: 'S256'
   });
 
   const response = await fetch(params.deviceCodeUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
+    body
   });
 
   if (!response.ok) {
@@ -82,13 +82,13 @@ async function pollForToken(params: {
       grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
       device_code: params.deviceCode,
       client_id: params.clientId,
-      code_verifier: params.verifierState.get()!,
+      code_verifier: params.verifierState.get()!
     });
 
     const response = await fetch(params.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
+      body
     });
 
     if (response.ok) {
@@ -115,7 +115,7 @@ export async function executeDeviceFlow(params: DeviceFlowParams): Promise<Devic
       scopes: params.scopes,
       clientId: params.clientId,
       deviceCodeUrl,
-      verifierState: params.verifierState,
+      verifierState: params.verifierState
     });
 
     const { randomUUID } = await import('crypto');
@@ -129,9 +129,9 @@ export async function executeDeviceFlow(params: DeviceFlowParams): Promise<Devic
       requestedSchema: {
         type: 'object',
         properties: {},
-        required: [],
+        required: []
       },
-      elicitationId,
+      elicitationId
     });
 
     if (elicitationResult.action !== 'accept') {
@@ -148,7 +148,7 @@ export async function executeDeviceFlow(params: DeviceFlowParams): Promise<Devic
         expiresIn: deviceData.expires_in,
         tokenUrl: params.tokenUrl,
         clientId: params.clientId,
-        verifierState: params.verifierState,
+        verifierState: params.verifierState
       });
       console.error('Polling completed successfully');
     } catch (pollError: unknown) {
@@ -156,14 +156,14 @@ export async function executeDeviceFlow(params: DeviceFlowParams): Promise<Devic
       console.error('Polling failed:', errorMessage);
       throw new Error(
         `Polling failed after user confirmed authentication. Error: ${errorMessage}. ` +
-        `This suggests the user may not have completed authentication at PingOne AIC before confirming.`
+          `This suggests the user may not have completed authentication at PingOne AIC before confirming.`
       );
     }
 
     const tokenToStore: TokenData = {
       accessToken: tokenData.access_token,
       expiresAt: Date.now() + tokenData.expires_in * 1000,
-      aicBaseUrl: params.aicBaseUrl,
+      aicBaseUrl: params.aicBaseUrl
     };
 
     await params.storage.setToken(tokenToStore);
@@ -171,7 +171,7 @@ export async function executeDeviceFlow(params: DeviceFlowParams): Promise<Devic
     try {
       await params.mcpServer.server.notification({
         method: 'notifications/elicitation/complete',
-        params: { elicitationId },
+        params: { elicitationId }
       });
     } catch (error) {
       console.error('Failed to send elicitation completion notification:', error);

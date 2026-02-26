@@ -7,23 +7,25 @@ import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 vi.mock('keytar', () => ({
   default: {
     setPassword: vi.fn().mockResolvedValue(undefined),
-    getPassword: vi.fn().mockResolvedValue(JSON.stringify({
-      accessToken: 'mock-token',
-      expiresAt: Date.now() + 3600000, // Expires in 1 hour
-      aicBaseUrl: 'test.forgeblocks.com',
-    })),
-    deletePassword: vi.fn().mockResolvedValue(true),
-  },
+    getPassword: vi.fn().mockResolvedValue(
+      JSON.stringify({
+        accessToken: 'mock-token',
+        expiresAt: Date.now() + 3600000, // Expires in 1 hour
+        aicBaseUrl: 'test.forgeblocks.com'
+      })
+    ),
+    deletePassword: vi.fn().mockResolvedValue(true)
+  }
 }));
 
 // Mock 'open' package (browser launching)
 vi.mock('open', () => ({
-  default: vi.fn().mockResolvedValue(undefined),
+  default: vi.fn().mockResolvedValue(undefined)
 }));
 
 // Mock debug module (used internally by some packages)
 vi.mock('debug', () => ({
-  default: () => vi.fn(),
+  default: () => vi.fn()
 }));
 
 // ===== NOW SAFE TO IMPORT MODULES =====

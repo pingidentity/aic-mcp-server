@@ -7,7 +7,7 @@ const { mockReadFile, mockWriteFile, mockMkdir, mockChmod, mockUnlink } = vi.hoi
   mockWriteFile: vi.fn(),
   mockMkdir: vi.fn(),
   mockChmod: vi.fn(),
-  mockUnlink: vi.fn(),
+  mockUnlink: vi.fn()
 }));
 
 // Mock node:fs/promises BEFORE other imports
@@ -16,11 +16,10 @@ vi.mock('node:fs/promises', () => ({
   writeFile: mockWriteFile,
   mkdir: mockMkdir,
   chmod: mockChmod,
-  unlink: mockUnlink,
+  unlink: mockUnlink
 }));
 
 import { createTestTokenData } from '../../helpers/authServiceTestHelper.js';
-
 
 describe('FileStorage', () => {
   const DEFAULT_FILE_PATH = '/app/tokens/token.json';
@@ -55,14 +54,10 @@ describe('FileStorage', () => {
 
       await storage.setToken(tokenData);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        DEFAULT_FILE_PATH,
-        expect.stringContaining('"accessToken"'),
-        {
-          encoding: 'utf-8',
-          mode: 0o600
-        }
-      );
+      expect(mockWriteFile).toHaveBeenCalledWith(DEFAULT_FILE_PATH, expect.stringContaining('"accessToken"'), {
+        encoding: 'utf-8',
+        mode: 0o600
+      });
 
       // Verify pretty formatting (should contain newlines and 2-space indentation)
       const writtenContent = mockWriteFile.mock.calls[0][1] as string;
@@ -84,14 +79,10 @@ describe('FileStorage', () => {
 
       await storage.setToken(tokenData);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        DEFAULT_FILE_PATH,
-        expect.any(String),
-        {
-          encoding: 'utf-8',
-          mode: 0o600
-        }
-      );
+      expect(mockWriteFile).toHaveBeenCalledWith(DEFAULT_FILE_PATH, expect.any(String), {
+        encoding: 'utf-8',
+        mode: 0o600
+      });
     });
 
     it('should deserialize JSON from file', async () => {
@@ -112,7 +103,7 @@ describe('FileStorage', () => {
       const tokenData = createTestTokenData({
         accessToken: 'test-token-12345',
         expiresAt: 1234567890,
-        aicBaseUrl: 'example.forgeblocks.com',
+        aicBaseUrl: 'example.forgeblocks.com'
       });
 
       const fileContent = JSON.stringify(tokenData, null, 2);
@@ -123,7 +114,7 @@ describe('FileStorage', () => {
       expect(retrieved).toEqual({
         accessToken: 'test-token-12345',
         expiresAt: 1234567890,
-        aicBaseUrl: 'example.forgeblocks.com',
+        aicBaseUrl: 'example.forgeblocks.com'
       });
     });
   });
@@ -221,10 +212,7 @@ describe('FileStorage', () => {
 
       await storage.getToken();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error reading token from file:',
-        expect.any(Error)
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error reading token from file:', expect.any(Error));
     });
 
     it('should handle ENOENT as success in deleteToken (already deleted)', async () => {
@@ -246,10 +234,7 @@ describe('FileStorage', () => {
       mockUnlink.mockRejectedValue(permissionError);
 
       await expect(storage.deleteToken()).rejects.toThrow();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error deleting token file:',
-        expect.any(Error)
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error deleting token file:', expect.any(Error));
     });
   });
 
@@ -275,7 +260,7 @@ describe('FileStorage', () => {
     it('should write UTF-8 encoded file', async () => {
       const storage = new FileStorage(DEFAULT_FILE_PATH);
       const tokenData = createTestTokenData({
-        accessToken: 'token-with-unicode-©-symbol',
+        accessToken: 'token-with-unicode-©-symbol'
       });
 
       mockMkdir.mockResolvedValue(undefined);
@@ -306,14 +291,10 @@ describe('FileStorage', () => {
 
       await storage.setToken(tokenData);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        '/app/tokens/token.json',
-        expect.any(String),
-        {
-          encoding: 'utf-8',
-          mode: 0o600
-        }
-      );
+      expect(mockWriteFile).toHaveBeenCalledWith('/app/tokens/token.json', expect.any(String), {
+        encoding: 'utf-8',
+        mode: 0o600
+      });
     });
 
     it('should accept custom file path', async () => {
@@ -326,14 +307,10 @@ describe('FileStorage', () => {
 
       await storage.setToken(tokenData);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        CUSTOM_FILE_PATH,
-        expect.any(String),
-        {
-          encoding: 'utf-8',
-          mode: 0o600
-        }
-      );
+      expect(mockWriteFile).toHaveBeenCalledWith(CUSTOM_FILE_PATH, expect.any(String), {
+        encoding: 'utf-8',
+        mode: 0o600
+      });
     });
   });
 });

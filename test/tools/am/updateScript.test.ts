@@ -19,7 +19,7 @@ describe('updateScript', () => {
     it('should reject when no update fields provided', async () => {
       const result = await updateScriptTool.toolFunction({
         realm: 'alpha',
-        scriptId: 'script-123',
+        scriptId: 'script-123'
       });
 
       expect(result.content[0].text).toContain('No updates provided');
@@ -39,7 +39,7 @@ describe('updateScript', () => {
       await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'UpdatedName',
+        name: 'UpdatedName'
       });
 
       const calls = getSpy().mock.calls;
@@ -57,7 +57,7 @@ describe('updateScript', () => {
             description: 'Original desc',
             script: Buffer.from('original code').toString('base64'),
             language: 'JAVASCRIPT',
-            context: 'AUTHENTICATION_TREE_DECISION_NODE',
+            context: 'AUTHENTICATION_TREE_DECISION_NODE'
           });
         }),
         http.put('https://*/am/json/*/scripts/*', () => {
@@ -68,7 +68,7 @@ describe('updateScript', () => {
       await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[1][2].body);
@@ -92,7 +92,7 @@ describe('updateScript', () => {
       await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        script: newScriptContent,
+        script: newScriptContent
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[1][2].body);
@@ -109,7 +109,7 @@ describe('updateScript', () => {
             _id: 'script-123',
             name: 'OriginalName',
             script: existingBase64,
-            language: 'JAVASCRIPT',
+            language: 'JAVASCRIPT'
           });
         }),
         http.put('https://*/am/json/*/scripts/*', () => {
@@ -120,7 +120,7 @@ describe('updateScript', () => {
       await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       const putBody = JSON.parse(getSpy().mock.calls[1][2].body);
@@ -143,7 +143,7 @@ describe('updateScript', () => {
       await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       const url = getSpy().mock.calls[0][0];
@@ -163,7 +163,7 @@ describe('updateScript', () => {
       await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       const putOptions = getSpy().mock.calls[1][2];
@@ -183,7 +183,7 @@ describe('updateScript', () => {
       await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       expect(getSpy().mock.calls[0][1]).toEqual(['fr:am:*']);
@@ -206,7 +206,7 @@ describe('updateScript', () => {
       const result = await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'UpdatedScript',
+        name: 'UpdatedScript'
       });
 
       expect(result.content[0].text).toContain('updated successfully');
@@ -245,7 +245,7 @@ describe('updateScript', () => {
       const result = await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       expect(result.content[0].text).toContain('Failed to update script');
@@ -264,7 +264,7 @@ describe('updateScript', () => {
       const result = await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       expect(result.content[0].text).toContain('Failed to update script');
@@ -280,7 +280,7 @@ describe('updateScript', () => {
       const result = await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'nonexistent',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       expect(result.content[0].text).toContain('Failed to update script');
@@ -296,7 +296,7 @@ describe('updateScript', () => {
       const result = await updateScriptTool.toolFunction({
         realm: 'alpha',
         scriptId: 'script-123',
-        name: 'NewName',
+        name: 'NewName'
       });
 
       expect(result.content[0].text).toContain('Failed to update script');

@@ -7,7 +7,7 @@ vi.mock('keytar', () => ({
   default: {
     setPassword: vi.fn(),
     getPassword: vi.fn(),
-    deletePassword: vi.fn(),
+    deletePassword: vi.fn()
   }
 }));
 
@@ -49,11 +49,7 @@ describe('KeychainStorage', () => {
 
       await storage.setToken(tokenData);
 
-      expect(mockKeytar.setPassword).toHaveBeenCalledWith(
-        'PingOneAIC_MCP_Server',
-        'user-token',
-        expect.any(String)
-      );
+      expect(mockKeytar.setPassword).toHaveBeenCalledWith('PingOneAIC_MCP_Server', 'user-token', expect.any(String));
     });
 
     it('should deserialize JSON string to TokenData', async () => {
@@ -77,7 +73,7 @@ describe('KeychainStorage', () => {
       const tokenData: TokenData = {
         accessToken: 'test-token-abc123',
         expiresAt: 1234567890000,
-        aicBaseUrl: 'test.forgeblocks.com',
+        aicBaseUrl: 'test.forgeblocks.com'
       };
       mockKeytar.getPassword.mockResolvedValue(JSON.stringify(tokenData));
 
@@ -105,10 +101,7 @@ describe('KeychainStorage', () => {
 
       await storage.getToken();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error reading token from keychain:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Error reading token from keychain:', expect.any(Error));
 
       consoleSpy.mockRestore();
     });
@@ -127,14 +120,11 @@ describe('KeychainStorage', () => {
 
       try {
         await storage.setToken(tokenData);
-      } catch (error) {
+      } catch {
         // Expected to throw
       }
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Error storing token in keychain:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Error storing token in keychain:', expect.any(Error));
 
       consoleSpy.mockRestore();
     });

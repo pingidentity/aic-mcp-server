@@ -24,10 +24,12 @@ describe('normalizeAicBaseUrl', () => {
   });
 
   it('should handle full URLs copied from browser', () => {
-    expect(normalizeAicBaseUrl('https://tenant.forgeblocks.com/admin/console/realms/alpha/dashboard'))
-      .toBe('tenant.forgeblocks.com');
-    expect(normalizeAicBaseUrl('https://tenant.forgeblocks.com:443/admin?tab=users#section'))
-      .toBe('tenant.forgeblocks.com');
+    expect(normalizeAicBaseUrl('https://tenant.forgeblocks.com/admin/console/realms/alpha/dashboard')).toBe(
+      'tenant.forgeblocks.com'
+    );
+    expect(normalizeAicBaseUrl('https://tenant.forgeblocks.com:443/admin?tab=users#section')).toBe(
+      'tenant.forgeblocks.com'
+    );
   });
 
   it('should trim whitespace', () => {
@@ -36,7 +38,6 @@ describe('normalizeAicBaseUrl', () => {
   });
 
   it('should handle subdomains', () => {
-    expect(normalizeAicBaseUrl('https://my.sub.tenant.forgeblocks.com/admin'))
-      .toBe('my.sub.tenant.forgeblocks.com');
+    expect(normalizeAicBaseUrl('https://my.sub.tenant.forgeblocks.com/admin')).toBe('my.sub.tenant.forgeblocks.com');
   });
 });

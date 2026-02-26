@@ -10,38 +10,58 @@ const SCOPES = ['fr:idc:monitoring:*'];
 export const queryLogsTool = {
   name: 'queryLogs',
   title: 'Query Logs',
-  description: 'Query PingOne AIC logs to investigate issues or understand system behavior. Useful for debugging journey execution failures, authentication errors, script exceptions, and API issues. Transaction IDs from error responses can be used to trace specific requests.',
+  description:
+    'Query PingOne AIC logs to investigate issues or understand system behavior. Useful for debugging journey execution failures, authentication errors, script exceptions, and API issues. Transaction IDs from error responses can be used to trace specific requests.',
   scopes: SCOPES,
   annotations: {
     readOnlyHint: true,
     openWorldHint: true
   },
   inputSchema: {
-    sources: z.array(z.string())
-      .describe("Log sources to query (e.g., ['am-authentication', 'idm-activity']). IMPORTANT: use the getLogSources tool to determine available sources."),
-    beginTime: z.string().optional()
-      .describe("Start time in ISO 8601 format without milliseconds (e.g., '2025-01-11T10:00:00Z'). Filters logs after this time. Defaults to 24 hours before endTime if omitted. Must be within 24 hours of endTime."),
-    endTime: z.string().optional()
-      .describe("End time in ISO 8601 format without milliseconds (e.g., '2025-01-11T12:00:00Z'). Filters logs before this time. Defaults to current time if omitted. Must be within 24 hours of beginTime."),
-    transactionId: z.string().optional()
-      .describe("Transaction ID to trace a specific request. Found in: (1) tool success/error messages, (2) x-forgerock-transactionid response header from AIC API calls, (3) browser network tab when debugging UI issues."),
-    queryFilter: z.string().max(2000).optional()
+    sources: z
+      .array(z.string())
+      .describe(
+        "Log sources to query (e.g., ['am-authentication', 'idm-activity']). IMPORTANT: use the getLogSources tool to determine available sources."
+      ),
+    beginTime: z
+      .string()
+      .optional()
+      .describe(
+        "Start time in ISO 8601 format without milliseconds (e.g., '2025-01-11T10:00:00Z'). Filters logs after this time. Defaults to 24 hours before endTime if omitted. Must be within 24 hours of endTime."
+      ),
+    endTime: z
+      .string()
+      .optional()
+      .describe(
+        "End time in ISO 8601 format without milliseconds (e.g., '2025-01-11T12:00:00Z'). Filters logs before this time. Defaults to current time if omitted. Must be within 24 hours of beginTime."
+      ),
+    transactionId: z
+      .string()
+      .optional()
+      .describe(
+        'Transaction ID to trace a specific request. Found in: (1) tool success/error messages, (2) x-forgerock-transactionid response header from AIC API calls, (3) browser network tab when debugging UI issues.'
+      ),
+    queryFilter: z
+      .string()
+      .max(2000)
+      .optional()
       .describe(
         'CRITICAL: All field paths MUST start with / (e.g., /payload/level, /payload/principal). Missing the leading slash causes 500 Internal Server Error.\n\n' +
-        'Operators: eq, co, sw, lt, le, gt, ge, pr (present), ! (NOT). Boolean: and, or. Quote string values.\n' +
-        'Time filtering: Use beginTime/endTime parameters for time ranges. Use /payload/timestamp only for exact timestamp matches.\n\n' +
-        'Examples:\n' +
-        '  /payload/level eq "ERROR"\n' +
-        '  /payload/principal co "admin"\n' +
-        '  /payload/eventName eq "AM-LOGIN-COMPLETED"\n' +
-        '  (/payload/level eq "ERROR") and (/payload/http/request/path co "openidm")\n' +
-        '  /payload/response.statusCode ge 400\n\n' +
-        'Troubleshooting: If you receive a 500 error, verify all field paths begin with /'
+          'Operators: eq, co, sw, lt, le, gt, ge, pr (present), ! (NOT). Boolean: and, or. Quote string values.\n' +
+          'Time filtering: Use beginTime/endTime parameters for time ranges. Use /payload/timestamp only for exact timestamp matches.\n\n' +
+          'Examples:\n' +
+          '  /payload/level eq "ERROR"\n' +
+          '  /payload/principal co "admin"\n' +
+          '  /payload/eventName eq "AM-LOGIN-COMPLETED"\n' +
+          '  (/payload/level eq "ERROR") and (/payload/http/request/path co "openidm")\n' +
+          '  /payload/response.statusCode ge 400\n\n' +
+          'Troubleshooting: If you receive a 500 error, verify all field paths begin with /'
       ),
-    pagedResultsCookie: z.string().optional()
-      .describe("Opaque pagination cookie from a previous response. Use this to retrieve the next page of results."),
-    pageSize: z.number().int().min(1).max(1000).optional()
-      .describe("Maximum logs to return (default 100)."),
+    pagedResultsCookie: z
+      .string()
+      .optional()
+      .describe('Opaque pagination cookie from a previous response. Use this to retrieve the next page of results.'),
+    pageSize: z.number().int().min(1).max(1000).optional().describe('Maximum logs to return (default 100).')
   },
   async toolFunction({
     sources,

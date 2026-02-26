@@ -17,13 +17,10 @@ describe('getManagedObjectSchema', () => {
   describe('Request Construction', () => {
     it('should build request with URL and scopes', async () => {
       await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        'https://test.forgeblocks.com/openidm/config/managed',
-        ['fr:idm:*']
-      );
+      expect(getSpy()).toHaveBeenCalledWith('https://test.forgeblocks.com/openidm/config/managed', ['fr:idm:*']);
     });
   });
 
@@ -31,7 +28,7 @@ describe('getManagedObjectSchema', () => {
   describe('Response Processing', () => {
     it('should extract specific object from config array', async () => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({
             objects: [
               { name: 'alpha_user', schema: { required: ['userName'], properties: { userName: { type: 'string' } } } },
@@ -42,7 +39,7 @@ describe('getManagedObjectSchema', () => {
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;
@@ -54,24 +51,26 @@ describe('getManagedObjectSchema', () => {
 
     it('should extract only essential schema fields', async () => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({
-            objects: [{
-              name: 'alpha_user',
-              schema: {
-                required: ['userName'],
-                properties: { userName: { type: 'string' } }
-              },
-              other_fields: 'should not appear',
-              _id: 'should not appear',
-              description: 'should not appear'
-            }]
+            objects: [
+              {
+                name: 'alpha_user',
+                schema: {
+                  required: ['userName'],
+                  properties: { userName: { type: 'string' } }
+                },
+                other_fields: 'should not appear',
+                _id: 'should not appear',
+                description: 'should not appear'
+              }
+            ]
           });
         })
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;
@@ -89,20 +88,22 @@ describe('getManagedObjectSchema', () => {
 
     it('should handle missing required array', async () => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({
-            objects: [{
-              name: 'alpha_user',
-              schema: {
-                properties: { userName: { type: 'string' } }
+            objects: [
+              {
+                name: 'alpha_user',
+                schema: {
+                  properties: { userName: { type: 'string' } }
+                }
               }
-            }]
+            ]
           });
         })
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;
@@ -113,20 +114,22 @@ describe('getManagedObjectSchema', () => {
 
     it('should handle missing properties object', async () => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({
-            objects: [{
-              name: 'alpha_user',
-              schema: {
-                required: ['userName']
+            objects: [
+              {
+                name: 'alpha_user',
+                schema: {
+                  required: ['userName']
+                }
               }
-            }]
+            ]
           });
         })
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;
@@ -137,7 +140,7 @@ describe('getManagedObjectSchema', () => {
 
     it('should return error when objectType not found in config', async () => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({
             objects: [
               { name: 'bravo_user', schema: { required: [], properties: {} } },
@@ -148,7 +151,7 @@ describe('getManagedObjectSchema', () => {
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;
@@ -162,13 +165,13 @@ describe('getManagedObjectSchema', () => {
 
     it('should handle missing objects array in config', async () => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({});
         })
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;
@@ -181,17 +184,19 @@ describe('getManagedObjectSchema', () => {
 
     it('should handle missing schema object', async () => {
       server.use(
-        http.get('https://*/openidm/config/managed', ({ request }) => {
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({
-            objects: [{
-              name: 'alpha_user'
-            }]
+            objects: [
+              {
+                name: 'alpha_user'
+              }
+            ]
           });
         })
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;
@@ -230,14 +235,14 @@ describe('getManagedObjectSchema', () => {
         name: 'should handle 401 Unauthorized error',
         status: 401,
         body: { error: 'unauthorized', message: 'Token expired' },
-        matcher: /401|unauthorized/i,
+        matcher: /401|unauthorized/i
       },
       {
         name: 'should handle 500 Internal Server Error',
         status: 500,
         body: { error: 'internal_error', message: 'Server error' },
-        matcher: /500|internal_error/i,
-      },
+        matcher: /500|internal_error/i
+      }
     ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.get('https://*/openidm/config/managed', () => {
@@ -246,7 +251,7 @@ describe('getManagedObjectSchema', () => {
       );
 
       const result = await getManagedObjectSchemaTool.toolFunction({
-        objectType: 'alpha_user',
+        objectType: 'alpha_user'
       });
 
       const resultText = result.content[0].text;

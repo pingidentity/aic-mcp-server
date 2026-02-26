@@ -23,7 +23,7 @@ describe('deleteManagedObject', () => {
           expect(url).toBe('https://test.forgeblocks.com/openidm/managed/alpha_user/obj-123');
           expect(scopes).toEqual(['fr:idm:*']);
           expect(options).toEqual(expect.objectContaining({ method: 'DELETE' }));
-        },
+        }
       },
       {
         name: 'uses DELETE method and scopes',
@@ -31,8 +31,8 @@ describe('deleteManagedObject', () => {
         assert: ({ scopes, options }: any) => {
           expect(scopes).toEqual(['fr:idm:*']);
           expect(options).toEqual(expect.objectContaining({ method: 'DELETE' }));
-        },
-      },
+        }
+      }
     ];
 
     it.each(requestCases)('$name', async ({ input, assert }) => {
@@ -50,22 +50,19 @@ describe('deleteManagedObject', () => {
         http.delete('https://*/openidm/managed/:objectType/:objectId', ({ request, params }) => {
           const authHeader = request.headers.get('Authorization');
           if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return new HttpResponse(
-              JSON.stringify({ error: 'unauthorized' }),
-              { status: 401 }
-            );
+            return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
           }
 
           return HttpResponse.json({
             _id: params.objectId as string,
-            _rev: '1',
+            _rev: '1'
           });
         })
       );
 
       const result = await deleteManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectId: 'obj-123',
+        objectId: 'obj-123'
       });
 
       expect(result.content[0].text).toContain('Deleted managed object');
@@ -109,20 +106,20 @@ describe('deleteManagedObject', () => {
         name: 'handles 401 Unauthorized error',
         status: 401,
         body: { error: 'unauthorized', message: 'Invalid token' },
-        matcher: /401|[Uu]nauthorized/,
+        matcher: /401|[Uu]nauthorized/
       },
       {
         name: 'handles 404 Not Found error',
         status: 404,
         body: { error: 'not_found', message: 'Object does not exist' },
-        matcher: /404|[Nn]ot [Ff]ound/,
+        matcher: /404|[Nn]ot [Ff]ound/
       },
       {
         name: 'handles 403 Forbidden error',
         status: 403,
         body: { error: 'forbidden', message: 'Insufficient permissions' },
-        matcher: /403|[Ff]orbidden/,
-      },
+        matcher: /403|[Ff]orbidden/
+      }
     ])('$name', async ({ status, body, matcher }) => {
       server.use(
         http.delete('https://*/openidm/managed/:objectType/:objectId', () => {
@@ -132,7 +129,7 @@ describe('deleteManagedObject', () => {
 
       const result = await deleteManagedObjectTool.toolFunction({
         objectType: 'alpha_user',
-        objectId: 'obj-123',
+        objectId: 'obj-123'
       });
 
       expect(result.content[0].text).toContain('Failed to delete managed object');

@@ -19,10 +19,13 @@ export const deleteManagedObjectTool = {
     openWorldHint: true
   },
   inputSchema: {
-    objectType: z.string().min(1).describe(
-      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
-    ),
-    objectId: safePathSegmentSchema.describe('The object\'s unique identifier (_id)'),
+    objectType: z
+      .string()
+      .min(1)
+      .describe(
+        `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+      ),
+    objectId: safePathSegmentSchema.describe("The object's unique identifier (_id)")
   },
   async toolFunction({ objectType, objectId }: { objectType: string; objectId: string }) {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${objectId}`;

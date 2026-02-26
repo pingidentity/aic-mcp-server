@@ -8,10 +8,7 @@
  * @param errorDetails - Optional error details (only shown on failure)
  * @returns Complete HTML page as string
  */
-export function generateAuthResultPage(
-  isSuccess: boolean,
-  errorDetails?: string
-): string {
+export function generateAuthResultPage(isSuccess: boolean, errorDetails?: string): string {
   const currentYear = new Date().getFullYear();
 
   const heading = isSuccess ? 'Authorization Successful' : 'Authorization Failed';
@@ -143,11 +140,15 @@ export function generateAuthResultPage(
       <h1>${heading}</h1>
       <p class="subtitle secondary-text">${message}</p>
 
-      ${errorDetails ? `
+      ${
+        errorDetails
+          ? `
       <div class="error-details secondary-text">
         <strong>Error:</strong> ${errorDetails}
       </div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <p class="subtitle secondary-text" id="closeMessage">${isSuccess ? '' : 'You can close this window.'}</p>
     </div>
@@ -156,7 +157,9 @@ export function generateAuthResultPage(
     &copy; Copyright <span id="year">${currentYear}</span> Ping Identity. All rights reserved.
   </footer>
   <script>
-    ${isSuccess ? `
+    ${
+      isSuccess
+        ? `
     // Auto-close countdown for success
     (function() {
       var countdown = 3;
@@ -177,7 +180,9 @@ export function generateAuthResultPage(
         }
       }, 1000);
     })();
-    ` : ''}
+    `
+        : ''
+    }
   </script>
 </body>
 </html>`;

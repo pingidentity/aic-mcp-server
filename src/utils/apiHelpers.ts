@@ -20,10 +20,10 @@ export async function makeAuthenticatedRequest(
   const response = await fetch(url, {
     ...options,
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       // Only add Content-Type header if the request has a body
       ...(options.body && { 'Content-Type': 'application/json' }),
-      ...options.headers,
+      ...options.headers
     }
   });
 
@@ -34,9 +34,7 @@ export async function makeAuthenticatedRequest(
 
   // Handle empty responses (e.g., 204 No Content or DELETE operations)
   const contentLength = response.headers.get('content-length');
-  const data = response.status === 204 || contentLength === '0'
-    ? null
-    : await response.json();
+  const data = response.status === 204 || contentLength === '0' ? null : await response.json();
 
   return { data, response };
 }
@@ -48,9 +46,11 @@ export async function makeAuthenticatedRequest(
  */
 export function createToolResponse(text: string) {
   return {
-    content: [{
-      type: 'text' as const,
-      text
-    }]
+    content: [
+      {
+        type: 'text' as const,
+        text
+      }
+    ]
   };
 }

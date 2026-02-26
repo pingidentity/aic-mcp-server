@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
 import { safePathSegmentSchema } from '../../utils/validationHelpers.js';
@@ -17,21 +16,17 @@ export const getVariableTool = {
     openWorldHint: true
   },
   inputSchema: {
-    variableId: safePathSegmentSchema.describe('Variable ID (format: esv-*)'),
+    variableId: safePathSegmentSchema.describe('Variable ID (format: esv-*)')
   },
   async toolFunction({ variableId }: { variableId: string }) {
     try {
       const url = `https://${aicBaseUrl}/environment/variables/${variableId}`;
 
-      const { data, response } = await makeAuthenticatedRequest(
-        url,
-        SCOPES,
-        {
-          headers: {
-            'accept-api-version': 'resource=2.0'
-          }
+      const { data, response } = await makeAuthenticatedRequest(url, SCOPES, {
+        headers: {
+          'accept-api-version': 'resource=2.0'
         }
-      );
+      });
 
       // Decode the base64 value and replace the field
       const variableData = data as any;

@@ -9,7 +9,8 @@ const SCOPES = ['fr:am:*'];
 export const deleteJourneyTool = {
   name: 'deleteJourney',
   title: 'Delete Journey',
-  description: 'Delete an authentication journey from a realm. AM automatically cleans up all node instances within the journey, including PageNode child nodes.',
+  description:
+    'Delete an authentication journey from a realm. AM automatically cleans up all node instances within the journey, including PageNode child nodes.',
   scopes: SCOPES,
   annotations: {
     destructiveHint: true,
@@ -26,13 +27,13 @@ export const deleteJourneyTool = {
 
       const { response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'DELETE',
-        headers: AM_API_HEADERS,
+        headers: AM_API_HEADERS
       });
 
       const result = {
         success: true,
         journeyName,
-        message: 'Journey and all associated nodes deleted successfully.',
+        message: 'Journey and all associated nodes deleted successfully.'
       };
 
       return createToolResponse(formatSuccess(result, response));
@@ -40,5 +41,5 @@ export const deleteJourneyTool = {
       const category = categorizeError(error.message);
       return createToolResponse(`Failed to delete journey "${journeyName}" [${category}]: ${error.message}`);
     }
-  },
+  }
 };

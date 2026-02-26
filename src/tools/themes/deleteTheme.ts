@@ -34,9 +34,7 @@ export const deleteThemeTool = {
       const realmThemes = (config as any).realm[realm];
 
       // Find the theme by ID or name
-      const themeIndex = realmThemes.findIndex((t: any) =>
-        t._id === themeIdentifier || t.name === themeIdentifier
-      );
+      const themeIndex = realmThemes.findIndex((t: any) => t._id === themeIdentifier || t.name === themeIdentifier);
 
       if (themeIndex === -1) {
         return createToolResponse(`Theme not found: "${themeIdentifier}" in realm "${realm}"`);
@@ -50,7 +48,7 @@ export const deleteThemeTool = {
       if (themeToDelete.isDefault === true) {
         return createToolResponse(
           `Cannot delete the default theme "${themeName}". ` +
-          `Set another theme as default using the setDefaultTheme tool first, then delete this theme.`
+            `Set another theme as default using the setDefaultTheme tool first, then delete this theme.`
         );
       }
 
@@ -67,14 +65,10 @@ export const deleteThemeTool = {
       };
 
       // PUT the updated configuration back
-      const { response } = await makeAuthenticatedRequest(
-        configUrl,
-        SCOPES,
-        {
-          method: 'PUT',
-          body: JSON.stringify(updatedConfig)
-        }
-      );
+      const { response } = await makeAuthenticatedRequest(configUrl, SCOPES, {
+        method: 'PUT',
+        body: JSON.stringify(updatedConfig)
+      });
 
       const successMessage = `Deleted theme "${themeName}" (${themeId}) from realm "${realm}"`;
       return createToolResponse(formatSuccess({ _id: themeId, name: themeName, message: successMessage }, response));

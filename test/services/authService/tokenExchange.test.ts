@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
-import {
-  setupAuthServiceTest,
-  MOCK_TOKEN_RESPONSE,
-} from '../../helpers/authServiceTestHelper.js';
+import { setupAuthServiceTest, MOCK_TOKEN_RESPONSE } from '../../helpers/authServiceTestHelper.js';
 import { createHoistedMockStorage } from '../../helpers/authServiceMocks.js';
 
 // Track mock storage instance
@@ -16,12 +13,12 @@ const { MockStorage, getInstance: getMockStorage } = createHoistedMockStorage(vi
 // Mock tokenStorage module to use our mock implementation
 vi.mock('../../../src/services/tokenStorage.js', () => ({
   FileStorage: MockStorage,
-  KeychainStorage: MockStorage,
+  KeychainStorage: MockStorage
 }));
 
 // Mock 'open' to prevent browser launching during tests
 vi.mock('open', () => ({
-  default: vi.fn().mockResolvedValue(undefined),
+  default: vi.fn().mockResolvedValue(undefined)
 }));
 
 /**
@@ -65,7 +62,7 @@ describe('AuthService Token Exchange', () => {
     mockStorage._mockGetToken().mockResolvedValue({
       accessToken: 'mock-primary-token',
       expiresAt: Date.now() + 3600000, // Valid for 1 hour
-      aicBaseUrl: 'test.forgeblocks.com',
+      aicBaseUrl: 'test.forgeblocks.com'
     });
     mockStorage._mockSetToken().mockResolvedValue(undefined);
   }
@@ -88,7 +85,7 @@ describe('AuthService Token Exchange', () => {
             return HttpResponse.json({
               access_token: 'exchanged-token',
               expires_in: 3600,
-              token_type: 'Bearer',
+              token_type: 'Bearer'
             });
           }
 
@@ -112,18 +109,18 @@ describe('AuthService Token Exchange', () => {
       {
         name: 'should extract access_token field from response',
         response: { access_token: 'exchanged-token', expires_in: 3600, token_type: 'Bearer' },
-        expected: 'exchanged-token',
+        expected: 'exchanged-token'
       },
       {
         name: 'should return only the token string (not full response)',
         response: { access_token: 'just-the-token', expires_in: 3600, token_type: 'Bearer', extra: 'ignored-field' },
-        expected: 'just-the-token',
+        expected: 'just-the-token'
       },
       {
         name: 'should handle missing access_token field',
         response: { expires_in: 3600, token_type: 'Bearer' },
-        expected: undefined,
-      },
+        expected: undefined
+      }
     ] as const;
 
     it.each(responseCases)('$name', async ({ response, expected }) => {
@@ -147,23 +144,21 @@ describe('AuthService Token Exchange', () => {
       {
         name: 'should catch HTTP errors and wrap them',
         handler: () => new HttpResponse('boom', { status: 500 }),
-        expected: 'Token exchange failed (500 Internal Server Error): boom',
+        expected: 'Token exchange failed (500 Internal Server Error): boom'
       },
       {
         name: 'should propagate network errors',
         handler: () => {
           throw new Error('network down');
         },
-        expected: 'network down',
-      },
+        expected: 'network down'
+      }
     ])('$name', async ({ handler, expected }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
       primeStorageWithValidToken();
 
-      server.use(
-        http.post('https://test.forgeblocks.com/am/oauth2/access_token', handler)
-      );
+      server.use(http.post('https://test.forgeblocks.com/am/oauth2/access_token', handler));
 
       await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow(expected);
     });
@@ -176,19 +171,19 @@ describe('AuthService Token Exchange', () => {
           HttpResponse.json({
             access_token: 'exchanged-after-retry',
             expires_in: 3600,
-            token_type: 'Bearer',
-          }),
+            token_type: 'Bearer'
+          })
         ],
-        expectError: false,
+        expectError: false
       },
       {
         name: 'should fail after retry if still unauthorized',
         responses: [
           new HttpResponse('unauthorized', { status: 401 }),
-          new HttpResponse('still unauthorized', { status: 401 }),
+          new HttpResponse('still unauthorized', { status: 401 })
         ],
-        expectError: /Token exchange failed \(401/,
-      },
+        expectError: /Token exchange failed \(401/
+      }
     ])('$name', async ({ responses, expectError }) => {
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
@@ -229,9 +224,7 @@ describe('AuthService Token Exchange', () => {
 
       await expect(getAuthService().getToken(['fr:idm:*'])).rejects.toThrow();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Token exchange: requesting scopes [fr:idm:*]'
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Token exchange: requesting scopes [fr:idm:*]');
     });
   });
 });

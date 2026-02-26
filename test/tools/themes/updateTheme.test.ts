@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
 import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
-import { snapshotTest } from '../../helpers/snapshotTest.js';
-import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { http, HttpResponse } from 'msw';
 import { updateThemeTool } from '../../../src/tools/themes/updateTheme.js';
 import { buildRealmConfig, mockThemeConfigHandlers, capturePutBody } from '../../helpers/themeConfigMocks.js';
@@ -22,7 +20,7 @@ describe('updateTheme', () => {
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { _id: 'new-id' },
+        themeUpdates: { _id: 'new-id' }
       });
 
       // Our code pre-validates protected fields before API call
@@ -35,7 +33,7 @@ describe('updateTheme', () => {
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { isDefault: true },
+        themeUpdates: { isDefault: true }
       });
 
       // Our code pre-validates protected fields before API call
@@ -45,15 +43,17 @@ describe('updateTheme', () => {
     });
 
     it('should fetch current theme config first', async () => {
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [{ _id: 'theme-123', name: 'ExistingTheme', isDefault: false }],
-        bravo: [],
-      }));
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [{ _id: 'theme-123', name: 'ExistingTheme', isDefault: false }],
+          bravo: []
+        })
+      );
 
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedTheme' },
+        themeUpdates: { name: 'UpdatedTheme' }
       });
 
       // Our code GET config before updating
@@ -66,14 +66,14 @@ describe('updateTheme', () => {
 
     it.each([
       { name: 'should validate config structure exists', config: { realm: {} as any } },
-      { name: 'should validate realm exists in config', config: buildRealmConfig({ bravo: [] }) },
+      { name: 'should validate realm exists in config', config: buildRealmConfig({ bravo: [] }) }
     ])('$name', async ({ config }) => {
       mockThemeConfigHandlers(config as any);
 
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedTheme' },
+        themeUpdates: { name: 'UpdatedTheme' }
       });
 
       expect(result.content[0].text).toContain('Invalid theme configuration structure for realm "alpha"');
@@ -81,17 +81,18 @@ describe('updateTheme', () => {
 
     it('should find theme by ID', async () => {
       const putCapture = capturePutBody();
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [
-          { _id: 'theme-123', name: 'OriginalName', isDefault: false },
-        ],
-        bravo: [],
-      }), putCapture.handler);
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [{ _id: 'theme-123', name: 'OriginalName', isDefault: false }],
+          bravo: []
+        }),
+        putCapture.handler
+      );
 
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123', // Search by ID
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       const capturedPutBody = putCapture.get();
@@ -102,17 +103,18 @@ describe('updateTheme', () => {
 
     it('should find theme by name', async () => {
       const putCapture = capturePutBody();
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [
-          { _id: 'theme-123', name: 'OriginalName', isDefault: false },
-        ],
-        bravo: [],
-      }), putCapture.handler);
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [{ _id: 'theme-123', name: 'OriginalName', isDefault: false }],
+          bravo: []
+        }),
+        putCapture.handler
+      );
 
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'OriginalName', // Search by name
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       const capturedPutBody = putCapture.get();
@@ -122,17 +124,17 @@ describe('updateTheme', () => {
     });
 
     it('should return error when theme not found', async () => {
-      mockThemeConfigHandlers(buildRealmConfig({
-        alpha: [
-          { _id: 'theme-456', name: 'OtherTheme', isDefault: false },
-        ],
-        bravo: [],
-      }));
+      mockThemeConfigHandlers(
+        buildRealmConfig({
+          alpha: [{ _id: 'theme-456', name: 'OtherTheme', isDefault: false }],
+          bravo: []
+        })
+      );
 
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'nonexistent',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       expect(result.content[0].text).toContain('Theme not found: "nonexistent" in realm "alpha"');
@@ -145,10 +147,10 @@ describe('updateTheme', () => {
             realm: {
               alpha: [
                 { _id: 'theme-123', name: 'ThemeToUpdate', isDefault: false },
-                { _id: 'theme-456', name: 'ExistingName', isDefault: false },
+                { _id: 'theme-456', name: 'ExistingName', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         })
       );
@@ -156,7 +158,7 @@ describe('updateTheme', () => {
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'ExistingName' }, // Trying to use existing name
+        themeUpdates: { name: 'ExistingName' } // Trying to use existing name
       });
 
       expect(result.content[0].text).toContain('Theme with name "ExistingName" already exists in realm "alpha"');
@@ -170,11 +172,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ThemeName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ThemeName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -183,10 +183,10 @@ describe('updateTheme', () => {
         })
       );
 
-      const result = await updateThemeTool.toolFunction({
+      await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'ThemeName', primaryColor: '#ff0000' }, // Same name, different field
+        themeUpdates: { name: 'ThemeName', primaryColor: '#ff0000' } // Same name, different field
       });
 
       expect(capturedPutBody).not.toBeNull();
@@ -207,11 +207,11 @@ describe('updateTheme', () => {
                   name: 'OriginalName',
                   isDefault: false,
                   primaryColor: '#0066cc',
-                  logoUrl: 'https://old.url',
-                },
+                  logoUrl: 'https://old.url'
+                }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -225,8 +225,8 @@ describe('updateTheme', () => {
         themeIdentifier: 'theme-123',
         themeUpdates: {
           logoUrl: 'https://new.url', // Update existing field
-          secondaryColor: '#ff0000', // Add new field
-        },
+          secondaryColor: '#ff0000' // Add new field
+        }
       });
 
       expect(capturedPutBody.realm.alpha[0]._id).toBe('theme-123');
@@ -246,10 +246,10 @@ describe('updateTheme', () => {
               alpha: [
                 { _id: 'theme-123', name: 'ThemeToUpdate', isDefault: false },
                 { _id: 'theme-456', name: 'OtherTheme', isDefault: true },
-                { _id: 'theme-789', name: 'ThirdTheme', isDefault: false },
+                { _id: 'theme-789', name: 'ThirdTheme', isDefault: false }
               ],
-              bravo: [],
-            },
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -261,7 +261,7 @@ describe('updateTheme', () => {
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       // Our code preserves all other themes
@@ -270,12 +270,12 @@ describe('updateTheme', () => {
       expect(capturedPutBody.realm.alpha[1]).toEqual({
         _id: 'theme-456',
         name: 'OtherTheme',
-        isDefault: true,
+        isDefault: true
       }); // Preserved
       expect(capturedPutBody.realm.alpha[2]).toEqual({
         _id: 'theme-789',
         name: 'ThirdTheme',
-        isDefault: false,
+        isDefault: false
       }); // Preserved
     });
 
@@ -286,13 +286,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'AlphaTheme', isDefault: false },
-              ],
-              bravo: [
-                { _id: 'theme-456', name: 'BravoTheme', isDefault: false },
-              ],
-            },
+              alpha: [{ _id: 'theme-123', name: 'AlphaTheme', isDefault: false }],
+              bravo: [{ _id: 'theme-456', name: 'BravoTheme', isDefault: false }]
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', async ({ request }) => {
@@ -304,13 +300,11 @@ describe('updateTheme', () => {
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedAlphaTheme' },
+        themeUpdates: { name: 'UpdatedAlphaTheme' }
       });
 
       // Our code preserves bravo realm
-      expect(capturedPutBody.realm.bravo).toEqual([
-        { _id: 'theme-456', name: 'BravoTheme', isDefault: false },
-      ]);
+      expect(capturedPutBody.realm.bravo).toEqual([{ _id: 'theme-456', name: 'BravoTheme', isDefault: false }]);
     });
 
     it('should PUT updated config back', async () => {
@@ -318,11 +312,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'OriginalName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'OriginalName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -333,7 +325,7 @@ describe('updateTheme', () => {
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       // Our code PUTs config after GET
@@ -352,11 +344,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ThemeName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ThemeName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -367,12 +357,10 @@ describe('updateTheme', () => {
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
-      expect(getSpy().mock.calls[0][0]).toBe(
-        'https://test.forgeblocks.com/openidm/config/ui/themerealm'
-      );
+      expect(getSpy().mock.calls[0][0]).toBe('https://test.forgeblocks.com/openidm/config/ui/themerealm');
     });
 
     it('should construct correct PUT URL for theme config', async () => {
@@ -380,11 +368,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ThemeName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ThemeName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -395,12 +381,10 @@ describe('updateTheme', () => {
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
-      expect(getSpy().mock.calls[1][0]).toBe(
-        'https://test.forgeblocks.com/openidm/config/ui/themerealm'
-      );
+      expect(getSpy().mock.calls[1][0]).toBe('https://test.forgeblocks.com/openidm/config/ui/themerealm');
     });
 
     it('should use PUT method for update', async () => {
@@ -408,11 +392,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ThemeName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ThemeName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -423,7 +405,7 @@ describe('updateTheme', () => {
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       expect(getSpy().mock.calls[1][2]?.method).toBe('PUT');
@@ -434,11 +416,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ThemeName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ThemeName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -449,7 +429,7 @@ describe('updateTheme', () => {
       await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       expect(getSpy().mock.calls[0][1]).toEqual(['fr:idm:*']);
@@ -464,11 +444,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'OriginalName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'OriginalName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -479,7 +457,7 @@ describe('updateTheme', () => {
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       const text = result.content[0].text;
@@ -493,11 +471,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'OriginalName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'OriginalName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -508,7 +484,7 @@ describe('updateTheme', () => {
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       const text = result.content[0].text;
@@ -583,17 +559,14 @@ describe('updateTheme', () => {
     it('should handle 401 Unauthorized error on GET', async () => {
       server.use(
         http.get('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json(
-            { message: 'Unauthorized' },
-            { status: 401 }
-          );
+          return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
         })
       );
 
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       expect(result.content[0].text).toContain('Failed to update theme in realm "alpha"');
@@ -605,25 +578,20 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ThemeName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ThemeName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
-          return HttpResponse.json(
-            { message: 'Unauthorized' },
-            { status: 401 }
-          );
+          return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 });
         })
       );
 
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       expect(result.content[0].text).toContain('Failed to update theme in realm "alpha"');
@@ -640,7 +608,7 @@ describe('updateTheme', () => {
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       expect(result.content[0].text).toContain('Failed to update theme in realm "alpha"');
@@ -651,11 +619,9 @@ describe('updateTheme', () => {
         http.get('https://*/openidm/config/ui/themerealm', () => {
           return HttpResponse.json({
             realm: {
-              alpha: [
-                { _id: 'theme-123', name: 'ThemeName', isDefault: false },
-              ],
-              bravo: [],
-            },
+              alpha: [{ _id: 'theme-123', name: 'ThemeName', isDefault: false }],
+              bravo: []
+            }
           });
         }),
         http.put('https://*/openidm/config/ui/themerealm', () => {
@@ -666,7 +632,7 @@ describe('updateTheme', () => {
       const result = await updateThemeTool.toolFunction({
         realm: 'alpha',
         themeIdentifier: 'theme-123',
-        themeUpdates: { name: 'UpdatedName' },
+        themeUpdates: { name: 'UpdatedName' }
       });
 
       expect(result.content[0].text).toContain('Failed to update theme in realm "alpha"');

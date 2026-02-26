@@ -17,10 +17,15 @@ export const createManagedObjectTool = {
     openWorldHint: true
   },
   inputSchema: {
-    objectType: z.string().min(1).describe(
-      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
-    ),
-    objectData: z.record(z.any()).describe('JSON object containing object properties (must include all required fields from the schema)'),
+    objectType: z
+      .string()
+      .min(1)
+      .describe(
+        `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+      ),
+    objectData: z
+      .record(z.any())
+      .describe('JSON object containing object properties (must include all required fields from the schema)')
   },
   async toolFunction({ objectType, objectData }: { objectType: string; objectData: Record<string, any> }) {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}?_action=create`;

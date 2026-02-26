@@ -18,18 +18,12 @@ describe('getTheme', () => {
     it('should construct URL with realm and themeIdentifier', async () => {
       await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       // Our code builds OR query filter: _id eq "X" or name eq "X"
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('realm=alpha'),
-        expect.any(Array)
-      );
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('_queryFilter='),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('realm=alpha'), expect.any(Array));
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('_queryFilter='), expect.any(Array));
       expect(getSpy()).toHaveBeenCalledWith(
         expect.stringContaining('_id%20eq%20%22theme-123%22%20or%20name%20eq%20%22theme-123%22'),
         expect.any(Array)
@@ -39,39 +33,30 @@ describe('getTheme', () => {
     it('should properly encode themeIdentifier in query', async () => {
       await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'Theme Name With Spaces',
+        themeIdentifier: 'Theme Name With Spaces'
       });
 
       const encodedIdentifier = encodeURIComponent('Theme Name With Spaces');
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining(encodedIdentifier),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining(encodedIdentifier), expect.any(Array));
     });
 
     it('should escape double quotes in themeIdentifier', async () => {
       await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'test"quote',
+        themeIdentifier: 'test"quote'
       });
 
       // Double quote becomes %22 when URL-encoded
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('test%22quote'),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('test%22quote'), expect.any(Array));
     });
 
     it('should pass correct scopes to auth', async () => {
       await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.any(String),
-        ['fr:idm:*']
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.any(String), ['fr:idm:*']);
     });
   });
 
@@ -82,14 +67,14 @@ describe('getTheme', () => {
         http.get('https://*/openidm/ui/theme/', () => {
           return HttpResponse.json({
             resultCount: 0,
-            result: [],
+            result: []
           });
         })
       );
 
       const result = await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'nonexistent',
+        themeIdentifier: 'nonexistent'
       });
 
       expect(result.content[0].text).toContain('Theme not found: "nonexistent" in realm "alpha"');
@@ -102,15 +87,15 @@ describe('getTheme', () => {
             resultCount: 2,
             result: [
               { _id: 'theme-1', name: 'duplicate' },
-              { _id: 'theme-2', name: 'duplicate' },
-            ],
+              { _id: 'theme-2', name: 'duplicate' }
+            ]
           });
         })
       );
 
       const result = await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'duplicate',
+        themeIdentifier: 'duplicate'
       });
 
       expect(result.content[0].text).toContain('Multiple themes found matching "duplicate"');
@@ -128,16 +113,16 @@ describe('getTheme', () => {
                 _id: 'theme-123',
                 name: 'My Theme',
                 isDefault: false,
-                primaryColor: '#0066cc',
-              },
-            ],
+                primaryColor: '#0066cc'
+              }
+            ]
           });
         })
       );
 
       const result = await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       const text = result.content[0].text;
@@ -155,14 +140,14 @@ describe('getTheme', () => {
       server.use(
         http.get('https://*/openidm/ui/theme/', () => {
           return HttpResponse.json({
-            result: [],
+            result: []
           });
         })
       );
 
       const result = await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Theme not found');
@@ -172,14 +157,14 @@ describe('getTheme', () => {
       server.use(
         http.get('https://*/openidm/ui/theme/', () => {
           return HttpResponse.json({
-            resultCount: 0,
+            resultCount: 0
           });
         })
       );
 
       const result = await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Theme not found');
@@ -197,13 +182,10 @@ describe('getTheme', () => {
       // Test 'bravo' realm
       await getThemeTool.toolFunction({
         realm: 'bravo',
-        themeIdentifier: 'theme-456',
+        themeIdentifier: 'theme-456'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('realm=bravo'),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('realm=bravo'), expect.any(Array));
     });
 
     it('should require themeIdentifier parameter', () => {
@@ -215,13 +197,10 @@ describe('getTheme', () => {
       // Our code doesn't validate format - API determines if valid
       await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'any-string-123_ABC',
+        themeIdentifier: 'any-string-123_ABC'
       });
 
-      expect(getSpy()).toHaveBeenCalledWith(
-        expect.stringContaining('any-string-123_ABC'),
-        expect.any(Array)
-      );
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('any-string-123_ABC'), expect.any(Array));
     });
   });
 
@@ -230,16 +209,13 @@ describe('getTheme', () => {
     it('should handle 401 Unauthorized error', async () => {
       server.use(
         http.get('https://*/openidm/ui/theme/', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'unauthorized' }),
-            { status: 401 }
-          );
+          return new HttpResponse(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
         })
       );
 
       const result = await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'theme-123',
+        themeIdentifier: 'theme-123'
       });
 
       expect(result.content[0].text).toContain('Failed to retrieve theme');
@@ -250,16 +226,13 @@ describe('getTheme', () => {
     it('should handle 404 Not Found error', async () => {
       server.use(
         http.get('https://*/openidm/ui/theme/', () => {
-          return new HttpResponse(
-            JSON.stringify({ error: 'not_found' }),
-            { status: 404 }
-          );
+          return new HttpResponse(JSON.stringify({ error: 'not_found' }), { status: 404 });
         })
       );
 
       const result = await getThemeTool.toolFunction({
         realm: 'alpha',
-        themeIdentifier: 'nonexistent',
+        themeIdentifier: 'nonexistent'
       });
 
       expect(result.content[0].text).toContain('Failed to retrieve theme');

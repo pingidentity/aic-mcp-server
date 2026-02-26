@@ -11,12 +11,7 @@ export async function snapshotTest(
   toolDefinition: any,
   snapshotDir: string = '__snapshots__'
 ): Promise<void> {
-  const snapshotPath = join(
-    process.cwd(),
-    'test',
-    snapshotDir,
-    `${toolName}.json`
-  );
+  const snapshotPath = join(process.cwd(), 'test', snapshotDir, `${toolName}.json`);
 
   const shouldUpdate = process.env.UPDATE_SNAPSHOTS === 'true';
 
@@ -31,7 +26,7 @@ export async function snapshotTest(
     title: toolDefinition.title,
     description: toolDefinition.description,
     scopes: toolDefinition.scopes,
-    inputSchema: toolDefinition.inputSchema,
+    inputSchema: toolDefinition.inputSchema
   };
 
   const currentSnapshot = JSON.stringify(schemaOnly, null, 2);
@@ -45,10 +40,7 @@ export async function snapshotTest(
 
   // Test mode: compare against saved snapshot
   if (!existsSync(snapshotPath)) {
-    throw new Error(
-      `Snapshot not found for ${toolName}.\n` +
-      `Run: UPDATE_SNAPSHOTS=true npm test`
-    );
+    throw new Error(`Snapshot not found for ${toolName}.\n` + `Run: UPDATE_SNAPSHOTS=true npm test`);
   }
 
   const savedSnapshot = readFileSync(snapshotPath, 'utf-8');
