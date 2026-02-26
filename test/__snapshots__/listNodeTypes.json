@@ -1,0 +1,24 @@
+{
+  "name": "listNodeTypes",
+  "title": "List AM Node Types",
+  "description": "Discover all available authentication node types in a realm. Returns node type metadata including ID, name, and tags. Use this to understand what node types can be used when building journeys.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm to query"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

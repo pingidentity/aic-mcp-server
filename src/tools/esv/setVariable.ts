@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
+import { safePathSegmentSchema } from '../../utils/validationHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -19,7 +20,7 @@ export const setVariableTool = {
     openWorldHint: true
   },
   inputSchema: {
-    variableId: z.string().describe('Variable ID (format: esv-*)'),
+    variableId: safePathSegmentSchema.describe('Variable ID (format: esv-*)'),
     value: z.any().describe(
       "Variable value as native type (NOT JSON string). Examples: string: 'hello', array: ['a','b'], object: {\"key\":\"val\"}, bool: true, int: 42, number: 3.14, list: 'a,b,c'. The tool handles JSON serialization internally for array/object types."
     ),

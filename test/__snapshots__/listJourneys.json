@@ -1,0 +1,24 @@
+{
+  "name": "listJourneys",
+  "title": "List AM Journeys",
+  "description": "Retrieve all authentication journeys (trees) for a specific realm in PingOne AIC. Returns journey metadata including ID, description, and the default journey for the realm.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm to query"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

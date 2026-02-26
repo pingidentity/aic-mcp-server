@@ -2,7 +2,8 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { EXAMPLE_TYPES_STRING, objectIdSchema } from '../../config/managedObjectUtils.js';
+import { EXAMPLE_TYPES_STRING } from '../../utils/managedObjectHelpers.js';
+import { safePathSegmentSchema } from '../../utils/validationHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -27,8 +28,10 @@ export const patchManagedObjectTool = {
     objectType: z.string().min(1).describe(
       `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
     ),
-    objectId: objectIdSchema.describe('The object\'s unique identifier (_id)'),
-    revision: z.string().describe('The current revision (_rev) of the object, obtained from getManagedObject'),
+    objectId: safePathSegmentSchema.describe('The object\'s unique identifier (_id)'),
+    revision: z.string().min(1).refine(val => val.trim().length > 0, {
+      message: "Revision cannot be empty or whitespace"
+    }).describe('The current revision (_rev) of the object, obtained from getManagedObject'),
     operations: z.array(patchOperationSchema).describe('Array of JSON Patch operations to apply to the object')
   },
   async toolFunction({ objectType, objectId, revision, operations }: {

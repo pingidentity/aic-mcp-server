@@ -480,6 +480,74 @@ Delete an environment variable by ID.
 - Requires `accept-api-version: resource=2.0` header
 - No equivalent for secrets (secrets are managed through different mechanisms)
 
+### AM Journey Tools (Local Mode Only)
+
+**IMPORTANT:** AM tools are only available in local mode. They are automatically excluded in Docker mode because they require browser-based PKCE authentication which is incompatible with the Device Code Flow used in containers.
+
+#### 19. `listJourneys`
+**File:** [src/tools/am/listJourneys.ts](src/tools/am/listJourneys.ts)
+
+Retrieve all authentication journeys (trees) for a specific realm in PingOne AIC.
+
+**Parameters:**
+- `realm` (string): The realm to query
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Journey metadata including ID, description, identity resource, UI configuration, nodes, enabled status, mustRun flag, and session time settings
+
+**Implementation Notes:**
+- Uses `_queryFilter=true` to return all journeys
+- Uses `_pageSize=-1` to return all results without pagination
+- Returns standard field set: `_id`, `description`, `identityResource`, `uiConfig`, `nodes`, `enabled`, `mustRun`, `maximumSessionTime`, `maximumIdleTime`
+- Requires `accept-api-version: protocol=2.1,resource=1.0` header
+
+#### 20. `getJourney`
+**File:** [src/tools/am/getJourney.ts](src/tools/am/getJourney.ts)
+
+Retrieve a specific authentication journey by name with complete node details automatically included.
+
+**Parameters:**
+- `realm` (string): The realm containing the journey
+- `journeyName` (string): The name of the journey to retrieve (e.g., 'Login', 'Registration')
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Complete journey configuration with embedded `nodeData` containing schemas and configs for all nodes
+
+**Implementation Notes:**
+- **Automatically fetches all node schemas and configs in parallel** - no additional calls needed
+- Multi-step process: Fetches journey → Extracts nodes → Parallel fetch of schemas (by type) + configs (by instance)
+- Enriches response with `nodeData` property containing:
+  - `schemas`: Keyed by nodeType (one per unique node type)
+  - `configs`: Keyed by nodeId (one per node instance)
+- Handles partial failures gracefully - failed fetches show `{error: "message"}`
+- Transaction ID captured from initial journey request only
+- URL-encodes journey name to handle spaces and special characters
+- Returns journey as-is if it contains no nodes
+
+#### 21. `getAMScript`
+**File:** [src/tools/am/getAMScript.ts](src/tools/am/getAMScript.ts)
+
+Retrieve an AM script by its ID with automatic base64 decoding.
+
+**Parameters:**
+- `realm` (string): The realm containing the script
+- `scriptId` (string): The unique identifier of the script (UUID format)
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Complete script including name, description, language, context, and decoded source code
+
+**Implementation Notes:**
+- **Automatically detects and decodes base64-encoded script content**
+- Uses regex pattern to identify base64 strings (minimum 4 characters)
+- Replaces base64 `script` property with decoded UTF-8 source code
+- Falls back to original content if decoding fails
+- URL-encodes script ID
+- Uses simpler AM scripts endpoint: `/am/json/{realm}/scripts/{scriptId}`
+- Requires `accept-api-version: protocol=1.0,resource=1.0` header
+
 ## Configuration
 
 ### Environment Variables
@@ -650,14 +718,15 @@ The server handles common error scenarios:
 pingone_AIC_MCP/
 ├── src/
 │   ├── index.ts                            # Server entry point and tool registration
-│   ├── config/
-│   │   └── managedObjectUtils.ts           # Shared utilities, examples, and validation
 │   ├── services/
 │   │   ├── authService.ts                  # OAuth 2.0 PKCE and Device Code authentication
 │   │   └── tokenStorage.ts                # Token storage abstraction (Keychain/File)
 │   ├── utils/
 │   │   ├── apiHelpers.ts                   # Shared API request helpers
-│   │   └── responseHelpers.ts              # Response formatting utilities
+│   │   ├── amHelpers.ts                    # AM-specific helpers (URL builders, batch operations)
+│   │   ├── managedObjectHelpers.ts         # Managed object example types
+│   │   ├── responseHelpers.ts              # Response formatting utilities
+│   │   └── validationHelpers.ts            # Path validation, REALMS constant
 │   └── tools/
 │       ├── managedObjects/                  # Managed object CRUD operations
 │       │   ├── index.ts                    # Re-exports all managed object tools
@@ -791,7 +860,7 @@ The server supports **any managed object type** defined in your PingOne AIC envi
 - Object type validation uses string validation (not enum) for maximum flexibility
 
 **Example Types:**
-The `src/config/managedObjectUtils.ts` file contains example types for documentation:
+The `src/utils/managedObjectHelpers.ts` file contains example types for documentation:
 ```typescript
 export const EXAMPLE_MANAGED_OBJECT_TYPES = [
   'alpha_user', 'bravo_user',

@@ -94,15 +94,11 @@ describe('deleteManagedObject', () => {
       expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
-    it.each([
-      { name: 'rejects path traversal ../../etc/passwd', value: '../../etc/passwd', matcher: /path traversal/ },
-      { name: 'rejects path traversal ../../../admin', value: '../../../admin', matcher: /path traversal/ },
-      { name: 'rejects path traversal obj/../admin', value: 'obj/../admin', matcher: /path traversal/ },
-      { name: 'rejects empty objectId', value: '', matcher: /cannot be empty/ },
-      { name: 'rejects whitespace objectId', value: '   ', matcher: /cannot be empty or whitespace/ },
-    ])('$name', ({ value, matcher }) => {
+    it('should use safePathSegmentSchema for objectId', () => {
       const schema = deleteManagedObjectTool.inputSchema.objectId;
-      expect(() => schema.parse(value)).toThrow(matcher);
+      expect(() => schema.parse('../etc/passwd')).toThrow(/path traversal/);
+      expect(() => schema.parse('')).toThrow(/cannot be empty/);
+      expect(() => schema.parse('ValidObjectId-123')).not.toThrow();
     });
   });
 

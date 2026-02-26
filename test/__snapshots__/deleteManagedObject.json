@@ -33,7 +33,7 @@
                   {
                     "kind": "min",
                     "value": 1,
-                    "message": "Object ID cannot be empty"
+                    "message": "Value cannot be empty"
                   }
                 ],
                 "typeName": "ZodString",

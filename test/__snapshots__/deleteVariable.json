@@ -8,14 +8,39 @@
   "inputSchema": {
     "variableId": {
       "_def": {
-        "checks": [
-          {
-            "kind": "min",
-            "value": 1
+        "schema": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "checks": [
+                  {
+                    "kind": "min",
+                    "value": 1,
+                    "message": "Value cannot be empty"
+                  }
+                ],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
           }
-        ],
-        "typeName": "ZodString",
-        "coerce": false,
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
         "description": "Variable ID (format: esv-*)"
       },
       "~standard": {

@@ -47,3 +47,37 @@ export const mockLogSources = [
   'am-authentication',
   'idm-activity',
 ];
+
+// AM script mock data
+export const mockScripts = {
+  scriptedDecisionNode: {
+    _id: 'script-123',
+    name: 'TestScript',
+    description: 'A test script',
+    script: Buffer.from('console.log("test");').toString('base64'),
+    language: 'JAVASCRIPT',
+    context: 'AUTHENTICATION_TREE_DECISION_NODE',
+    evaluatorVersion: '2.0',
+  }
+};
+
+// AM journey mock data
+export const mockJourneyData = {
+  simple: {
+    _id: 'SimpleJourney',
+    entryNodeId: 'node-1',
+    nodes: {
+      'node-1': {
+        nodeType: 'UsernameCollectorNode',
+        displayName: 'Collect Username',
+        connections: { outcome: 'success' },
+        config: { _id: 'node-1' }
+      }
+    },
+    staticNodes: {
+      startNode: { x: 50, y: 250 },
+      '70e691a5-1e33-4ac3-a356-e7b6d60d92e0': { x: 550, y: 150 },
+      'e301438c-0bd0-429c-ab0c-66126501069a': { x: 550, y: 350 }
+    }
+  }
+};
