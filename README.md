@@ -260,6 +260,20 @@ Manage environment secrets and variables.
 | `setVariable` | Create or update a variable | - `Create variable esv-api-key` <br> - `Update esv-max-connections to 100` <br> - `Set esv-endpoint to https://api.example.com` |
 | `deleteVariable` | Delete a variable | - `Delete esv-old-config` <br> - `Remove variable xyz` <br> - `Delete the deprecated esv-legacy-url` |
 
+### AM Journeys (Not available when using Docker)
+
+> **📍 Not available when using MCP from a Docker container **: AM Journey tools are automatically excluded in Docker deployments because they require browser-based PKCE authentication which is incompatible with the Device Code Flow used in containers.
+
+Analyze authentication journeys with complete node details.
+
+| Tool | Description | Usage Examples |
+|------|-------------|----------------|
+| `listJourneys` | List all authentication journeys in a realm | - `Show all journeys in alpha` <br> - `List authentication trees for bravo` <br> - `What journeys exist?` |
+| `getJourney` | Get journey with node schemas and configs **automatically included** | - `Show me the Login journey` <br> - `Get the Registration journey with all node details` <br> - `Display the PasswordReset journey configuration` |
+| `getAMScript` | Get AM script with automatic base64 decoding | - `Show me script 01e1a3c0-038b-4c16-956a-6c9d89328cff` <br> - `Get the decision node script` <br> - `Display the authentication script code` |
+
+**Key Feature**: The `getJourney` tool **automatically fetches and includes** all node schemas and configurations in parallel, so you get complete journey details in a single call - no need to manually fetch node information.
+
 ## Docker Deployment
 
 > **⚠️ EXPERIMENTAL**: Docker deployment uses OAuth 2.0 Device Code Flow with MCP form elicitation. This requires MCP client support for form elicitation, which is currently limited. If your client doesn't support it, use the local deployment method above.

@@ -245,4 +245,148 @@ export const handlers = [
       totalPagedResults: 0,
     });
   }),
+
+  // AM - Journey list
+  http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      result: [],
+      resultCount: 0,
+    });
+  }),
+
+  // AM - Single journey
+  http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: 'Login',
+      nodes: {},
+    });
+  }),
+
+  // AM - Node schema (POST with _action=schema)
+  http.post('https://*/am/json/*/realm-config/authentication/authenticationtrees/nodes/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      type: 'object',
+      properties: {},
+    });
+  }),
+
+  // AM - Node config (GET)
+  http.get('https://*/am/json/*/realm-config/authentication/authenticationtrees/nodes/*/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: 'node-123',
+      nodeType: 'TestNode',
+    });
+  }),
+
+  // AM - Scripts
+  http.get('https://*/am/json/*/scripts/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: 'script-123',
+      name: 'TestScript',
+      script: '',
+      language: 'JAVASCRIPT',
+    });
+  }),
+
+  // AM - Create script
+  http.post('https://*/am/json/*/scripts', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    const url = new URL(request.url);
+    if (url.searchParams.get('_action') === 'create') {
+      return HttpResponse.json({ _id: 'new-script-id', name: 'NewScript' });
+    }
+    return HttpResponse.json({ error: 'Invalid action' }, { status: 400 });
+  }),
+
+  // AM - Update script
+  http.put('https://*/am/json/*/scripts/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: 'script-123', name: 'UpdatedScript' });
+  }),
+
+  // AM - Delete script
+  http.delete('https://*/am/json/*/scripts/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // AM - Script contexts
+  http.get('https://*/am/json/*/contexts/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      bindings: [{ name: 'outcome', type: 'java.lang.String' }],
+      allowedImports: ['java.lang.Math']
+    });
+  }),
+
+  // AM - Save journey (PUT)
+  http.put('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: 'TestJourney' });
+  }),
+
+  // AM - Delete journey
+  http.delete('https://*/am/json/*/realm-config/authentication/authenticationtrees/trees/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // AM - Update node (PUT)
+  http.put('https://*/am/json/*/realm-config/authentication/authenticationtrees/nodes/*/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: 'node-123' });
+  }),
+
+  // AM - Delete node
+  http.delete('https://*/am/json/*/realm-config/authentication/authenticationtrees/nodes/*/*', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // AM - Auth config (GET)
+  http.get('https://*/am/json/*/realm-config/authentication', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ core: { orgConfig: 'Login', adminAuthModule: 'Login' } });
+  }),
+
+  // AM - Auth config (PUT)
+  http.put('https://*/am/json/*/realm-config/authentication', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ core: { orgConfig: 'NewDefault', adminAuthModule: 'Login' } });
+  }),
 ];

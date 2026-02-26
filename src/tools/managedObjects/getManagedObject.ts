@@ -2,7 +2,8 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { EXAMPLE_TYPES_STRING, objectIdSchema } from '../../config/managedObjectUtils.js';
+import { EXAMPLE_TYPES_STRING } from '../../utils/managedObjectHelpers.js';
+import { safePathSegmentSchema } from '../../utils/validationHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -21,7 +22,7 @@ export const getManagedObjectTool = {
     objectType: z.string().min(1).describe(
       `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
     ),
-    objectId: objectIdSchema.describe('The object\'s unique identifier (_id)'),
+    objectId: safePathSegmentSchema.describe('The object\'s unique identifier (_id)'),
   },
   async toolFunction({ objectType, objectId }: { objectType: string; objectId: string }) {
     const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${objectId}`;

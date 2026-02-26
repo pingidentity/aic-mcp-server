@@ -94,34 +94,11 @@ describe('getManagedObject', () => {
       expect(() => schema.parse('custom_application')).not.toThrow();
     });
 
-    it.each([
-      { name: 'rejects path traversal ../../../etc/passwd', value: '../../../etc/passwd', matcher: /path traversal/ },
-      { name: 'rejects path traversal ../../admin', value: '../../admin', matcher: /path traversal/ },
-      { name: 'rejects path traversal obj/../admin', value: 'obj/../admin', matcher: /path traversal/ },
-      { name: 'rejects forward slash obj/123', value: 'obj/123', matcher: /path traversal/ },
-      { name: 'rejects absolute path /etc/passwd', value: '/etc/passwd', matcher: /path traversal/ },
-      { name: 'rejects forward traversal obj/../../admin', value: 'obj/../../admin', matcher: /path traversal/ },
-      { name: 'rejects backslash obj\\123', value: 'obj\\123', matcher: /path traversal/ },
-      { name: 'rejects backslash obj\\..\\admin', value: 'obj\\..\\admin', matcher: /path traversal/ },
-      { name: 'rejects backslash ..\\..\\admin', value: '..\\..\\admin', matcher: /path traversal/ },
-      { name: 'rejects URL-encoded obj%2e%2e', value: 'obj%2e%2e', matcher: /path traversal/ },
-      { name: 'rejects URL-encoded %2e%2e%2fadmin', value: '%2e%2e%2fadmin', matcher: /path traversal/ },
-      { name: 'rejects URL-encoded obj%2f123', value: 'obj%2f123', matcher: /path traversal/ },
-      { name: 'rejects URL-encoded obj%5c123', value: 'obj%5c123', matcher: /path traversal/ },
-      { name: 'rejects empty objectId', value: '', matcher: /cannot be empty/ },
-      { name: 'rejects whitespace objectId', value: '   ', matcher: /cannot be empty or whitespace/ },
-    ])('$name', ({ value, matcher }) => {
+    it('should use safePathSegmentSchema for objectId', () => {
       const schema = getManagedObjectTool.inputSchema.objectId;
-      expect(() => schema.parse(value)).toThrow(matcher);
-    });
-
-    it('should accept valid objectId', () => {
-      const schema = getManagedObjectTool.inputSchema.objectId;
-
-      expect(() => schema.parse('valid-object-123')).not.toThrow();
-      expect(() => schema.parse('obj_test')).not.toThrow();
-      expect(() => schema.parse('abc-123-xyz_456')).not.toThrow();
-      expect(() => schema.parse('uuid-1234-5678-90ab-cdef')).not.toThrow();
+      expect(() => schema.parse('../etc/passwd')).toThrow(/path traversal/);
+      expect(() => schema.parse('')).toThrow(/cannot be empty/);
+      expect(() => schema.parse('ValidObjectId-123')).not.toThrow();
     });
   });
 

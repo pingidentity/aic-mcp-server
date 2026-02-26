@@ -1,0 +1,24 @@
+{
+  "name": "listScripts",
+  "title": "List AM Scripts",
+  "description": "List Scripted Decision Node scripts (evaluatorVersion 2.0) in a realm. Returns script metadata including ID, name, description, language, and context. Use getAMScript to retrieve the full script content.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm to query"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}
