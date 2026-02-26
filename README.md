@@ -42,10 +42,11 @@ Ask questions like "Find all alpha_users with email starting with john@example.c
 
 - **Secure authentication** - Supports OAuth 2.0 PKCE flow for local deployment and Device Code Flow for containerized deployment. All actions are user-based and auditable. Tokens stored securely in OS keychain (local) or ephemerally (Docker).
 
-- **Broad tool support** - Supports full CRUD operations against any managed object type in your environment (users, roles, groups, organizations, and custom types), authentication theme management, advanced log querying, and environment variable configuration.
+- **Broad tool support** - Supports full CRUD operations against any managed object type in your environment (users, roles, groups, organizations, and custom types), authentication journey and script management, theme customization, advanced log querying, and environment variable configuration.
 
 ## Use Cases
 
+- **Journey Management** - "Show me the Login journey", "Create a new MFA journey", "Add a scripted decision node to the registration flow", "Set Login as the default journey"
 - **Authentication Customization** - "Create a branded theme with our corporate colors", "Show me all themes in production", "Set the new theme as default"
 - **Audit & Monitoring** - "Show me failed login attempts in the last hour", "Find all logs for transaction abc-123", "What log sources are available?"
 - **Identity Operations** - "Find all users with admin in their username", "Create a new developer role", "Update the email for user xyz123"
@@ -265,13 +266,27 @@ Manage environment secrets and variables.
 
 > **📍 Not available when using MCP from a Docker container **: AM Journey tools are automatically excluded in Docker deployments because they require browser-based PKCE authentication which is incompatible with the Device Code Flow used in containers.
 
-Analyze authentication journeys with complete node details.
+Manage authentication journeys, node types, and scripts.
 
-| Tool           | Description                                                          | Usage Examples                                                                                                                                     |
-| -------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `listJourneys` | List all authentication journeys in a realm                          | - `Show all journeys in alpha` <br> - `List authentication trees for bravo` <br> - `What journeys exist?`                                          |
-| `getJourney`   | Get journey with node schemas and configs **automatically included** | - `Show me the Login journey` <br> - `Get the Registration journey with all node details` <br> - `Display the PasswordReset journey configuration` |
-| `getAMScript`  | Get AM script with automatic base64 decoding                         | - `Show me script 01e1a3c0-038b-4c16-956a-6c9d89328cff` <br> - `Get the decision node script` <br> - `Display the authentication script code`      |
+| Tool                              | Description                                                          | Usage Examples                                                                                                                                              |
+| --------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `listJourneys`                    | List all authentication journeys in a realm                          | - `Show all journeys in alpha` <br> - `List authentication trees for bravo` <br> - `What journeys exist?`                                                   |
+| `getJourney`                      | Get journey with node schemas and configs **automatically included** | - `Show me the Login journey` <br> - `Get the Registration journey with all node details` <br> - `Display the PasswordReset journey configuration`          |
+| `saveJourney`                     | Create or update a complete journey atomically                       | - `Create a new login journey` <br> - `Update the Registration journey with a new node` <br> - `Build a journey with these nodes`                           |
+| `deleteJourney`                   | Delete a journey and its associated nodes                            | - `Delete the Test journey` <br> - `Remove the old login flow` <br> - `Delete journey OldRegistration`                                                      |
+| `setDefaultJourney`               | Set the default authentication journey for a realm                   | - `Set Login as the default journey` <br> - `Make Registration the default for alpha` <br> - `Change the default authentication journey`                    |
+| `getJourneyPreviewUrl`            | Generate a preview URL to test a journey in a browser                | - `Get the preview URL for Login` <br> - `How can I test the Registration journey?` <br> - `Give me a link to try the PasswordReset flow`                   |
+| `listNodeTypes`                   | Discover all available authentication node types                     | - `What node types are available?` <br> - `List all authentication node types` <br> - `Show me the available nodes for building journeys`                   |
+| `getNodeTypeDetails`              | Get schema, template, and outcomes for node types                    | - `Show me the PageNode schema` <br> - `What config does ScriptedDecisionNode need?` <br> - `Get details for UsernameCollectorNode`                         |
+| `getDynamicNodeOutcomes`          | Calculate outcomes for a node based on its configuration             | - `What outcomes does this PageNode produce?` <br> - `Get the outcomes for a ChoiceCollectorNode with these choices` <br> - `List outcomes for this config` |
+| `updateJourneyNode`               | Update a single node's configuration                                 | - `Update the config for node xyz` <br> - `Change the script on this ScriptedDecisionNode` <br> - `Modify the PageNode configuration`                       |
+| `deleteJourneyNodes`              | Batch delete orphaned node instances                                 | - `Clean up orphaned nodes from the last update` <br> - `Delete these unused node instances` <br> - `Remove leftover nodes`                                 |
+| `listScripts`                     | List Scripted Decision Node scripts in a realm                       | - `Show all scripts in alpha` <br> - `List decision node scripts` <br> - `What scripts are available?`                                                      |
+| `getAMScript`                     | Get AM script with automatic base64 decoding                         | - `Show me script 01e1a3c0-038b-4c16-956a-6c9d89328cff` <br> - `Get the decision node script` <br> - `Display the authentication script code`               |
+| `createScript`                    | Create a new Scripted Decision Node script                           | - `Create a script that checks user attributes` <br> - `Add a new decision script` <br> - `Write a script for conditional authentication`                   |
+| `updateScript`                    | Update an existing script's name, description, or content            | - `Update the login script code` <br> - `Rename script xyz` <br> - `Change the description on this script`                                                  |
+| `deleteScript`                    | Delete an AM script                                                  | - `Delete script xyz` <br> - `Remove the old decision script` <br> - `Delete the unused test script`                                                        |
+| `getScriptedDecisionNodeBindings` | Get available bindings and allowed imports for scripting             | - `What variables are available in scripts?` <br> - `Show me the scripting API` <br> - `What can I import in decision scripts?`                             |
 
 **Key Feature**: The `getJourney` tool **automatically fetches and includes** all node schemas and configurations in parallel, so you get complete journey details in a single call - no need to manually fetch node information.
 
