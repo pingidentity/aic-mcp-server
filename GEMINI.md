@@ -625,6 +625,304 @@ Retrieve an AM script by its ID with automatic base64 decoding.
 - Uses simpler AM scripts endpoint: `/am/json/{realm}/scripts/{scriptId}`
 - Requires `accept-api-version: protocol=1.0,resource=1.0` header
 
+#### 22. `listNodeTypes`
+
+**File:** [src/tools/am/listNodeTypes.ts](src/tools/am/listNodeTypes.ts)
+
+Discover all available authentication node types in a realm.
+
+**Parameters:**
+
+- `realm` (string): The realm to query
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Node type metadata including ID, name, and tags with count
+
+**Implementation Notes:**
+
+- Uses `_action=getAllTypes` POST to the nodes endpoint
+- Returns all node types available for building journeys
+
+#### 23. `getNodeTypeDetails`
+
+**File:** [src/tools/am/getNodeTypeDetails.ts](src/tools/am/getNodeTypeDetails.ts)
+
+Get complete details (schema, default template, and outcomes) for one or more node types.
+
+**Parameters:**
+
+- `realm` (string): The realm to query
+- `nodeTypes` (string[]): Array of node type names to get details for
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Schema, default template, and outcomes for each requested node type
+
+**Implementation Notes:**
+
+- Fetches details for multiple node types in parallel via `fetchNodeTypeDetails` helper
+- Returns success/error counts for partial failure handling
+- Use before building journeys to understand node configuration requirements
+
+#### 24. `getDynamicNodeOutcomes`
+
+**File:** [src/tools/am/getDynamicNodeOutcomes.ts](src/tools/am/getDynamicNodeOutcomes.ts)
+
+Calculate the dynamic outcomes for a node based on its configuration.
+
+**Parameters:**
+
+- `realm` (string): The realm to query
+- `nodeType` (string): The node type (e.g., "PageNode", "ChoiceCollectorNode")
+- `config` (object): Node configuration object
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Calculated outcomes for the given node configuration
+
+**Implementation Notes:**
+
+- Uses `_action=listOutcomes` POST endpoint
+- PageNode child nodes automatically get `_id` fields injected if missing
+- Useful for determining what connections to wire when building journeys
+
+#### 25. `saveJourney`
+
+**File:** [src/tools/am/saveJourney.ts](src/tools/am/saveJourney.ts)
+
+Create or update a complete authentication journey atomically.
+
+**Parameters:**
+
+- `realm` (string): The realm to create/update the journey in
+- `journeyName` (string): The name of the journey
+- `description` (string, optional): Admin-facing description
+- `journeyData` (object): The journey structure including `entryNodeId` and `nodes` map
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Success result with mapping of original IDs to generated UUIDs
+
+**Implementation Notes:**
+
+- Node IDs can be human-readable (e.g., "login-page") and are automatically transformed to UUIDs
+- Use "success" or "failure" as connection targets for terminal nodes
+- Validates connection targets before making API calls
+- Uses PUT to create or update the journey
+- Returns the ID mapping so callers know the generated UUIDs
+
+#### 26. `updateJourneyNode`
+
+**File:** [src/tools/am/updateJourneyNode.ts](src/tools/am/updateJourneyNode.ts)
+
+Update a single node's configuration without modifying the journey structure.
+
+**Parameters:**
+
+- `realm` (string): The realm containing the node
+- `nodeType` (string): The node type (e.g., "ScriptedDecisionNode")
+- `nodeId` (string): The node instance UUID
+- `config` (object): The complete node configuration (full replacement)
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Success message with node type and ID
+
+**Implementation Notes:**
+
+- **Full replacement** — fetch current config first if you need to preserve existing fields
+- Auto-injects `_id` into the config payload
+- Uses PUT on the node instance endpoint
+
+#### 27. `deleteJourney`
+
+**File:** [src/tools/am/deleteJourney.ts](src/tools/am/deleteJourney.ts)
+
+Delete an authentication journey from a realm.
+
+**Parameters:**
+
+- `realm` (string): The realm containing the journey
+- `journeyName` (string): The name of the journey to delete
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Success message confirming deletion
+
+**Implementation Notes:**
+
+- AM automatically cleans up all node instances within the journey, including PageNode child nodes
+- Permanent deletion — cannot be undone
+
+#### 28. `deleteJourneyNodes`
+
+**File:** [src/tools/am/deleteJourneyNodes.ts](src/tools/am/deleteJourneyNodes.ts)
+
+Batch delete orphaned node instances.
+
+**Parameters:**
+
+- `realm` (string): The realm containing the nodes
+- `nodes` (array): Array of objects with `nodeType` and `nodeId` to delete
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Results for each deletion with success/error counts
+
+**Implementation Notes:**
+
+- Use to clean up nodes removed from a journey during an update (via saveJourney) that still exist in AM
+- Not needed when deleting entire journeys (AM cleans up nodes automatically)
+- Deletes executed in parallel; individual failures do not stop other deletions
+
+#### 29. `setDefaultJourney`
+
+**File:** [src/tools/am/setDefaultJourney.ts](src/tools/am/setDefaultJourney.ts)
+
+Set the default authentication journey for a realm.
+
+**Parameters:**
+
+- `realm` (string): The realm to configure
+- `journeyName` (string): The name of the journey to set as default
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Success message confirming the default journey change
+
+**Implementation Notes:**
+
+- First GETs current auth config to preserve `adminAuthModule`
+- Then PUTs updated config with new `orgConfig` value
+- Uses `accept-api-version: protocol=1.0,resource=1.0` header
+
+#### 30. `getJourneyPreviewUrl`
+
+**File:** [src/tools/am/getJourneyPreviewUrl.ts](src/tools/am/getJourneyPreviewUrl.ts)
+
+Generate the preview URL for testing an authentication journey.
+
+**Parameters:**
+
+- `realm` (string): The realm containing the journey
+- `journeyName` (string, optional): The journey to preview. If omitted, returns the URL for the default journey.
+
+**Required Scopes:** None (URL generation only)
+
+**Returns:** Preview URL that can be opened in a browser
+
+**Implementation Notes:**
+
+- No API call required — constructs URL from `AIC_BASE_URL` and parameters
+- URL-encodes journey name for special characters
+
+#### 31. `listScripts`
+
+**File:** [src/tools/am/listScripts.ts](src/tools/am/listScripts.ts)
+
+List Scripted Decision Node scripts (evaluatorVersion 2.0) in a realm.
+
+**Parameters:**
+
+- `realm` (string): The realm to query
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Script metadata including ID, name, description, language, and context
+
+**Implementation Notes:**
+
+- Filters to `context eq "AUTHENTICATION_TREE_DECISION_NODE" and evaluatorVersion eq "2.0"`
+- Use `getAMScript` to retrieve full script content
+
+#### 32. `createScript`
+
+**File:** [src/tools/am/createScript.ts](src/tools/am/createScript.ts)
+
+Create a new Scripted Decision Node script for use in authentication journeys.
+
+**Parameters:**
+
+- `realm` (string): The realm to create the script in
+- `name` (string): The name of the script
+- `description` (string, optional): Description of the script
+- `script` (string): The JavaScript source code
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Success message with script ID and transaction ID
+
+**Implementation Notes:**
+
+- Automatically base64-encodes the script content
+- Sets `evaluatorVersion` to "2.0" and `language` to "JAVASCRIPT"
+- Use `getScriptedDecisionNodeBindings` first to see available APIs
+
+#### 33. `updateScript`
+
+**File:** [src/tools/am/updateScript.ts](src/tools/am/updateScript.ts)
+
+Update an existing Scripted Decision Node script.
+
+**Parameters:**
+
+- `realm` (string): The realm containing the script
+- `scriptId` (string): The unique identifier of the script (UUID format)
+- `name` (string, optional): New name for the script
+- `description` (string, optional): New description
+- `script` (string, optional): New JavaScript source code
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Success message with script ID and transaction ID
+
+**Implementation Notes:**
+
+- Fetches current script first, then merges updates (preserves unchanged fields)
+- At least one update field must be provided
+- Script content is base64-encoded before sending
+
+#### 34. `deleteScript`
+
+**File:** [src/tools/am/deleteScript.ts](src/tools/am/deleteScript.ts)
+
+Delete an AM script by its ID.
+
+**Parameters:**
+
+- `realm` (string): The realm containing the script
+- `scriptId` (string): The unique identifier of the script to delete (UUID format)
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Success message with transaction ID
+
+**Implementation Notes:**
+
+- Permanent deletion — cannot be undone
+- Ensure the script is not referenced by any journey nodes before deleting
+
+#### 35. `getScriptedDecisionNodeBindings`
+
+**File:** [src/tools/am/getScriptedDecisionNodeBindings.ts](src/tools/am/getScriptedDecisionNodeBindings.ts)
+
+Retrieve the available bindings (variables, functions) and allowed import libraries for Scripted Decision Node scripts.
+
+**Parameters:**
+
+- `realm` (string): The realm to query
+
+**Required Scopes:** `fr:am:*`
+
+**Returns:** Available bindings and allowed imports for the scripting environment
+
+**Implementation Notes:**
+
+- Essential reference when writing journey scripts
+- Queries the `contexts/SCRIPTED_DECISION_NODE` endpoint
+- Shows what APIs and classes are available in the scripting environment
+
 ## Configuration
 
 ### Environment Variables
@@ -804,14 +1102,24 @@ The server handles common error scenarios:
 pingone_AIC_MCP/
 ├── src/
 │   ├── index.ts                            # Server entry point and tool registration
+│   ├── init.ts                             # Initialization helpers
+│   ├── types/
+│   │   └── tool.ts                         # Tool type definitions
 │   ├── services/
 │   │   ├── authService.ts                  # OAuth 2.0 PKCE and Device Code authentication
-│   │   └── tokenStorage.ts                # Token storage abstraction (Keychain/File)
+│   │   ├── tokenStorage.ts                # Token storage abstraction (Keychain/File)
+│   │   └── flows/
+│   │       ├── authResultPage.ts           # OAuth result page HTML
+│   │       ├── deviceFlow.ts               # Device Code Flow implementation
+│   │       ├── pkceFlow.ts                 # PKCE Flow implementation
+│   │       └── pkceUtils.ts                # PKCE utility functions
 │   ├── utils/
 │   │   ├── apiHelpers.ts                   # Shared API request helpers
 │   │   ├── amHelpers.ts                    # AM-specific helpers (URL builders, batch operations)
 │   │   ├── managedObjectHelpers.ts         # Managed object example types
 │   │   ├── responseHelpers.ts              # Response formatting utilities
+│   │   ├── toolHelpers.ts                  # Tool registration helpers
+│   │   ├── urlHelpers.ts                   # URL construction utilities
 │   │   └── validationHelpers.ts            # Path validation, REALMS constant
 │   └── tools/
 │       ├── managedObjects/                  # Managed object CRUD operations
@@ -836,19 +1144,38 @@ pingone_AIC_MCP/
 │       │   ├── updateTheme.ts              # Update existing theme
 │       │   ├── deleteTheme.ts              # Delete theme
 │       │   └── setDefaultTheme.ts          # Set default theme
-│       └── esv/                             # Environment secrets and variables
-│           ├── index.ts                    # Re-exports all ESV tools
-│           ├── queryESVs.ts                # Query variables and secrets
-│           ├── getVariable.ts              # Get specific variable
-│           ├── setVariable.ts              # Create/update variable
-│           └── deleteVariable.ts           # Delete variable
+│       ├── esv/                             # Environment secrets and variables
+│       │   ├── index.ts                    # Re-exports all ESV tools
+│       │   ├── queryESVs.ts                # Query variables and secrets
+│       │   ├── getVariable.ts              # Get specific variable
+│       │   ├── setVariable.ts              # Create/update variable
+│       │   └── deleteVariable.ts           # Delete variable
+│       └── am/                              # AM journey, node, and script tools
+│           ├── index.ts                    # Re-exports all AM tools
+│           ├── listJourneys.ts             # List authentication journeys
+│           ├── getJourney.ts               # Get journey with node details
+│           ├── saveJourney.ts              # Create/update journey atomically
+│           ├── deleteJourney.ts            # Delete journey
+│           ├── setDefaultJourney.ts        # Set default journey for realm
+│           ├── getJourneyPreviewUrl.ts     # Generate journey preview URL
+│           ├── listNodeTypes.ts            # List available node types
+│           ├── getNodeTypeDetails.ts       # Get node type schema/outcomes
+│           ├── getDynamicNodeOutcomes.ts   # Calculate node outcomes from config
+│           ├── updateJourneyNode.ts        # Update single node config
+│           ├── deleteJourneyNodes.ts       # Batch delete orphaned nodes
+│           ├── listScripts.ts             # List decision node scripts
+│           ├── getAMScript.ts             # Get script with base64 decoding
+│           ├── createScript.ts            # Create new script
+│           ├── updateScript.ts            # Update existing script
+│           ├── deleteScript.ts            # Delete script
+│           └── getScriptedDecisionNodeBindings.ts  # Get scripting bindings/imports
 ├── dist/                                    # Compiled JavaScript (generated)
 ├── Dockerfile                               # Multi-stage Docker build (sets DOCKER_CONTAINER=true)
 ├── .dockerignore                            # Docker build context exclusions
 ├── package.json                             # Dependencies and scripts
 ├── tsconfig.json                            # TypeScript configuration
 ├── CLAUDE.md                                # This file
-└── LICENSE                                  # MIT License
+└── LICENSE                                  # Apache License 2.0
 ```
 
 ## Extending the Server
@@ -857,7 +1184,7 @@ pingone_AIC_MCP/
 
 To add a new tool:
 
-1. Create a new file in the appropriate category directory (e.g., `src/tools/managedObjects/myNewTool.ts`, `src/tools/logs/myNewTool.ts`, or `src/tools/themes/myNewTool.ts`)
+1. Create a new file in the appropriate category directory (e.g., `src/tools/managedObjects/myNewTool.ts`, `src/tools/logs/myNewTool.ts`, `src/tools/themes/myNewTool.ts`, or `src/tools/am/myNewTool.ts`)
 2. Define the tool following this pattern:
 
 ```typescript
@@ -1007,7 +1334,7 @@ Manually navigate to the URL shown in error logs, or check if the `open` package
 
 ## Testing
 
-The project includes a comprehensive test suite with **360 tests** across all **20 tools** covering managed objects, themes, logs, and ESV operations.
+The project includes a comprehensive test suite with **749 tests** across all **37 tools** covering managed objects, themes, logs, ESV operations, and AM journeys/scripts.
 
 ### Test Architecture
 
@@ -1038,12 +1365,13 @@ test/
 │   ├── handlers.ts               # MSW request handlers
 │   └── mockData.ts               # Shared test data
 ├── setup.ts                      # Global test setup
-├── __snapshots__/                # Tool schema snapshots (20 files)
+├── __snapshots__/                # Tool schema snapshots (37 files)
 └── tools/
-    ├── managedObjects/           # 7 test files, 113 tests
+    ├── managedObjects/           # 7 test files, 104 tests
     ├── themes/                   # 7 test files, 135 tests
-    ├── logs/                     # 2 test files, 32 tests
-    └── esv/                      # 4 test files, 80 tests
+    ├── logs/                     # 2 test files, 30 tests
+    ├── esv/                      # 4 test files, 72 tests
+    └── am/                       # 17 test files, 208 tests
 ```
 
 **Test File Structure:**
@@ -1092,13 +1420,15 @@ Each tool has a snapshot test that validates the tool's schema structure. When t
 
 **What's Tested:**
 
-- ✅ All 20 tool schemas (snapshot tests)
+- ✅ All 37 tool schemas (snapshot tests)
 - ✅ Request construction for all API endpoints
 - ✅ Response processing and transformations
   - Schema field extraction (getManagedObjectSchema)
   - Base64 decoding (getVariable)
   - Type-specific encoding (setVariable: String() vs JSON.stringify())
-  - Multi-step orchestration (theme tools: GET→modify→PUT)
+  - Multi-step orchestration (theme tools: GET→modify→PUT; saveJourney: validate→generate IDs→transform→PUT)
+  - Base64 encoding (createScript, updateScript)
+  - Journey ID mapping (saveJourney: human-readable IDs→UUIDs)
 - ✅ Input validation (Zod schemas)
 - ✅ Security validations
   - Path traversal prevention (objectId validation)
