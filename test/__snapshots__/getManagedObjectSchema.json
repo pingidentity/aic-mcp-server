@@ -22,6 +22,26 @@
         "version": 1,
         "vendor": "zod"
       }
+    },
+    "includeFullDefinition": {
+      "_def": {
+        "description": "When true, returns the complete managed object definition including script hooks, lifecycle metadata, notifications, and other configuration. Defaults to false for a concise schema-only response.",
+        "innerType": {
+          "_def": {
+            "typeName": "ZodBoolean",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodDefault"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
     }
   }
 }

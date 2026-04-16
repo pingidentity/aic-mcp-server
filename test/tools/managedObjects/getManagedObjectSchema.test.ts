@@ -49,7 +49,7 @@ describe('getManagedObjectSchema', () => {
       expect(resultText).not.toContain('username');
     });
 
-    it('should extract only essential schema fields', async () => {
+    it('should extract only essential schema fields by default', async () => {
       server.use(
         http.get('https://*/openidm/config/managed', ({ request: _request }) => {
           return HttpResponse.json({
@@ -84,6 +84,40 @@ describe('getManagedObjectSchema', () => {
       expect(parsedResult).not.toHaveProperty('other_fields');
       expect(parsedResult).not.toHaveProperty('_id');
       expect(parsedResult).not.toHaveProperty('description');
+    });
+
+    it('should return full managed object definition when includeFullDefinition is true', async () => {
+      const fullObject = {
+        name: 'alpha_user',
+        schema: {
+          required: ['userName'],
+          properties: { userName: { type: 'string' } }
+        },
+        onCreate: { type: 'text/javascript', source: 'logger.info("created");' },
+        onUpdate: { type: 'text/javascript', source: 'logger.info("updated");' },
+        _id: 'managed/alpha_user',
+        description: 'Alpha realm user'
+      };
+
+      server.use(
+        http.get('https://*/openidm/config/managed', ({ request: _request }) => {
+          return HttpResponse.json({ objects: [fullObject] });
+        })
+      );
+
+      const result = await getManagedObjectSchemaTool.toolFunction({
+        objectType: 'alpha_user',
+        includeFullDefinition: true
+      });
+
+      const resultText = result.content[0].text;
+      const parsedResult = JSON.parse(resultText);
+
+      expect(parsedResult.name).toBe('alpha_user');
+      expect(parsedResult.onCreate).toEqual(fullObject.onCreate);
+      expect(parsedResult.onUpdate).toEqual(fullObject.onUpdate);
+      expect(parsedResult._id).toBe('managed/alpha_user');
+      expect(parsedResult.description).toBe('Alpha realm user');
     });
 
     it('should handle missing required array', async () => {
@@ -225,6 +259,17 @@ describe('getManagedObjectSchema', () => {
       const schema = getManagedObjectSchemaTool.inputSchema.objectType;
       expect(() => schema.parse('alpha_device')).not.toThrow();
       expect(() => schema.parse('custom_application')).not.toThrow();
+    });
+
+    it('should default includeFullDefinition to false', () => {
+      const schema = getManagedObjectSchemaTool.inputSchema.includeFullDefinition;
+      expect(schema.parse(undefined)).toBe(false);
+    });
+
+    it('should accept boolean values for includeFullDefinition', () => {
+      const schema = getManagedObjectSchemaTool.inputSchema.includeFullDefinition;
+      expect(schema.parse(true)).toBe(true);
+      expect(schema.parse(false)).toBe(false);
     });
   });
 
