@@ -19,6 +19,8 @@ export const setDefaultJourneyTool = {
     'Set the default authentication journey for a realm. This journey will be used when no specific journey is requested during authentication.',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true
   },
   inputSchema: {

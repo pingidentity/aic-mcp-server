@@ -15,6 +15,7 @@ export const createThemeTool = {
     'Create a new theme for a realm in PingOne AIC. IMPORTANT: Call getThemeSchema first to understand all available fields, their types, enum values, and requirements before creating a theme.',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
     openWorldHint: true
   },
   inputSchema: {
