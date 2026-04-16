@@ -1,6 +1,6 @@
 ---
 name: review-conventions
-description: Code review guidelines for the aic-mcp-server codebase — what to check, common pitfalls, and required patterns
+description: Code review checklists and common pitfalls for this codebase — security, correctness, conventions, and verification commands. TRIGGER when: reviewing a PR or diff; user asks to review, check, or validate changes; running /review or /security-review; verifying tool implementation correctness before committing.
 ---
 
 # Review Conventions
