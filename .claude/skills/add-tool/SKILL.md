@@ -1,6 +1,6 @@
 ---
 name: add-tool
-description: How to add a new tool to the MCP server — file template, conventions, registration, and adding new categories
+description: Required conventions for MCP tool implementation — structure, response formatting, annotations, and registration. TRIGGER when: creating or modifying any tool file in src/tools/; changing inputSchema, toolFunction, or response handling; adding a tool category; touching code that uses makeAuthenticatedRequest, createToolResponse, or formatSuccess. SKIP when: only modifying tests (use testing skill), only reviewing code (use review-conventions skill).
 ---
 
 # Adding a New Tool
@@ -36,7 +36,7 @@ export const myNewToolTool = {
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'GET'
       });
-      return createToolResponse(formatSuccess(JSON.stringify(data, null, 2), response));
+      return createToolResponse(formatSuccess(data, response));
     } catch (error: any) {
       return createToolResponse(`Failed to do thing: ${error.message}`);
     }
@@ -53,6 +53,18 @@ export { myNewToolTool } from './myNewTool.js';
 ```
 
 The tool auto-registers — `toolHelpers.ts` collects via `Object.values()` on each category module.
+
+## Response Formatting
+
+`formatSuccess(data, response)` accepts objects or strings — it handles JSON serialization internally. Always pass the `response` object from `makeAuthenticatedRequest` so the transaction ID (`x-forgerock-transactionid` header) is automatically appended. Transaction IDs are critical for tracing tool calls back to AIC API requests.
+
+For **write operations returning 204** (DELETE, some PUT), there's no response body to pass to `formatSuccess`. Manually extract the transaction ID:
+
+```typescript
+const { response } = await makeAuthenticatedRequest(url, SCOPES, { method: 'DELETE' });
+const transactionId = response.headers.get('x-forgerock-transactionid') || 'unknown';
+return createToolResponse(`Resource deleted successfully.\nTransaction ID: ${transactionId}`);
+```
 
 ## Annotations
 

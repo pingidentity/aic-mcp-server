@@ -1,6 +1,6 @@
 ---
 name: testing
-description: How to write tests for this codebase — framework, file template, section ordering, and security test requirements
+description: Required conventions for writing and modifying tests — framework, file template, section ordering, and security test requirements. TRIGGER when: creating or modifying any file under test/; adding, changing, or removing tool parameters or response behavior that requires test updates; user asks about testing patterns or test structure.
 ---
 
 # Testing
