@@ -14,6 +14,7 @@ export const createManagedObjectTool = {
   description: 'Create a new managed object in PingOne AIC',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
     openWorldHint: true
   },
   inputSchema: {

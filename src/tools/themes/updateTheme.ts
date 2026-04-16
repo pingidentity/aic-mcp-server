@@ -13,6 +13,7 @@ export const updateThemeTool = {
   description: 'Update an existing theme in PingOne AIC',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true
   },

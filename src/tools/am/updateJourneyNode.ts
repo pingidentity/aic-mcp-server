@@ -13,6 +13,8 @@ export const updateJourneyNodeTool = {
     "Update a single node's configuration without modifying the journey structure. This is a FULL REPLACEMENT of the node configuration - to preserve existing fields, first fetch the current configuration using getJourney, merge your changes, then call this tool with the complete configuration.",
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true
   },
   inputSchema: {

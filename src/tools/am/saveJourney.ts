@@ -21,6 +21,8 @@ export const saveJourneyTool = {
     'Create or update a complete authentication journey atomically. Node IDs can be human-readable (e.g., "login-page") and will be automatically transformed to UUIDs. Use "success" or "failure" as connection targets for terminal nodes. Returns the mapping of original IDs to generated UUIDs.',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true
   },
   inputSchema: {

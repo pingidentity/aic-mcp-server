@@ -12,6 +12,8 @@ export const updateScriptTool = {
     'Update an existing Scripted Decision Node script. You can update any combination of name, description, or script content.',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
+    idempotentHint: true,
     openWorldHint: true
   },
   inputSchema: {
