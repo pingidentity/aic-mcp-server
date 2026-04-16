@@ -23,9 +23,21 @@ export const getManagedObjectSchemaTool = {
       .min(1)
       .describe(
         `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+      ),
+    includeFullDefinition: z
+      .boolean()
+      .default(false)
+      .describe(
+        'When true, returns the complete managed object definition including script hooks, lifecycle metadata, notifications, and other configuration. Defaults to false for a concise schema-only response.'
       )
   },
-  async toolFunction({ objectType }: { objectType: string }) {
+  async toolFunction({
+    objectType,
+    includeFullDefinition = false
+  }: {
+    objectType: string;
+    includeFullDefinition?: boolean;
+  }) {
     const url = `https://${aicBaseUrl}/openidm/config/managed`;
 
     try {
@@ -42,7 +54,10 @@ export const getManagedObjectSchemaTool = {
         );
       }
 
-      // Extract only the essential schema information
+      if (includeFullDefinition) {
+        return createToolResponse(formatSuccess(managedObject, response));
+      }
+
       const schemaInfo = {
         name: managedObject.name,
         required: managedObject.schema?.required || [],
