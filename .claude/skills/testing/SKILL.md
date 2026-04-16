@@ -56,6 +56,7 @@ Complex orchestration tools add "Application Logic" after snapshot tests.
 ## Security Tests
 
 Always include for tools that accept user input:
+
 - Path traversal prevention for ID parameters (`schema.parse('../etc/passwd')` should throw)
 - Query injection prevention for user-provided filter strings
 

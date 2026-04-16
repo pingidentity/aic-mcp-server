@@ -26,14 +26,14 @@ description: Code review guidelines for the aic-mcp-server codebase — what to 
 
 ## Common Pitfalls
 
-| Pitfall | What to look for |
-|---------|------------------|
-| Missing path traversal protection | Any ID parameter in a URL path not using `safePathSegmentSchema` |
-| Missing destructiveHint | DELETE or destructive operations without `annotations: { destructiveHint: true }` |
-| Hardcoded scopes | Scopes written inline in `makeAuthenticatedRequest()` instead of referencing the `SCOPES` const |
-| Raw JSON response | Returning `JSON.stringify(data)` without `formatSuccess()` — loses transaction ID |
-| Theme data loss | Theme update/delete operations that don't preserve `isDefault` or other realm data |
-| AM helper bypass | AM tools not using `buildAMRealmUrl()` and `AM_API_HEADERS` from `amHelpers` |
+| Pitfall                           | What to look for                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Missing path traversal protection | Any ID parameter in a URL path not using `safePathSegmentSchema`                                |
+| Missing destructiveHint           | DELETE or destructive operations without `annotations: { destructiveHint: true }`               |
+| Hardcoded scopes                  | Scopes written inline in `makeAuthenticatedRequest()` instead of referencing the `SCOPES` const |
+| Raw JSON response                 | Returning `JSON.stringify(data)` without `formatSuccess()` — loses transaction ID               |
+| Theme data loss                   | Theme update/delete operations that don't preserve `isDefault` or other realm data              |
+| AM helper bypass                  | AM tools not using `buildAMRealmUrl()` and `AM_API_HEADERS` from `amHelpers`                    |
 
 ## Test Review Checklist
 
@@ -54,6 +54,7 @@ Run these to verify changes:
 npm test                         # All tests pass
 npm run typecheck                # No type errors
 npm run lint                     # No lint violations
+npm run format:check             # No formatting issues
 npm run build                    # Clean build succeeds
 npm run test:snapshots:update    # If tool schema changed
 ```
