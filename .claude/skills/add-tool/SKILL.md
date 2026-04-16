@@ -47,6 +47,7 @@ export const myNewToolTool = {
 ## 2. Export from the category index
 
 Add to `src/tools/<category>/index.ts`:
+
 ```typescript
 export { myNewToolTool } from './myNewTool.js';
 ```
@@ -57,14 +58,15 @@ The tool auto-registers — `toolHelpers.ts` collects via `Object.values()` on e
 
 Every tool should have an `annotations` object describing its behavior to MCP clients. These are hints that guide client behavior (e.g., requiring confirmation, enabling retries).
 
-| Annotation | Meaning | Default |
-|------------|---------|---------|
-| `readOnlyHint` | Tool only reads data, does not modify state | `false` |
-| `destructiveHint` | Tool may perform destructive updates (only meaningful when `readOnlyHint` is `false`) | `true` |
-| `idempotentHint` | Calling repeatedly with the same arguments has no additional effect (only meaningful when `readOnlyHint` is `false`) | `false` |
-| `openWorldHint` | Tool may interact with an open world of external entities (e.g., web search). If `false`, the domain of interaction is closed (e.g., a memory tool) | `true` |
+| Annotation        | Meaning                                                                                                                                             | Default |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `readOnlyHint`    | Tool only reads data, does not modify state                                                                                                         | `false` |
+| `destructiveHint` | Tool may perform destructive updates (only meaningful when `readOnlyHint` is `false`)                                                               | `true`  |
+| `idempotentHint`  | Calling repeatedly with the same arguments has no additional effect (only meaningful when `readOnlyHint` is `false`)                                | `false` |
+| `openWorldHint`   | Tool may interact with an open world of external entities (e.g., web search). If `false`, the domain of interaction is closed (e.g., a memory tool) | `true`  |
 
 Common combinations used in this codebase:
+
 - **Read-only** (GET, list, query): `{ readOnlyHint: true, openWorldHint: true }`
 - **Create**: `{ openWorldHint: true }`
 - **Update (idempotent)**: `{ idempotentHint: true, openWorldHint: true }`
