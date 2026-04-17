@@ -1,0 +1,61 @@
+{
+  "name": "patchManagedObjectDefinition",
+  "title": "Patch Managed Object Definition",
+  "description": "Modify an existing managed object type definition in PingOne AIC using ForgeRock PATCH operations. Operations use field paths relative to the object (e.g., /schema/properties/email). IMPORTANT: Cannot modify relationship properties — use patchManagedObjectRelationship for those.",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectName": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "regex",
+            "regex": {},
+            "message": "Object name must contain only letters, numbers, and underscores"
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Name of the managed object type to modify (e.g., \"alpha_user\", \"custom_application\"). Must contain only a-z, A-Z, 0-9, and underscore characters."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "operations": {
+      "_def": {
+        "type": {
+          "_def": {
+            "unknownKeys": "strip",
+            "catchall": {
+              "_def": {
+                "typeName": "ZodNever"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodObject"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          },
+          "_cached": null
+        },
+        "minLength": null,
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Array of ForgeRock PATCH operations to apply. Each operation has operation (add/remove/replace), field (path relative to the object, e.g., /schema/properties/email), and optional value."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

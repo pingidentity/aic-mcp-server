@@ -1,0 +1,59 @@
+{
+  "name": "createManagedObjectDefinition",
+  "title": "Create Managed Object Definition",
+  "description": "Create a new managed object type definition in PingOne AIC by appending to the managed config. IMPORTANT: Call getManagedObjectSchema with includeFullDefinition=true on an existing object first to understand the expected definition structure.",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectName": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "regex",
+            "regex": {},
+            "message": "Object name must contain only letters, numbers, and underscores"
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Name for the new managed object type (e.g., \"alpha_device\", \"custom_application\"). Must contain only a-z, A-Z, 0-9, and underscore characters."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "objectDefinition": {
+      "_def": {
+        "keyType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "valueType": {
+          "_def": {
+            "typeName": "ZodAny"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          },
+          "_any": true
+        },
+        "typeName": "ZodRecord",
+        "description": "The object definition containing at minimum a schema with properties. Call getManagedObjectSchema with includeFullDefinition=true on an existing object to see the expected structure."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

@@ -13,6 +13,7 @@ export const setDefaultThemeTool = {
   description: 'Set a theme as the default for a realm in PingOne AIC',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true
   },

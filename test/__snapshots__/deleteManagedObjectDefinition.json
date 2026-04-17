@@ -1,0 +1,28 @@
+{
+  "name": "deleteManagedObjectDefinition",
+  "title": "Delete Managed Object Definition",
+  "description": "Delete a managed object type definition from PingOne AIC. Removes the object type from the managed config. IMPORTANT: This will fail if other object types have relationship properties referencing this object type.",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectName": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "regex",
+            "regex": {},
+            "message": "Object name must contain only letters, numbers, and underscores"
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "Name of the managed object type to delete (e.g., \"alpha_device\", \"custom_application\"). Must contain only a-z, A-Z, 0-9, and underscore characters."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

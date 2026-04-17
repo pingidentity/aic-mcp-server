@@ -1,0 +1,161 @@
+{
+  "name": "patchManagedObjectRelationship",
+  "title": "Patch Managed Object Relationship",
+  "description": "Add, update, or remove a custom relationship property on a managed object type in PingOne AIC via the schema service. Only works with properties that have a \"custom_\" prefix. For add/update, provide the full relationship property definition.",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "objectType": {
+      "_def": {
+        "schema": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "checks": [
+                  {
+                    "kind": "min",
+                    "value": 1,
+                    "message": "Value cannot be empty"
+                  }
+                ],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
+        "description": "The managed object type (e.g., \"alpha_user\", \"bravo_role\"). Must be a valid path segment."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "propertyName": {
+      "_def": {
+        "schema": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "schema": {
+                  "_def": {
+                    "checks": [
+                      {
+                        "kind": "min",
+                        "value": 1,
+                        "message": "Value cannot be empty"
+                      }
+                    ],
+                    "typeName": "ZodString",
+                    "coerce": false
+                  },
+                  "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                  }
+                },
+                "typeName": "ZodEffects",
+                "effect": {
+                  "type": "refinement"
+                }
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
+        "description": "The relationship property name. Must start with \"custom_\" prefix (e.g., \"custom_department\", \"custom_teams\")."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "action": {
+      "_def": {
+        "values": [
+          "add",
+          "update",
+          "remove"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The action to perform: \"add\" to create a new relationship property, \"update\" to modify an existing one, or \"remove\" to delete it."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "propertyDefinition": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "keyType": {
+              "_def": {
+                "checks": [],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "valueType": {
+              "_def": {
+                "typeName": "ZodAny"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              },
+              "_any": true
+            },
+            "typeName": "ZodRecord"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "The full relationship property definition. Required for add/update actions. For the expected structure, refer to an existing relationship property from getManagedObjectSchema with includeFullDefinition=true."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

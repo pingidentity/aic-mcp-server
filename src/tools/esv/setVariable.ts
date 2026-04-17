@@ -16,6 +16,7 @@ export const setVariableTool = {
   description: 'Create or update an environment variable (ESV) in PingOne AIC',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
     idempotentHint: true,
     openWorldHint: true
   },

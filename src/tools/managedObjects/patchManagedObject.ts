@@ -26,6 +26,7 @@ export const patchManagedObjectTool = {
   description: 'Update specific fields of a managed object in PingOne AIC using JSON Patch operations',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
     openWorldHint: true
   },
   inputSchema: {

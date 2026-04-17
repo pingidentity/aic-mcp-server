@@ -12,6 +12,7 @@ export const createScriptTool = {
     'Create a new Scripted Decision Node script for use in authentication journeys. Use getScriptedDecisionNodeBindings to see available variables and allowed imports before writing the script.',
   scopes: SCOPES,
   annotations: {
+    destructiveHint: false,
     openWorldHint: true
   },
   inputSchema: {
