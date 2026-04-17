@@ -100,6 +100,18 @@ export const handlers = [
     return HttpResponse.json(mockManagedObjectConfig);
   }),
 
+  // Patch managed object config (definition-level operations)
+  http.patch('https://*/openidm/config/managed', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: 'managed',
+      _rev: '2',
+      objects: mockManagedObjectConfig.objects
+    });
+  }),
+
   // Create managed object
   http.post('https://*/openidm/managed/:objectType', async ({ request }) => {
     const authError = validateAuthHeader(request);
@@ -131,6 +143,23 @@ export const handlers = [
     if (authError) return authError;
 
     return HttpResponse.json({ _id: params.objectId });
+  }),
+
+  // Schema service - PUT relationship property
+  http.put('https://*/openidm/schema/managed/:objectType/properties/:propertyName', async ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    const body = (await request.json()) as Record<string, any>;
+    return HttpResponse.json(body);
+  }),
+
+  // Schema service - DELETE relationship property
+  http.delete('https://*/openidm/schema/managed/:objectType/properties/:propertyName', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return new HttpResponse(null, { status: 204, headers: { 'content-length': '0' } });
   }),
 
   // Themes - getThemes endpoint (query all themes)

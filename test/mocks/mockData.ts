@@ -15,8 +15,63 @@ export const mockManagedObjects = [
 // Mock managed object configuration response
 export const mockManagedObjectConfig = {
   objects: [
-    { name: 'alpha_user', schema: { required: ['userName'], properties: { userName: { type: 'string' } } } },
-    { name: 'bravo_role', schema: { required: ['name'], properties: { name: { type: 'string' } } } },
+    {
+      name: 'alpha_user',
+      schema: {
+        required: ['userName'],
+        properties: {
+          userName: { type: 'string' },
+          manager: {
+            type: 'relationship',
+            resourceCollection: [
+              {
+                path: 'managed/alpha_user',
+                label: 'Alpha_user',
+                query: { queryFilter: 'true', fields: ['_id'], sortKeys: [] },
+                notify: false
+              }
+            ]
+          },
+          roles: {
+            type: 'array',
+            items: {
+              type: 'relationship',
+              resourceCollection: [
+                {
+                  path: 'managed/bravo_role',
+                  label: 'Bravo_role',
+                  query: { queryFilter: 'true', fields: ['_id'], sortKeys: [] },
+                  notify: false
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      name: 'bravo_role',
+      schema: {
+        required: ['name'],
+        properties: {
+          name: { type: 'string' },
+          members: {
+            type: 'array',
+            items: {
+              type: 'relationship',
+              resourceCollection: [
+                {
+                  path: 'managed/alpha_user',
+                  label: 'Alpha_user',
+                  query: { queryFilter: 'true', fields: ['_id'], sortKeys: [] },
+                  notify: false
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
     { name: 'alpha_device', schema: { required: ['deviceId'], properties: { deviceId: { type: 'string' } } } }
   ]
 };
