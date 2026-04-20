@@ -277,6 +277,21 @@ Inspect and enable optional features in PingOne AIC. A single `listFeatures` too
 | `installIdmFeature`  | Install an IDM feature (one-way — cannot be undone). Run `validateIdmFeature` first | - `Install the groups feature` <br> - `Install password/timestamps`                                       |
 | `enableAiAgent`      | Enable AI Agents (one-way — cannot be undone). Re-running is safe                   | - `Enable AI Agents` <br> - `Set up AI Agents in this tenant`                                             |
 
+### Applications (Not available when using Docker)
+
+> **📍 Not available when using MCP from a Docker container **: Application tools are automatically excluded in Docker deployments because they require browser-based PKCE authentication which is incompatible with the Device Code Flow used in containers.
+
+Manage OIDC applications in a realm.
+
+| Tool               | Description                                                                                        | Usage Examples                                                                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getOidcAppSchema` | Get the OIDC app schema (compact summary by default, full detail with section filtering available) | - `What fields can I set on an OIDC app?` <br> - `Show me the OIDC application schema` <br> - `Show the full schema for coreOAuth2ClientConfig` |
+| `listOidcApps`     | List OIDC applications in a realm with summary fields                                              | - `Show all OIDC apps in alpha` <br> - `List applications in bravo` <br> - `What OIDC apps exist?`                                              |
+| `getOidcApp`       | Retrieve a complete OIDC application configuration                                                 | - `Get the MyPortal OIDC app` <br> - `Show me the configuration for app xyz` <br> - `Display the full config for the Checkout application`      |
+| `createOidcApp`    | Create a new OIDC application                                                                      | - `Create an OIDC app called MyPortal` <br> - `Add a new OIDC application for Checkout` <br> - `Create an OIDC client with client ID my-spa`    |
+| `updateOidcApp`    | Update an OIDC application (partial updates — send only changed fields)                            | - `Update the redirect URIs on MyPortal` <br> - `Change the owners of the Checkout app` <br> - `Update the token lifetime for the SPA app`      |
+| `deleteOidcApp`    | Delete an OIDC application                                                                         | - `Delete the MyPortal app` <br> - `Remove the old Checkout application` <br> - `Delete OIDC app xyz`                                           |
+
 ### AM Journeys (Not available when using Docker)
 
 > **📍 Not available when using MCP from a Docker container **: AM Journey tools are automatically excluded in Docker deployments because they require browser-based PKCE authentication which is incompatible with the Device Code Flow used in containers.

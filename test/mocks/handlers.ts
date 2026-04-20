@@ -405,5 +405,35 @@ export const handlers = [
     if (authError) return authError;
 
     return HttpResponse.json({ core: { orgConfig: 'NewDefault', adminAuthModule: 'Login' } });
+  }),
+
+  // AM - OAuth2Client agent (GET single, PUT create/update, DELETE)
+  http.get('https://*/am/json/*/realm-config/agents/OAuth2Client/:clientId', ({ params, request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: params.clientId, coreOAuth2ClientConfig: {} });
+  }),
+
+  http.put('https://*/am/json/*/realm-config/agents/OAuth2Client/:clientId', async ({ params, request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: params.clientId });
+  }),
+
+  http.delete('https://*/am/json/*/realm-config/agents/OAuth2Client/:clientId', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // AM - OAuth2Client schema/template (POST with _action)
+  http.post('https://*/am/json/*/realm-config/agents/OAuth2Client', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ type: 'object', properties: {} });
   })
 ];

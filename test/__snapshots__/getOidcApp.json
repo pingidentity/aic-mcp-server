@@ -1,0 +1,42 @@
+{
+  "name": "getOidcApp",
+  "title": "Get OIDC App",
+  "description": "Retrieves a complete OIDC application configuration.",
+  "scopes": [
+    "fr:am:*",
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "name": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "min",
+            "value": 1
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "The application name"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

@@ -256,6 +256,40 @@ describe('AuthService Token Caching', () => {
       expect(mockPkceFlow).toHaveBeenCalledTimes(1);
     });
 
+    it('should share cached token lookup for concurrent calls', async () => {
+      const mockNow = 1000000000;
+      vi.spyOn(Date, 'now').mockReturnValue(mockNow);
+
+      const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
+      initAuthService(['fr:idm:*'], { allowCachedOnFirstRequest: true });
+
+      const validToken = createTestTokenData({
+        accessToken: 'cached-token',
+        expiresAt: mockNow + 3600000,
+        aicBaseUrl: 'test.forgeblocks.com'
+      });
+      getStorage()._mockGetToken().mockResolvedValue(validToken);
+
+      const authServiceInstance = getAuthService() as any;
+      authServiceInstance.executePkceFlow = mockPkceFlow;
+      authServiceInstance.executeDeviceFlow = mockDeviceFlow;
+      authServiceInstance.exchangeToken = mockExchangeToken;
+
+      const [token1, token2] = await Promise.all([
+        getAuthService().getToken(['fr:idm:*']),
+        getAuthService().getToken(['fr:idm:*'])
+      ]);
+
+      expect(token1).toBe('scoped-token');
+      expect(token2).toBe('scoped-token');
+      expect(getStorage()._mockGetToken()).toHaveBeenCalledTimes(1);
+      expect(mockPkceFlow).not.toHaveBeenCalled();
+      expect(mockDeviceFlow).not.toHaveBeenCalled();
+      expect(mockExchangeToken).toHaveBeenCalledTimes(2);
+      expect(mockExchangeToken).toHaveBeenNthCalledWith(1, 'cached-token', ['fr:idm:*']);
+      expect(mockExchangeToken).toHaveBeenNthCalledWith(2, 'cached-token', ['fr:idm:*']);
+    });
+
     it('should clear in-flight promise after authentication completes', async () => {
       const mockNow = 1000000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);

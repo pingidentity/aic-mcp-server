@@ -1,0 +1,98 @@
+{
+  "name": "getOidcAppSchema",
+  "title": "Get OIDC App Schema",
+  "description": "Returns the schema for an OIDC application. By default returns a compact summary of property names, types, and allowed values. Set summary=false for full details. Call this before createOidcApp or updateOidcApp to understand available fields.",
+  "scopes": [
+    "fr:am:*",
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "summary": {
+      "_def": {
+        "description": "When true (default), returns a compact listing of property names, types, and allowed values. Set to false for the full schema.",
+        "innerType": {
+          "_def": {
+            "typeName": "ZodBoolean",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodDefault"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "sections": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "type": {
+              "_def": {
+                "checks": [],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "minLength": null,
+            "maxLength": null,
+            "exactLength": null,
+            "typeName": "ZodArray"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Limits the full client configuration schema to specific sections (e.g., [\"coreOAuth2ClientConfig\", \"advancedOAuth2ClientConfig\"]). The application metadata schema is always returned in full. Omit to get all sections."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "includeDefaults": {
+      "_def": {
+        "description": "Returns default values for all fields. Only applies when summary is false. Large response.",
+        "innerType": {
+          "_def": {
+            "typeName": "ZodBoolean",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodDefault"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

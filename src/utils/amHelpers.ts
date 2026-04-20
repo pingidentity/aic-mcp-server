@@ -23,6 +23,14 @@ export const AM_API_HEADERS = {
 } as const;
 
 /**
+ * Standard headers for AM OAuth2Client agent CRUD operations (protocol 2.1, resource 1.0).
+ */
+export const AM_OAUTH2_CLIENT_HEADERS = {
+  'accept-api-version': 'protocol=2.1,resource=1.0',
+  'Content-Type': 'application/json'
+} as const;
+
+/**
  * Headers for AM script API requests (protocol 1.0, resource 1.0).
  * Used by getAMScript for reading scripts.
  */
