@@ -216,17 +216,21 @@ The server provides tools for AI agents to interact with your PingOne AIC enviro
 
 ### Managed Objects
 
-Generic CRUD operations for **any managed object type** in your environment.
+Generic CRUD operations for **any managed object type** in your environment, plus administrative tools for managing object type definitions and relationship properties.
 
-| Tool                     | Description                                           | Usage Examples                                                                                                                          |
-| ------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `listManagedObjects`     | Discover all managed object types in your environment | - `What object types are available?` <br> - `List all managed objects` <br> - `Show me what types I can work with`                      |
-| `getManagedObjectSchema` | Get schema definition for an object type              | - `What fields are required for alpha_user?` <br> - `Show me the schema for bravo_role` <br> - `What properties does alpha_group have?` |
-| `queryManagedObjects`    | Query objects with filters, pagination, sorting       | - `Find users with email @example.com` <br> - `List all roles sorted by name` <br> - `Show me the first 10 alpha_groups`                |
-| `getManagedObject`       | Retrieve an object's complete profile                 | - `Get user xyz123` <br> - `Show me the details for role abc456` <br> - `Display the profile for alpha_user xyz`                        |
-| `createManagedObject`    | Create a new managed object                           | - `Create user jsmith` <br> - `Add a new admin role` <br> - `Create a bravo_group called Developers`                                    |
-| `patchManagedObject`     | Update object fields                                  | - `Update user xyz123 email to new@example.com` <br> - `Change role description` <br> - `Modify the alpha_group name`                   |
-| `deleteManagedObject`    | Delete an object                                      | - `Delete user xyz123` <br> - `Remove role abc456` <br> - `Delete the test group`                                                       |
+| Tool                             | Description                                                                        | Usage Examples                                                                                                                                                 |
+| -------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `listManagedObjects`             | Discover all managed object types in your environment                              | - `What object types are available?` <br> - `List all managed objects` <br> - `Show me what types I can work with`                                             |
+| `getManagedObjectSchema`         | Get schema definition for an object type                                           | - `What fields are required for alpha_user?` <br> - `Show me the schema for bravo_role` <br> - `What properties does alpha_group have?`                        |
+| `queryManagedObjects`            | Query objects with filters, pagination, sorting                                    | - `Find users with email @example.com` <br> - `List all roles sorted by name` <br> - `Show me the first 10 alpha_groups`                                       |
+| `getManagedObject`               | Retrieve an object's complete profile                                              | - `Get user xyz123` <br> - `Show me the details for role abc456` <br> - `Display the profile for alpha_user xyz`                                               |
+| `createManagedObject`            | Create a new managed object                                                        | - `Create user jsmith` <br> - `Add a new admin role` <br> - `Create a bravo_group called Developers`                                                           |
+| `patchManagedObject`             | Update object fields                                                               | - `Update user xyz123 email to new@example.com` <br> - `Change role description` <br> - `Modify the alpha_group name`                                          |
+| `deleteManagedObject`            | Delete an object                                                                   | - `Delete user xyz123` <br> - `Remove role abc456` <br> - `Delete the test group`                                                                              |
+| `createManagedObjectDefinition`  | Create a new managed object type definition                                        | - `Create a new alpha_device object type` <br> - `Add a custom_application managed object` <br> - `Define a new managed object type for vehicles`              |
+| `patchManagedObjectDefinition`   | Modify an existing managed object type definition using ForgeRock PATCH operations | - `Add an email property to alpha_user` <br> - `Remove the unused field from custom_application` <br> - `Update the description on the alpha_device schema`    |
+| `deleteManagedObjectDefinition`  | Delete a managed object type definition from the managed config                    | - `Delete the custom_application object type` <br> - `Remove the alpha_device managed object` <br> - `Drop the unused custom object type`                      |
+| `patchManagedObjectRelationship` | Add, update, or remove a custom relationship property (must use `custom_` prefix)  | - `Add a custom_manager relationship to alpha_user` <br> - `Update the custom_teams relationship definition` <br> - `Remove custom_department from bravo_user` |
 
 ### Themes
 
@@ -261,6 +265,17 @@ Manage environment secrets and variables.
 | `getVariable`    | Retrieve a variable with decoded value   | - `Get esv-database-url` <br> - `Show me the API key variable` <br> - `Display the value of esv-config`                           |
 | `setVariable`    | Create or update a variable              | - `Create variable esv-api-key` <br> - `Update esv-max-connections to 100` <br> - `Set esv-endpoint to https://api.example.com`   |
 | `deleteVariable` | Delete a variable                        | - `Delete esv-old-config` <br> - `Remove variable xyz` <br> - `Delete the deprecated esv-legacy-url`                              |
+
+### Feature Management
+
+Inspect and enable optional features in PingOne AIC. A single `listFeatures` tool returns a unified view of all IDM and AIC platform features with install status. Install operations are one-way and cannot be undone from these tools.
+
+| Tool                 | Description                                                                         | Usage Examples                                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `listFeatures`       | List all features (IDM + AIC platform) and their install status                     | - `What features are available?` <br> - `Which features are installed?` <br> - `Is AI Agents installed?`  |
+| `validateIdmFeature` | Check whether an IDM feature can be installed without making any changes            | - `Can I install the groups feature?` <br> - `Validate the password/timestamps feature before installing` |
+| `installIdmFeature`  | Install an IDM feature (one-way — cannot be undone). Run `validateIdmFeature` first | - `Install the groups feature` <br> - `Install password/timestamps`                                       |
+| `enableAiAgent`      | Enable AI Agents (one-way — cannot be undone). Re-running is safe                   | - `Enable AI Agents` <br> - `Set up AI Agents in this tenant`                                             |
 
 ### AM Journeys (Not available when using Docker)
 

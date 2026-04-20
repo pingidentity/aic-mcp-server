@@ -13,7 +13,7 @@ const patchOperationSchema = z.object({
   field: z
     .string()
     .describe(
-      "The field path relative to the object definition using JSON Pointer format (e.g., '/schema/properties/email'). The tool will prepend the correct array index path internally."
+      "The field path relative to the object definition using JSON Pointer format (e.g., '/schema/properties/email')."
     ),
   value: z.any().optional().describe('The value for the operation (required for add/replace/test operations)')
 });

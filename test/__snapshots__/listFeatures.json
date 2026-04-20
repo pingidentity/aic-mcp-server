@@ -1,0 +1,10 @@
+{
+  "name": "listFeatures",
+  "title": "List Features",
+  "description": "List all available features in PingOne AIC and whether they are installed. Returns a unified list of IDM features and AIC platform features (e.g. AI Agents) with install status. This is the single tool to call when checking what features exist and their state.",
+  "scopes": [
+    "fr:am:*",
+    "fr:idm:*"
+  ],
+  "inputSchema": {}
+}

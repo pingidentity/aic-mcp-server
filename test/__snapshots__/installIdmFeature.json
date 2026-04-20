@@ -1,0 +1,43 @@
+{
+  "name": "installIdmFeature",
+  "title": "Install IDM Feature",
+  "description": "Install an IDM feature in PingOne AIC. IMPORTANT: this action is one-way and cannot be undone. Run `validateIdmFeature` first to check the feature can be installed. For AI Agents, use `enableAiAgent` instead. Use `listFeatures` to see what is available.",
+  "scopes": [
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "featureName": {
+      "_def": {
+        "schema": {
+          "_def": {
+            "checks": [
+              {
+                "kind": "min",
+                "value": 1
+              },
+              {
+                "kind": "max",
+                "value": 128
+              }
+            ],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
+        "description": "IDM feature name. May be a single segment (e.g. `groups`, `aiagent`) or slash-separated segments (e.g. `password/timestamps`, `indexed/strings/6thru20`). Alphanumeric/underscore/hyphen segments only; no leading/trailing slash, no `..`."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}
