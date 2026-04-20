@@ -5,6 +5,7 @@ import * as themeTools from '../tools/themes/index.js';
 import * as esvTools from '../tools/esv/index.js';
 import * as featureManagementTools from '../tools/featureManagement/index.js';
 import * as amTools from '../tools/am/index.js';
+import * as applicationTools from '../tools/applications/index.js';
 
 /**
  * Collects all tools from all tool categories
@@ -25,6 +26,7 @@ export function getAllTools(): Tool[] {
   // Only include AM tools in non-Docker mode (requires browser-based PKCE auth)
   if (!isDockerMode) {
     tools.push(...(Object.values(amTools) as Tool[]));
+    tools.push(...(Object.values(applicationTools) as Tool[]));
   }
 
   return tools;

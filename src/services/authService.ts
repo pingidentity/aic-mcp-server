@@ -65,45 +65,40 @@ class AuthService {
    * @returns Primary access token with all scopes
    */
   private async getPrimaryToken(): Promise<string> {
-    const shouldSkipCache = !this.hasAuthenticatedThisSession && !this.config.allowCachedOnFirstRequest;
-
-    if (!shouldSkipCache) {
-      // Try to get token from storage
-      try {
-        const tokenData = await this.storage.getToken();
-        if (tokenData) {
-          const { accessToken, expiresAt, aicBaseUrl } = tokenData;
-
-          // Check if token is for the current tenant
-          if (aicBaseUrl !== AIC_BASE_URL) {
-            console.error(
-              `Cached token is for different tenant (${aicBaseUrl}), current tenant is ${AIC_BASE_URL}. Re-authenticating...`
-            );
-            // Token is for different tenant, proceed to get new token
-          }
-          // Check if token is still valid (and for correct tenant)
-          else if (Date.now() + CLOCK_SKEW_BUFFER_MS < expiresAt) {
-            return accessToken;
-          }
-        }
-      } catch (error) {
-        console.error('Error accessing token storage:', error);
-      }
-    } else {
-      console.error('Fresh authentication required on startup');
-    }
-
     // If token request is already in flight, return existing promise
     if (this.tokenPromise) {
       return this.tokenPromise;
     }
 
-    // Determine which auth flow to use
-    if (this.useDeviceCode) {
-      this.tokenPromise = this.executeDeviceFlow(this.allScopes);
-    } else {
-      this.tokenPromise = this.executePkceFlow(this.allScopes);
-    }
+    // Share the entire primary-token acquisition path, including storage lookup.
+    // This prevents parallel tool requests from racing each other into duplicate
+    // keychain reads or unexpected interactive authentication.
+    this.tokenPromise = (async () => {
+      const shouldSkipCache = !this.hasAuthenticatedThisSession && !this.config.allowCachedOnFirstRequest;
+
+      if (!shouldSkipCache) {
+        try {
+          const tokenData = await this.storage.getToken();
+          if (tokenData) {
+            const { accessToken, expiresAt, aicBaseUrl } = tokenData;
+
+            if (aicBaseUrl !== AIC_BASE_URL) {
+              console.error(
+                `Cached token is for different tenant (${aicBaseUrl}), current tenant is ${AIC_BASE_URL}. Re-authenticating...`
+              );
+            } else if (Date.now() + CLOCK_SKEW_BUFFER_MS < expiresAt) {
+              return accessToken;
+            }
+          }
+        } catch (error) {
+          console.error('Error accessing token storage:', error);
+        }
+      } else {
+        console.error('Fresh authentication required on startup');
+      }
+
+      return this.useDeviceCode ? this.executeDeviceFlow(this.allScopes) : this.executePkceFlow(this.allScopes);
+    })();
 
     try {
       return await this.tokenPromise;

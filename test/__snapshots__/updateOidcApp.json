@@ -1,0 +1,112 @@
+{
+  "name": "updateOidcApp",
+  "title": "Update OIDC App",
+  "description": "Updates an OIDC application. You can update the client configuration, the application metadata, or both.",
+  "scopes": [
+    "fr:am:*",
+    "fr:idm:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "name": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "min",
+            "value": 1
+          }
+        ],
+        "typeName": "ZodString",
+        "coerce": false,
+        "description": "The application name"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "oauth2Client": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "keyType": {
+              "_def": {
+                "checks": [],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "valueType": {
+              "_def": {
+                "typeName": "ZodAny"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              },
+              "_any": true
+            },
+            "typeName": "ZodRecord"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Partial OIDC client configuration. Provide only the properties you want to change, nested under their configuration sections. Omit to skip this update."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "managedApplication": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "unknownKeys": "strip",
+            "catchall": {
+              "_def": {
+                "typeName": "ZodNever"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodObject"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          },
+          "_cached": null
+        },
+        "typeName": "ZodOptional",
+        "description": "Application metadata patch. Omit to skip this update."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}
