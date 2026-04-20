@@ -30,7 +30,7 @@ export const setVariableTool = {
     type: z
       .enum(['string', 'array', 'object', 'bool', 'int', 'number', 'list'])
       .describe(
-        "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Ping recommends using 'array' instead of 'list'."
+        "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Prefer 'array' over 'list'."
       ),
     description: z.string().optional().describe("Optional description of the variable's purpose")
   },

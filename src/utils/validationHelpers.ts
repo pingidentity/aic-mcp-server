@@ -51,3 +51,33 @@ export const safePathSegmentSchema = z
   .refine(isValidPathSegment, {
     message: 'Value must not contain path traversal characters (/, \\, ..) or URL-encoded equivalents'
   });
+
+/**
+ * Regex for validating IDM feature names.
+ * Accepts one or more alphanumeric/underscore/hyphen segments separated by single '/'.
+ * Rejects leading/trailing slashes, doubled slashes, '..', and URL-encoded characters
+ * (because '.' and '%' are not in the allowed character class).
+ */
+const FEATURE_NAME_REGEX = /^[a-zA-Z0-9_-]+(\/[a-zA-Z0-9_-]+)*$/;
+
+/**
+ * Zod schema for validating IDM feature names (e.g. `groups`, `aiagent`,
+ * `password/timestamps`). Permits `/` as a segment separator because the IDM
+ * feature router treats the remainder of the path after `/openidm/feature/` as
+ * the feature id. Unlike `safePathSegmentSchema`, this schema intentionally
+ * allows single `/` between alphanumeric/underscore/hyphen segments while still
+ * rejecting path traversal sequences.
+ *
+ * Accepts: `groups`, `aiagent`, `password/timestamps`, `indexed/strings/6thru20`,
+ *          `am/2fa/profiles`.
+ * Rejects: `..`, `/groups`, `groups/`, `foo//bar`, `foo/../bar`, `%2e%2e`,
+ *          empty strings, whitespace-only strings, and values longer than 128
+ *          characters.
+ */
+export const featureNameSchema = z
+  .string()
+  .min(1)
+  .max(128)
+  .refine((v) => FEATURE_NAME_REGEX.test(v), {
+    message: 'Feature name must be alphanumeric segments separated by single "/" (no leading/trailing slash, no "..")'
+  });

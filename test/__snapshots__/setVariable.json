@@ -71,7 +71,7 @@
           "list"
         ],
         "typeName": "ZodEnum",
-        "description": "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Ping recommends using 'array' instead of 'list'."
+        "description": "The variable type. Determines how the value is interpreted. Note: Type cannot be changed after creation. Prefer 'array' over 'list'."
       },
       "~standard": {
         "version": 1,

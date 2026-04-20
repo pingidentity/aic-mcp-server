@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isValidPathSegment, safePathSegmentSchema, REALMS } from '../../src/utils/validationHelpers.js';
+import {
+  isValidPathSegment,
+  safePathSegmentSchema,
+  featureNameSchema,
+  REALMS
+} from '../../src/utils/validationHelpers.js';
 
 describe('validationHelpers', () => {
   // ===== REALMS CONSTANT =====
@@ -59,5 +64,65 @@ describe('validationHelpers', () => {
         expect(safePathSegmentSchema.parse(value)).toBe(value);
       }
     );
+  });
+
+  // ===== featureNameSchema =====
+  describe('featureNameSchema', () => {
+    it.each(['groups', 'aiagent', 'password/timestamps', 'indexed/strings/6thru20', 'am/2fa/profiles'])(
+      'should accept valid feature name: "%s"',
+      (value) => {
+        expect(featureNameSchema.parse(value)).toBe(value);
+      }
+    );
+
+    it.each([
+      '..',
+      '/groups',
+      'groups/',
+      'foo//bar',
+      'foo/../bar',
+      '%2e%2e',
+      '%2E%2E',
+      'foo%2fbar',
+      'foo.bar',
+      'foo bar',
+      'foo\\bar'
+    ])('should reject invalid feature name: "%s"', (value) => {
+      expect(() => featureNameSchema.parse(value)).toThrow();
+    });
+
+    it('should reject empty string', () => {
+      expect(() => featureNameSchema.parse('')).toThrow();
+    });
+
+    it('should reject whitespace-only string', () => {
+      expect(() => featureNameSchema.parse('   ')).toThrow();
+    });
+
+    it('should reject feature name longer than 128 characters', () => {
+      const tooLong = 'a'.repeat(129);
+      expect(() => featureNameSchema.parse(tooLong)).toThrow();
+    });
+
+    it('should accept feature name exactly 128 characters', () => {
+      const maxLen = 'a'.repeat(128);
+      expect(featureNameSchema.parse(maxLen)).toBe(maxLen);
+    });
+
+    it('should accept mixed-case names', () => {
+      expect(featureNameSchema.parse('Groups')).toBe('Groups');
+      expect(featureNameSchema.parse('AIAGENT')).toBe('AIAGENT');
+      expect(featureNameSchema.parse('Password/Timestamps')).toBe('Password/Timestamps');
+    });
+
+    it('should reject Unicode / non-ASCII names', () => {
+      expect(() => featureNameSchema.parse('café')).toThrow();
+      expect(() => featureNameSchema.parse('группы')).toThrow();
+      expect(() => featureNameSchema.parse('功能')).toThrow();
+    });
+
+    it.each(['foo+bar', 'foo:bar', 'foo@bar'])('should reject disallowed special character: "%s"', (value) => {
+      expect(() => featureNameSchema.parse(value)).toThrow();
+    });
   });
 });

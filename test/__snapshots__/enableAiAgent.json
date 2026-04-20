@@ -1,0 +1,10 @@
+{
+  "name": "enableAiAgent",
+  "title": "Enable AI Agents (End-to-End)",
+  "description": "Enable the AI Agents feature in PingOne AIC. IMPORTANT: this action is one-way and cannot be undone. Re-running this tool is safe. Use `listFeatures` to check current status.",
+  "scopes": [
+    "fr:am:*",
+    "fr:idm:*"
+  ],
+  "inputSchema": {}
+}
