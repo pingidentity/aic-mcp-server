@@ -1,7 +1,7 @@
 {
-  "name": "saveJourney",
-  "title": "Save Journey",
-  "description": "Create or update a complete authentication journey atomically. Node IDs can be human-readable (e.g., \"login-page\") and will be automatically transformed to UUIDs. Use \"success\" or \"failure\" as connection targets for terminal nodes. Returns the mapping of original IDs to generated UUIDs.",
+  "name": "createJourney",
+  "title": "Create Journey",
+  "description": "Create or replace an authentication journey (upsert operation — if a journey with the same name already exists, it is overwritten). Node IDs can be human-readable (e.g., \"login-page\") and will be automatically transformed to UUIDs. Use \"success\" or \"failure\" as connection targets for terminal nodes. Returns the mapping of original IDs to generated UUIDs.",
   "scopes": [
     "fr:am:*"
   ],
@@ -13,7 +13,7 @@
           "bravo"
         ],
         "typeName": "ZodEnum",
-        "description": "The realm to create/update the journey in"
+        "description": "The realm to create the journey in"
       },
       "~standard": {
         "version": 1,
@@ -77,6 +77,27 @@
         },
         "typeName": "ZodOptional",
         "description": "Admin-facing description of the journey"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "identityResource": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "The identity resource that the journey authenticates against. Expected format: \"managed/<realm>_<objectType>\" (e.g., \"managed/alpha_user\", \"managed/bravo_role\")."
       },
       "~standard": {
         "version": 1,

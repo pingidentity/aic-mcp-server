@@ -3,7 +3,7 @@ import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHel
 import { formatSuccess } from '../../utils/responseHelpers.js';
 import { REALMS, safePathSegmentSchema } from '../../utils/validationHelpers.js';
 import {
-  buildAMRealmUrl,
+  buildAMJourneyUrl,
   AM_API_HEADERS,
   categorizeError,
   generateNodeIdMapping,
@@ -14,11 +14,11 @@ import {
 
 const SCOPES = ['fr:am:*'];
 
-export const saveJourneyTool = {
-  name: 'saveJourney',
-  title: 'Save Journey',
+export const createJourneyTool = {
+  name: 'createJourney',
+  title: 'Create Journey',
   description:
-    'Create or update a complete authentication journey atomically. Node IDs can be human-readable (e.g., "login-page") and will be automatically transformed to UUIDs. Use "success" or "failure" as connection targets for terminal nodes. Returns the mapping of original IDs to generated UUIDs.',
+    'Create or replace an authentication journey (upsert operation — if a journey with the same name already exists, it is overwritten). Node IDs can be human-readable (e.g., "login-page") and will be automatically transformed to UUIDs. Use "success" or "failure" as connection targets for terminal nodes. Returns the mapping of original IDs to generated UUIDs.',
   scopes: SCOPES,
   annotations: {
     destructiveHint: false,
@@ -26,9 +26,15 @@ export const saveJourneyTool = {
     openWorldHint: true
   },
   inputSchema: {
-    realm: z.enum(REALMS).describe('The realm to create/update the journey in'),
+    realm: z.enum(REALMS).describe('The realm to create the journey in'),
     journeyName: safePathSegmentSchema.describe('The name of the journey'),
     description: z.string().optional().describe('Admin-facing description of the journey'),
+    identityResource: z
+      .string()
+      .optional()
+      .describe(
+        'The identity resource that the journey authenticates against. Expected format: "managed/<realm>_<objectType>" (e.g., "managed/alpha_user", "managed/bravo_role").'
+      ),
     journeyData: z
       .object({
         entryNodeId: z
@@ -59,11 +65,13 @@ export const saveJourneyTool = {
     realm,
     journeyName,
     description,
+    identityResource,
     journeyData
   }: {
     realm: string;
     journeyName: string;
     description?: string;
+    identityResource?: string;
     journeyData: JourneyInput;
   }) {
     try {
@@ -82,12 +90,12 @@ export const saveJourneyTool = {
       // Step 4: Build API payload
       const payload = {
         ...transformedJourney,
-        ...(description && { description })
+        ...(description && { description }),
+        ...(identityResource && { identityResource })
       };
 
       // Step 5: Make API call
-      const encodedJourneyName = encodeURIComponent(journeyName);
-      const url = buildAMRealmUrl(realm, `realm-config/authentication/authenticationtrees/trees/${encodedJourneyName}`);
+      const url = buildAMJourneyUrl(realm, journeyName);
 
       const { response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'PUT',
@@ -105,7 +113,7 @@ export const saveJourneyTool = {
       return createToolResponse(formatSuccess(result, response));
     } catch (error: any) {
       const category = categorizeError(error.message);
-      return createToolResponse(`Failed to save journey "${journeyName}" [${category}]: ${error.message}`);
+      return createToolResponse(`Failed to create journey "${journeyName}" [${category}]: ${error.message}`);
     }
   }
 };

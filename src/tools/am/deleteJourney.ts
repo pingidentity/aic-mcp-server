@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
 import { REALMS, safePathSegmentSchema } from '../../utils/validationHelpers.js';
-import { buildAMRealmUrl, AM_API_HEADERS, categorizeError } from '../../utils/amHelpers.js';
+import { buildAMJourneyUrl, AM_API_HEADERS, categorizeError } from '../../utils/amHelpers.js';
 
 const SCOPES = ['fr:am:*'];
 
@@ -22,8 +22,7 @@ export const deleteJourneyTool = {
   },
   async toolFunction({ realm, journeyName }: { realm: string; journeyName: string }) {
     try {
-      const encodedJourneyName = encodeURIComponent(journeyName);
-      const url = buildAMRealmUrl(realm, `realm-config/authentication/authenticationtrees/trees/${encodedJourneyName}`);
+      const url = buildAMJourneyUrl(realm, journeyName);
 
       const { response } = await makeAuthenticatedRequest(url, SCOPES, {
         method: 'DELETE',
