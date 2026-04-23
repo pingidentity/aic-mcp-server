@@ -5,6 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { initAuthService, cleanupAuthService } from './services/authService.js';
 import { getAllTools, getAllScopes } from './utils/toolHelpers.js';
 import { ToolConfig } from './types/tool.js';
+import { VERSION } from './utils/version.js';
 
 // Collect all tools and scopes using shared utility
 const allTools = getAllTools();
@@ -13,7 +14,7 @@ const allScopes = getAllScopes();
 // Create an MCP server
 const server = new McpServer({
   name: 'pingone-aic-mcp-server',
-  version: '1.0.0'
+  version: VERSION
 });
 
 // Initialize auth service with all scopes and MCP server reference

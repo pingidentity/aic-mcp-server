@@ -8,7 +8,7 @@
 
 ---
 
-**[Features](#features)** • **[Use Cases](#use-cases)** • **[Prerequisites](#prerequisites)** • **[Getting Started](#getting-started)** • **[Authentication](#authentication)** • **[Available Tools](#available-tools)** • **[Docker Deployment](#docker-deployment)** • **[Security](#security)** • **[Troubleshooting](#troubleshooting)** • **[Development](#development)** • **[License](#license)**
+**[Features](#features)** • **[Use Cases](#use-cases)** • **[Prerequisites](#prerequisites)** • **[Getting Started](#getting-started)** • **[Authentication](#authentication)** • **[Available Tools](#available-tools)** • **[Agent Skills](#agent-skills)** • **[Docker Deployment](#docker-deployment)** • **[Security](#security)** • **[Monitoring & Audit](#monitoring--audit)** • **[Troubleshooting](#troubleshooting)** • **[Development](#development)** • **[License](#license)**
 
 ---
 
@@ -321,6 +321,34 @@ Manage authentication journeys, node types, and scripts.
 
 **Key Feature**: The `getJourney` tool **automatically fetches and includes** all node schemas and configurations in parallel, so you get complete journey details in a single call - no need to manually fetch node information.
 
+## Agent Skills
+
+This repository ships agent skills that extend your AI assistant's ability to work with the AIC MCP server. Once installed, your agent can take on operational tasks — like auditing MCP usage in your environment — without needing explicit instructions.
+
+| Skill                                                      | What it does                                                                                             | Try it                                                |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| [`monitor-usage`](./.claude/skills/monitor-usage/SKILL.md) | Audits MCP server activity in AIC logs — authentication events, user-attributed actions, and API traffic | _"Show me what's been done via the MCP server today"_ |
+
+### Install the Skills
+
+**Option 1 — Skills CLI** (works with any supported agent):
+
+```bash
+npx skills add pingidentity/aic-mcp-server
+```
+
+**Option 2 — Manual installation**:
+
+Clone the repository and copy the skills from `.claude/skills/` to your agent's skills directory. See your agent's documentation for the correct location:
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code/skills)
+- [VS Code / GitHub Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
+- [Gemini CLI](https://geminicli.com/docs/cli/skills/)
+- [Codex](https://developers.openai.com/codex/skills/)
+- [Goose](https://block.github.io/goose/docs/guides/context-engineering/using-skills/)
+
+Once installed, verify by asking your agent _"What skills do you have?"_ — you should see `monitor-usage` in the list.
+
 ## Docker Deployment
 
 > **⚠️ EXPERIMENTAL**: Docker deployment uses OAuth 2.0 Device Code Flow with MCP form elicitation. This requires MCP client support for form elicitation, which is currently limited. If your client doesn't support it, use the local deployment method above.
@@ -369,6 +397,27 @@ The PingOne AIC MCP Server implements multiple security layers:
 - **User-based authentication** - All API calls are authenticated as the user who logged in, providing complete audit trails
 - **Input validation** - Built-in protections against path traversal and query injection attacks
 - **Tenant isolation** - Tokens are validated against the configured `AIC_BASE_URL` to prevent accidental cross-tenant operations
+
+## Monitoring & Audit
+
+All operations performed through the MCP server are executed as the authenticated user — there are no anonymous or service-account-attributed actions. Every tool invocation produces a full audit trail in the AIC audit logs, attributable to the individual who authenticated the session.
+
+### Authentication events
+
+The server authenticates using two registered OAuth 2.0 clients:
+
+- **`AICMCPClient`** — used for the initial user login (PKCE or Device Code flow)
+- **`AICMCPExchangeClient`** — used to obtain scoped tokens for each tool call via RFC 8693 token exchange
+
+Filtering the `am-authentication` log source for either of these client IDs will surface all MCP authentication activity. Each token exchange references the original user login, providing a complete chain from the tool call back to the authenticated identity.
+
+### Attributing actions to a user
+
+All API calls made by the server carry the scoped token issued to the authenticated user. Configuration changes (journeys, scripts, OIDC apps) appear in AM audit logs and identity operations (managed objects, groups, relationships) appear in IDM audit logs — all attributed to the user identity, not a service account.
+
+### Identifying MCP traffic
+
+All requests from the server include a `User-Agent` header of the form `aic-mcp-server/<version>`. This can be used to filter access logs and isolate MCP-originated traffic from browser sessions, automated reconciliation jobs, and other API clients.
 
 <details>
 <summary><h2>Troubleshooting</h2></summary>

@@ -1,5 +1,6 @@
 import { TokenData, TokenStorage } from '../tokenStorage.js';
 import { generatePkcePair } from './pkceUtils.js';
+import { USER_AGENT } from '../../utils/version.js';
 
 interface DeviceCodeResponse {
   device_code: string;
@@ -50,7 +51,7 @@ async function requestDeviceCode(params: {
 
   const response = await fetch(params.deviceCodeUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': USER_AGENT },
     body
   });
 
@@ -87,7 +88,7 @@ async function pollForToken(params: {
 
     const response = await fetch(params.tokenUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': USER_AGENT },
       body
     });
 
