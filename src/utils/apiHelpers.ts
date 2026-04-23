@@ -1,6 +1,7 @@
 // src/utils/apiHelpers.ts
 import { getAuthService } from '../services/authService.js';
 import { formatError } from './responseHelpers.js';
+import { USER_AGENT } from './version.js';
 
 /**
  * Makes an authenticated API request to PingOne AIC
@@ -21,6 +22,7 @@ export async function makeAuthenticatedRequest(
     ...options,
     headers: {
       Authorization: `Bearer ${token}`,
+      'User-Agent': USER_AGENT,
       // Only add Content-Type header if the request has a body
       ...(options.body && { 'Content-Type': 'application/json' }),
       ...options.headers

@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import open from 'open';
 import { generatePkcePair } from './pkceUtils.js';
 import { generateAuthResultPage } from './authResultPage.js';
+import { USER_AGENT } from '../../utils/version.js';
 
 export interface PkceFlowParams {
   scopes: string[];
@@ -181,7 +182,8 @@ async function exchangeCodeForToken(params: {
   const response = await fetch(tokenUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': USER_AGENT
     },
     body
   });

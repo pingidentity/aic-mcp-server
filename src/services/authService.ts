@@ -3,6 +3,7 @@ import type { Server as HttpServer } from 'http';
 import { TokenStorage, TokenData, KeychainStorage, FileStorage } from './tokenStorage.js';
 import { executePkceFlow as runPkceFlow } from './flows/pkceFlow.js';
 import { executeDeviceFlow as runDeviceFlow } from './flows/deviceFlow.js';
+import { USER_AGENT } from '../utils/version.js';
 
 // --- Configuration ---
 const AIC_BASE_URL = process.env.AIC_BASE_URL;
@@ -126,7 +127,8 @@ class AuthService {
     const response = await fetch(TOKEN_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': USER_AGENT
       },
       body: params
     });
