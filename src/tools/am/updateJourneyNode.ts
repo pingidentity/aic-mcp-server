@@ -20,7 +20,7 @@ export const updateJourneyNodeTool = {
   inputSchema: {
     realm: z.enum(REALMS).describe('The realm containing the node'),
     nodeType: safePathSegmentSchema.describe('The node type (e.g., "ScriptedDecisionNode")'),
-    nodeId: safePathSegmentSchema.describe('The node instance UUID (from a previous read or create operation)'),
+    nodeId: z.string().uuid().describe('The node instance UUID (from a previous read or create operation)'),
     config: z
       .record(z.any())
       .describe(
@@ -40,6 +40,13 @@ export const updateJourneyNodeTool = {
   }) {
     try {
       const url = buildAMJourneyNodesUrl(realm, nodeType, nodeId);
+
+      // Pre-flight GET: AM silently accepts PUTs to non-existent node UUIDs and returns
+      // success, so verify the node exists first and surface a 404 if it doesn't.
+      await makeAuthenticatedRequest(url, SCOPES, {
+        method: 'GET',
+        headers: AM_API_HEADERS
+      });
 
       // Auto-inject _id into config to match nodeId
       const payload = {

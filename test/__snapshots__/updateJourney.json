@@ -1,0 +1,321 @@
+{
+  "name": "updateJourney",
+  "title": "Update Journey",
+  "description": "Update an existing authentication journey. Fetches the current journey, merges any caller-provided metadata fields (description, identityResource, mustRun, innerTreeOnly, uiConfig, enabled, maximumSessionTime, maximumIdleTime), and PUTs the result back. If nodes and/or entryNodeId are provided, the graph is replaced atomically using the same UUID transformation pipeline as createJourney; otherwise the existing graph is preserved unchanged. Fields not supplied by the caller are preserved from the fetched journey.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "realm": {
+      "_def": {
+        "values": [
+          "alpha",
+          "bravo"
+        ],
+        "typeName": "ZodEnum",
+        "description": "The realm containing the journey"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "journeyName": {
+      "_def": {
+        "schema": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "checks": [
+                  {
+                    "kind": "min",
+                    "value": 1,
+                    "message": "Value cannot be empty"
+                  }
+                ],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
+        "description": "The name of the journey to update"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "description": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Admin-facing description of the journey"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "identityResource": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "The identity resource that the journey authenticates against. Expected format: \"managed/<realm>_<objectType>\" (e.g., \"managed/alpha_user\", \"managed/bravo_role\")."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "mustRun": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "typeName": "ZodBoolean",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Whether the journey must run to completion"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "innerTreeOnly": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "typeName": "ZodBoolean",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Whether the journey can only be used as an inner tree"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "uiConfig": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "keyType": {
+              "_def": {
+                "checks": [],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "valueType": {
+              "_def": {
+                "typeName": "ZodAny"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              },
+              "_any": true
+            },
+            "typeName": "ZodRecord"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Unbounded JSON object of UI configuration key/value pairs. The set of meaningful keys is defined by AM and is not enumerated here. To discover the shape for a given journey, read it first with getJourney."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "enabled": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "typeName": "ZodBoolean",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Whether the journey is enabled"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "maximumSessionTime": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodNumber",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Maximum session time in minutes"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "maximumIdleTime": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodNumber",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Maximum idle time in minutes"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "entryNodeId": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "ID of the first node (connected from Start). Required when replacing the graph. Can be human-readable; will be transformed to UUID."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "nodes": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "keyType": {
+              "_def": {
+                "checks": [],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "valueType": {
+              "_def": {
+                "unknownKeys": "strip",
+                "catchall": {
+                  "_def": {
+                    "typeName": "ZodNever"
+                  },
+                  "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                  }
+                },
+                "typeName": "ZodObject"
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              },
+              "_cached": null
+            },
+            "typeName": "ZodRecord"
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Map of node IDs to node definitions. When provided, replaces the existing graph entirely and must be provided together with entryNodeId. Keys can be human-readable (e.g., \"login-page\"); they will be transformed to UUIDs."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

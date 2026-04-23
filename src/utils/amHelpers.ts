@@ -82,7 +82,7 @@ export interface JourneyNodeInput {
 }
 
 /**
- * Input format for saveJourney tool
+ * Input format for createJourney tool
  */
 export interface JourneyInput {
   entryNodeId: string;
@@ -156,6 +156,26 @@ export interface ConfigResult {
  */
 export function buildAMRealmUrl(realm: string, path: string): string {
   return `https://${aicBaseUrl}/am/json/${realm}/${path}`;
+}
+
+/**
+ * Builds a URL for a specific AM authentication journey (tree) resource.
+ * URL-encodes the journey name to be safe for names that contain characters
+ * requiring escaping (e.g. spaces).
+ *
+ * @param realm - The realm containing the journey
+ * @param journeyName - The journey's name (e.g., 'Login', 'Copy of Login')
+ * @returns Full URL for the journey endpoint
+ *
+ * @example
+ * buildAMJourneyUrl('alpha', 'Login')
+ * // Returns: 'https://tenant.forgeblocks.com/am/json/alpha/realm-config/authentication/authenticationtrees/trees/Login'
+ */
+export function buildAMJourneyUrl(realm: string, journeyName: string): string {
+  return buildAMRealmUrl(
+    realm,
+    `realm-config/authentication/authenticationtrees/trees/${encodeURIComponent(journeyName)}`
+  );
 }
 
 /**

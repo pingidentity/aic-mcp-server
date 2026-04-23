@@ -9,7 +9,7 @@ export const deleteJourneyNodesTool = {
   name: 'deleteJourneyNodes',
   title: 'Delete Journey Nodes (Batch)',
   description:
-    'Batch delete orphaned node instances. Use this to clean up nodes that were removed from a journey during an update (via saveJourney) but still exist in AM. Note: Deleting an entire journey automatically cleans up its nodes, so this tool is only needed after journey updates that remove nodes.',
+    'Batch delete orphaned node instances. Use this to clean up nodes that were removed from a journey during an update (via updateJourney) but still exist in AM. Note: Deleting an entire journey automatically cleans up its nodes, so this tool is only needed after journey updates that remove nodes.',
   scopes: SCOPES,
   annotations: {
     destructiveHint: true,

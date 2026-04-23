@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { saveJourneyTool } from '../../../src/tools/am/saveJourney.js';
+import { createJourneyTool } from '../../../src/tools/am/createJourney.js';
 import { snapshotTest } from '../../helpers/snapshotTest.js';
 import { setupTestEnvironment } from '../../helpers/testEnvironment.js';
 import { server } from '../../setup.js';
 import { http, HttpResponse } from 'msw';
 import { UUID_REGEX, STATIC_NODE_IDS, JourneyInput } from '../../../src/utils/amHelpers.js';
 
-describe('saveJourney', () => {
+describe('createJourney', () => {
   const getSpy = setupTestEnvironment();
 
   const simpleJourneyData: JourneyInput = {
@@ -41,13 +41,13 @@ describe('saveJourney', () => {
 
   // ===== SNAPSHOT TEST =====
   it('should match tool schema snapshot', async () => {
-    await snapshotTest('saveJourney', saveJourneyTool);
+    await snapshotTest('createJourney', createJourneyTool);
   });
 
   // ===== APPLICATION LOGIC TESTS =====
   describe('Application Logic', () => {
     it('should validate connection targets before making API call', async () => {
-      const result = await saveJourneyTool.toolFunction({
+      const result = await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: {
@@ -68,7 +68,7 @@ describe('saveJourney', () => {
     });
 
     it('should reject self-referencing connections', async () => {
-      const result = await saveJourneyTool.toolFunction({
+      const result = await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: {
@@ -89,7 +89,7 @@ describe('saveJourney', () => {
     });
 
     it('should transform human-readable IDs to UUIDs', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -103,7 +103,7 @@ describe('saveJourney', () => {
     });
 
     it('should transform entryNodeId to UUID', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -115,7 +115,7 @@ describe('saveJourney', () => {
     });
 
     it('should transform connection targets to UUIDs', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: multiNodeJourneyData
@@ -133,7 +133,7 @@ describe('saveJourney', () => {
     });
 
     it('should resolve "success" and "failure" aliases to static node IDs', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: multiNodeJourneyData
@@ -148,7 +148,7 @@ describe('saveJourney', () => {
     });
 
     it('should include staticNodes in payload', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -160,7 +160,7 @@ describe('saveJourney', () => {
     });
 
     it('should include description when provided', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         description: 'A test journey',
@@ -172,7 +172,7 @@ describe('saveJourney', () => {
     });
 
     it('should omit description when not provided', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -182,8 +182,31 @@ describe('saveJourney', () => {
       expect(putBody.description).toBeUndefined();
     });
 
+    it('should include identityResource when provided', async () => {
+      await createJourneyTool.toolFunction({
+        realm: 'alpha',
+        journeyName: 'TestJourney',
+        identityResource: 'managed/alpha_user',
+        journeyData: simpleJourneyData
+      });
+
+      const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
+      expect(putBody.identityResource).toBe('managed/alpha_user');
+    });
+
+    it('should omit identityResource when not provided', async () => {
+      await createJourneyTool.toolFunction({
+        realm: 'alpha',
+        journeyName: 'TestJourney',
+        journeyData: simpleJourneyData
+      });
+
+      const putBody = JSON.parse(getSpy().mock.calls[0][2].body);
+      expect('identityResource' in putBody).toBe(false);
+    });
+
     it('should return ID mapping in response', async () => {
-      const result = await saveJourneyTool.toolFunction({
+      const result = await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -198,7 +221,7 @@ describe('saveJourney', () => {
   // ===== REQUEST CONSTRUCTION TESTS =====
   describe('Request Construction', () => {
     it('should build URL with encoded journeyName', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'Copy of Login',
         journeyData: simpleJourneyData
@@ -209,7 +232,7 @@ describe('saveJourney', () => {
     });
 
     it('should use PUT method', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -220,7 +243,7 @@ describe('saveJourney', () => {
     });
 
     it('should include AM_API_HEADERS', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -231,7 +254,7 @@ describe('saveJourney', () => {
     });
 
     it('should pass correct scopes', async () => {
-      await saveJourneyTool.toolFunction({
+      await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -245,23 +268,28 @@ describe('saveJourney', () => {
   // ===== INPUT VALIDATION TESTS =====
   describe('Input Validation', () => {
     it('should require realm parameter', () => {
-      expect(() => saveJourneyTool.inputSchema.realm.parse(undefined)).toThrow();
+      expect(() => createJourneyTool.inputSchema.realm.parse(undefined)).toThrow();
     });
 
     it('should validate journeyName with safePathSegmentSchema', () => {
-      const schema = saveJourneyTool.inputSchema.journeyName;
+      const schema = createJourneyTool.inputSchema.journeyName;
       expect(() => schema.parse('../etc/passwd')).toThrow(/path traversal/);
       expect(() => schema.parse('')).toThrow(/cannot be empty/);
       expect(() => schema.parse('ValidJourney')).not.toThrow();
     });
 
     it('should accept optional description', () => {
-      expect(saveJourneyTool.inputSchema.description.parse(undefined)).toBeUndefined();
-      expect(saveJourneyTool.inputSchema.description.parse('A description')).toBe('A description');
+      expect(createJourneyTool.inputSchema.description.parse(undefined)).toBeUndefined();
+      expect(createJourneyTool.inputSchema.description.parse('A description')).toBe('A description');
+    });
+
+    it('should accept optional identityResource', () => {
+      expect(createJourneyTool.inputSchema.identityResource.parse(undefined)).toBeUndefined();
+      expect(createJourneyTool.inputSchema.identityResource.parse('managed/alpha_user')).toBe('managed/alpha_user');
     });
 
     it('should require journeyData object', () => {
-      expect(() => saveJourneyTool.inputSchema.journeyData.parse(undefined)).toThrow();
+      expect(() => createJourneyTool.inputSchema.journeyData.parse(undefined)).toThrow();
     });
   });
 
@@ -274,14 +302,14 @@ describe('saveJourney', () => {
         })
       );
 
-      const result = await saveJourneyTool.toolFunction({
+      const result = await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
       });
 
       expect(result.content[0].text).toContain('[unauthorized]');
-      expect(result.content[0].text).toContain('Failed to save journey');
+      expect(result.content[0].text).toContain('Failed to create journey');
     });
 
     it('should categorize 400 error as invalid_request', async () => {
@@ -291,7 +319,7 @@ describe('saveJourney', () => {
         })
       );
 
-      const result = await saveJourneyTool.toolFunction({
+      const result = await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
@@ -307,14 +335,14 @@ describe('saveJourney', () => {
         })
       );
 
-      const result = await saveJourneyTool.toolFunction({
+      const result = await createJourneyTool.toolFunction({
         realm: 'alpha',
         journeyName: 'TestJourney',
         journeyData: simpleJourneyData
       });
 
       expect(result.content[0].text).toContain('[transient]');
-      expect(result.content[0].text).toContain('Failed to save journey');
+      expect(result.content[0].text).toContain('Failed to create journey');
     });
   });
 });

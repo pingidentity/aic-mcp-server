@@ -128,5 +128,31 @@ export const mockJourneyData = {
       '70e691a5-1e33-4ac3-a356-e7b6d60d92e0': { x: 550, y: 150 },
       'e301438c-0bd0-429c-ab0c-66126501069a': { x: 550, y: 350 }
     }
+  },
+  // Richer fixture used by updateJourney tests to verify selective merge of metadata fields.
+  withMetadata: {
+    _id: 'JourneyWithMeta',
+    entryNodeId: 'existing-node-uuid',
+    nodes: {
+      'existing-node-uuid': {
+        nodeType: 'UsernameCollectorNode',
+        displayName: 'Existing Collector',
+        connections: { outcome: 'success' },
+        config: { _id: 'existing-node-uuid' }
+      }
+    },
+    staticNodes: {
+      startNode: { x: 50, y: 250 },
+      '70e691a5-1e33-4ac3-a356-e7b6d60d92e0': { x: 550, y: 150 },
+      'e301438c-0bd0-429c-ab0c-66126501069a': { x: 550, y: 350 }
+    },
+    description: 'Existing description',
+    identityResource: 'managed/alpha_user',
+    mustRun: true,
+    innerTreeOnly: false,
+    uiConfig: { displayName: 'Existing Journey' },
+    enabled: true,
+    maximumSessionTime: 120,
+    maximumIdleTime: 30
   }
 };

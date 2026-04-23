@@ -3,7 +3,7 @@ import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHel
 import { formatSuccess } from '../../utils/responseHelpers.js';
 import { REALMS, safePathSegmentSchema } from '../../utils/validationHelpers.js';
 import {
-  buildAMRealmUrl,
+  buildAMJourneyUrl,
   AM_API_HEADERS,
   fetchNodeSchemas,
   fetchNodeConfigs,
@@ -46,8 +46,7 @@ export const getJourneyTool = {
   async toolFunction({ realm, journeyName }: { realm: string; journeyName: string }) {
     try {
       // Step 1: Fetch the journey
-      const encodedJourneyName = encodeURIComponent(journeyName);
-      const journeyUrl = `${buildAMRealmUrl(realm, 'realm-config/authentication/authenticationtrees/trees')}/${encodedJourneyName}`;
+      const journeyUrl = buildAMJourneyUrl(realm, journeyName);
 
       const { data: journeyData, response } = await makeAuthenticatedRequest(journeyUrl, SCOPES, {
         method: 'GET',
