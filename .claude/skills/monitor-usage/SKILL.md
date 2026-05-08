@@ -1,6 +1,6 @@
 ---
 name: monitor-usage
-description: "Audit and report on MCP server activity in AIC logs — authentication events, user-attributed actions, and API traffic. TRIGGER when: user asks what has been done/used/changed via the MCP server; asked to audit or review MCP activity; asked to show recent actions, operations, or usage; user wants to trace an action back to a user or session."
+description: 'Audit and report on MCP server activity in AIC logs — authentication events, user-attributed actions, and API traffic. TRIGGER when: user asks what has been done/used/changed via the MCP server; asked to audit or review MCP activity; asked to show recent actions, operations, or usage; user wants to trace an action back to a user or session.'
 ---
 
 # Monitor MCP Server Usage

@@ -1,0 +1,200 @@
+{
+  "name": "createCorsPolicy",
+  "title": "Create CORS Policy",
+  "description": "Create a new CORS policy on the global AM CorsService. All seven policy fields are required. A user-facing policyId may optionally be supplied; if omitted, AM assigns one. The policy ID is returned in the success response.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "policyId": {
+      "_def": {
+        "innerType": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "schema": {
+                  "_def": {
+                    "checks": [
+                      {
+                        "kind": "min",
+                        "value": 1,
+                        "message": "Value cannot be empty"
+                      }
+                    ],
+                    "typeName": "ZodString",
+                    "coerce": false
+                  },
+                  "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                  }
+                },
+                "typeName": "ZodEffects",
+                "effect": {
+                  "type": "refinement"
+                }
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodOptional",
+        "description": "Optional user-facing identifier for the CORS policy. If omitted, AM assigns one."
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "acceptedOrigins": {
+      "_def": {
+        "type": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "minLength": null,
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Allowed origins (e.g. [\"https://example.org\"])"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "acceptedMethods": {
+      "_def": {
+        "type": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "minLength": null,
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "HTTP methods allowed during preflight"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "acceptedHeaders": {
+      "_def": {
+        "type": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "minLength": null,
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Non-simple request headers allowed during preflight"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "exposedHeaders": {
+      "_def": {
+        "type": {
+          "_def": {
+            "checks": [],
+            "typeName": "ZodString",
+            "coerce": false
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "minLength": null,
+        "maxLength": null,
+        "exactLength": null,
+        "typeName": "ZodArray",
+        "description": "Response headers exposed to the browser"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "maxAge": {
+      "_def": {
+        "checks": [
+          {
+            "kind": "int"
+          },
+          {
+            "kind": "min",
+            "value": 0,
+            "inclusive": true
+          }
+        ],
+        "typeName": "ZodNumber",
+        "coerce": false,
+        "description": "Preflight cache duration in seconds"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "allowCredentials": {
+      "_def": {
+        "typeName": "ZodBoolean",
+        "coerce": false,
+        "description": "Whether to send Access-Control-Allow-Credentials: true on responses"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    },
+    "enabled": {
+      "_def": {
+        "typeName": "ZodBoolean",
+        "coerce": false,
+        "description": "Whether the policy is enabled; if false, no CORS headers are added"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

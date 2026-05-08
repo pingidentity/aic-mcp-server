@@ -49,6 +49,15 @@ export const AM_SCRIPT_HEADERS_V2 = {
 } as const;
 
 /**
+ * Headers for AM CORS policy API requests (resource=1.0, no protocol).
+ * Used for CRUD operations against the global AM CorsService endpoint.
+ */
+export const AM_CORS_HEADERS = {
+  'accept-api-version': 'resource=1.0',
+  'Content-Type': 'application/json'
+} as const;
+
+/**
  * Fixed node IDs for journey terminal nodes.
  * These are constants defined by AM and must not be changed.
  */
@@ -156,6 +165,25 @@ export interface ConfigResult {
  */
 export function buildAMRealmUrl(realm: string, path: string): string {
   return `https://${aicBaseUrl}/am/json/${realm}/${path}`;
+}
+
+/**
+ * Builds a URL for AM global (non-realm-scoped) service configuration endpoints.
+ *
+ * @param serviceName - The name of the global service (e.g., 'CorsService')
+ * @param path - Optional path after '/configuration' (e.g., a policy ID)
+ * @returns Full URL for the AM global service configuration endpoint
+ *
+ * @example
+ * buildAMGlobalConfigUrl('CorsService')
+ * // Returns: 'https://tenant.forgeblocks.com/am/json/global-config/services/CorsService/configuration'
+ *
+ * buildAMGlobalConfigUrl('CorsService', 'my-policy-id')
+ * // Returns: 'https://tenant.forgeblocks.com/am/json/global-config/services/CorsService/configuration/my-policy-id'
+ */
+export function buildAMGlobalConfigUrl(serviceName: string, path?: string): string {
+  const base = `https://${aicBaseUrl}/am/json/global-config/services/${serviceName}/configuration`;
+  return path ? `${base}/${path}` : base;
 }
 
 /**

@@ -1,0 +1,9 @@
+{
+  "name": "listCorsPolicies",
+  "title": "List CORS Policies",
+  "description": "List all CORS policies configured on the global AM CorsService. Returns policy metadata including IDs and configured origins, methods, and headers.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {}
+}

@@ -17,3 +17,8 @@ export { listScriptsTool } from './listScripts.js';
 export { createScriptTool } from './createScript.js';
 export { updateScriptTool } from './updateScript.js';
 export { deleteScriptTool } from './deleteScript.js';
+export { listCorsPoliciesTool } from './listCorsPolicies.js';
+export { getCorsPolicyTool } from './getCorsPolicy.js';
+export { createCorsPolicyTool } from './createCorsPolicy.js';
+export { updateCorsPolicyTool } from './updateCorsPolicy.js';
+export { deleteCorsPolicyTool } from './deleteCorsPolicy.js';
