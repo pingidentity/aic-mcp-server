@@ -1,0 +1,52 @@
+{
+  "name": "getCorsPolicy",
+  "title": "Get CORS Policy",
+  "description": "Retrieve a single CORS policy by its ID from the global AM CorsService. Returns the full policy including origins, methods, headers, maxAge, allowCredentials, and enabled status.",
+  "scopes": [
+    "fr:am:*"
+  ],
+  "inputSchema": {
+    "policyId": {
+      "_def": {
+        "schema": {
+          "_def": {
+            "schema": {
+              "_def": {
+                "checks": [
+                  {
+                    "kind": "min",
+                    "value": 1,
+                    "message": "Value cannot be empty"
+                  }
+                ],
+                "typeName": "ZodString",
+                "coerce": false
+              },
+              "~standard": {
+                "version": 1,
+                "vendor": "zod"
+              }
+            },
+            "typeName": "ZodEffects",
+            "effect": {
+              "type": "refinement"
+            }
+          },
+          "~standard": {
+            "version": 1,
+            "vendor": "zod"
+          }
+        },
+        "typeName": "ZodEffects",
+        "effect": {
+          "type": "refinement"
+        },
+        "description": "The unique identifier of the CORS policy"
+      },
+      "~standard": {
+        "version": 1,
+        "vendor": "zod"
+      }
+    }
+  }
+}

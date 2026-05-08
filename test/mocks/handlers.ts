@@ -435,5 +435,57 @@ export const handlers = [
     if (authError) return authError;
 
     return HttpResponse.json({ type: 'object', properties: {} });
+  }),
+
+  // AM - CORS policy list (GET with _queryFilter=true)
+  http.get('https://*/am/json/global-config/services/CorsService/configuration', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      result: [],
+      resultCount: 0
+    });
+  }),
+
+  // AM - CORS policy create (POST with _action=create)
+  http.post('https://*/am/json/global-config/services/CorsService/configuration', ({ request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: 'new-cors-policy-id' });
+  }),
+
+  // AM - CORS policy get (GET by ID)
+  http.get('https://*/am/json/global-config/services/CorsService/configuration/:policyId', ({ params, request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({
+      _id: params.policyId,
+      acceptedOrigins: ['https://example.org'],
+      acceptedMethods: ['GET', 'POST'],
+      acceptedHeaders: ['Content-Type'],
+      exposedHeaders: [],
+      maxAge: 600,
+      allowCredentials: true,
+      enabled: true
+    });
+  }),
+
+  // AM - CORS policy update (PUT by ID)
+  http.put('https://*/am/json/global-config/services/CorsService/configuration/:policyId', ({ params, request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: params.policyId });
+  }),
+
+  // AM - CORS policy delete (DELETE by ID)
+  http.delete('https://*/am/json/global-config/services/CorsService/configuration/:policyId', ({ params, request }) => {
+    const authError = validateAuthHeader(request);
+    if (authError) return authError;
+
+    return HttpResponse.json({ _id: params.policyId });
   })
 ];
