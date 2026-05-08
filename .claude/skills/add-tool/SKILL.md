@@ -1,6 +1,6 @@
 ---
 name: add-tool
-description: Required conventions for MCP tool implementation — structure, response formatting, annotations, and registration. TRIGGER when: creating or modifying any tool file in src/tools/; changing inputSchema, toolFunction, or response handling; adding a tool category; touching code that uses makeAuthenticatedRequest, createToolResponse, or formatSuccess. SKIP when: only modifying tests (use testing skill), only reviewing code (use review-conventions skill).
+description: "Required conventions for MCP tool implementation — structure, response formatting, annotations, and registration. TRIGGER when: creating or modifying any tool file in src/tools/; changing inputSchema, toolFunction, or response handling; adding a tool category; touching code that uses makeAuthenticatedRequest, createToolResponse, or formatSuccess. SKIP when: only modifying tests (use testing skill), only reviewing code (use review-conventions skill)."
 ---
 
 # Adding a New Tool
