@@ -13,16 +13,6 @@
 ---
 
 > [!CAUTION]
-> **Preview Software Notice**
->
-> This is preview software provided AS IS with no warranties of any kind.
->
-> - Current release is only for Sandbox and Development AIC tenants, the server is not enabled for production environments.
-> - Limited support is available during the public preview phase — please report bugs and provide feedback via the [GitHub issue tracker](https://github.com/pingidentity/aic-mcp-server/issues)
->
-> Your use of this software constitutes acceptance of these terms.
-
-> [!CAUTION]
 > **Security Notice**
 >
 > Depending on the requests made to the MCP server, tenant configuration or data may be returned. Do not use the MCP server with untrusted MCP clients, agent code or LLM inference.
