@@ -55,16 +55,16 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/open": "^6.0.0",
-    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
     "memfs": "^4.51.1",
     "msw": "^2.12.4",
     "prettier": "^3.8.1",
     "shx": "^0.4.0",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.0.4",
     "typescript-eslint": "^8.56.1",
-    "vitest": "^4.0.15"
+    "vitest": "^4.1.8"
   }
 }
