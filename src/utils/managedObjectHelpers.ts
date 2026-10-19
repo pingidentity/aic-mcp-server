@@ -2,12 +2,25 @@
  * Managed object specific helpers.
  *
  * Includes:
+ * - Shared managed object type validation schema
  * - Example managed object types for documentation and tool descriptions
  *
  * IMPORTANT: The example types are NOT exhaustive. The MCP server supports ANY
  * managed object type defined in your PingOne AIC environment, including custom types.
  * Use the listManagedObjects tool to discover all available types in your tenant.
  */
+import { z } from 'zod';
+
+/**
+ * Validation schema for managed object type names.
+ *
+ * Managed object types are single path segments with a known character set
+ * (letters, numbers, underscores), so a strict allowlist prevents path
+ * traversal and URL delimiter injection (e.g., '../config', 'a?b', 'a#b').
+ */
+export const managedObjectTypeSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9_]+$/, 'Object type must contain only letters, numbers, and underscores');
 
 /**
  * Example managed object types for use in tool descriptions.

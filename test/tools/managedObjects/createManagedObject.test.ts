@@ -101,8 +101,15 @@ describe('createManagedObject', () => {
       expect(() => schema.parse('bravo_role')).not.toThrow();
     });
 
-    it('should accept any non-empty object type string', () => {
+    it('should reject path traversal and delimiter payloads in objectType', () => {
       const schema = createManagedObjectTool.inputSchema.objectType;
+      expect(() => schema.parse('../etc/passwd')).toThrow();
+      expect(() => schema.parse('alpha_user/../admin')).toThrow();
+      expect(() => schema.parse('%2e%2e')).toThrow();
+      expect(() => schema.parse('a?b')).toThrow();
+      expect(() => schema.parse('a#b')).toThrow();
+
+      // Valid allowlist values still parse (coverage preserved from the old test name)
       expect(() => schema.parse('alpha_device')).not.toThrow();
       expect(() => schema.parse('custom_application')).not.toThrow();
     });

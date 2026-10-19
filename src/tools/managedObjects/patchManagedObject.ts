@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { EXAMPLE_TYPES_STRING } from '../../utils/managedObjectHelpers.js';
+import { EXAMPLE_TYPES_STRING, managedObjectTypeSchema } from '../../utils/managedObjectHelpers.js';
 import { safePathSegmentSchema } from '../../utils/validationHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
@@ -30,12 +30,9 @@ export const patchManagedObjectTool = {
     openWorldHint: true
   },
   inputSchema: {
-    objectType: z
-      .string()
-      .min(1)
-      .describe(
-        `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
-      ),
+    objectType: managedObjectTypeSchema.describe(
+      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+    ),
     objectId: safePathSegmentSchema.describe("The object's unique identifier (_id)"),
     revision: z
       .string()
@@ -57,7 +54,7 @@ export const patchManagedObjectTool = {
     revision: string;
     operations: Array<{ operation: string; field: string; value?: any }>;
   }) {
-    const url = `https://${aicBaseUrl}/openidm/managed/${objectType}/${objectId}`;
+    const url = `https://${aicBaseUrl}/openidm/managed/${encodeURIComponent(objectType)}/${encodeURIComponent(objectId)}`;
 
     try {
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES, {

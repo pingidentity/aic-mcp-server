@@ -10,8 +10,9 @@
       "_def": {
         "checks": [
           {
-            "kind": "min",
-            "value": 1
+            "kind": "regex",
+            "regex": {},
+            "message": "Object type must contain only letters, numbers, and underscores"
           }
         ],
         "typeName": "ZodString",

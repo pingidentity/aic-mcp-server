@@ -130,10 +130,29 @@ describe('queryManagedObjects', () => {
       expect(() => schema.parse('bravo_role')).not.toThrow();
     });
 
-    it('should accept any non-empty object type string', () => {
+    it('should reject path traversal and delimiter payloads in objectType', () => {
       const schema = queryManagedObjectsTool.inputSchema.objectType;
+      expect(() => schema.parse('../etc/passwd')).toThrow();
+      expect(() => schema.parse('alpha_user/../admin')).toThrow();
+      expect(() => schema.parse('%2e%2e')).toThrow();
+      expect(() => schema.parse('a?b')).toThrow();
+      expect(() => schema.parse('a#b')).toThrow();
+
+      // Valid allowlist values still parse (coverage preserved from the old test name)
       expect(() => schema.parse('alpha_device')).not.toThrow();
       expect(() => schema.parse('custom_application')).not.toThrow();
+    });
+
+    it('should percent-encode traversal payloads so the request path stays under /openidm/managed/', async () => {
+      // Regression test for IAM-11741: toolFunction bypasses the zod boundary (the MCP SDK applies
+      // it at registration), so the sink-level encodeURIComponent wrap must neutralize traversal on
+      // its own — the URL path must stay one encoded segment under /openidm/managed/, never
+      // normalizing to /openidm/config/sync
+      await queryManagedObjectsTool.toolFunction({ objectType: '../config/sync' });
+
+      const [url] = getSpy().mock.calls.at(-1)!;
+      expect(url).toContain('/openidm/managed/..%2Fconfig%2Fsync');
+      expect(url).not.toContain('/openidm/config/');
     });
 
     it('should work with any object type in tool function', async () => {

@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
-import { EXAMPLE_TYPES_STRING } from '../../utils/managedObjectHelpers.js';
+import { EXAMPLE_TYPES_STRING, managedObjectTypeSchema } from '../../utils/managedObjectHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -18,12 +18,9 @@ export const queryManagedObjectsTool = {
     openWorldHint: true
   },
   inputSchema: {
-    objectType: z
-      .string()
-      .min(1)
-      .describe(
-        `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
-      ),
+    objectType: managedObjectTypeSchema.describe(
+      `Managed object type (e.g., ${EXAMPLE_TYPES_STRING}). Use listManagedObjects to discover all available types.`
+    ),
     queryFilter: z
       .string()
       .max(1000)
@@ -74,7 +71,7 @@ export const queryManagedObjectsTool = {
   }) {
     try {
       // Build query URL using URL constructor for proper encoding
-      const url = new URL(`https://${aicBaseUrl}/openidm/managed/${objectType}`);
+      const url = new URL(`https://${aicBaseUrl}/openidm/managed/${encodeURIComponent(objectType)}`);
 
       // Query filter - default to 'true' to return all objects
       url.searchParams.append('_queryFilter', queryFilter || 'true');
