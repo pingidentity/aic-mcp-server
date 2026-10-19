@@ -36,6 +36,38 @@ describe('deleteOidcApp', () => {
       expect(lookupCall[0]).toContain('name%20eq%20%22My%20App%22');
     });
 
+    it('should escape double quotes in the name so filter grammar cannot be injected', async () => {
+      server.use(
+        http.get('https://*/openidm/managed/alpha_application', () => {
+          return HttpResponse.json({ result: [] });
+        })
+      );
+
+      // Injection payload: an unescaped `"` would terminate the `name eq "..."`
+      // string literal and let the remainder parse as filter grammar.
+      await deleteOidcAppTool.toolFunction({ realm: 'alpha', name: 'x" or true eq "y' });
+
+      const lookupCall = getSpy().mock.calls[0];
+      // `x"` is escaped to `x\"` (URL-encoded `%5C%22`) inside the literal; the
+      // `or`/`true` grammar stays inside the quoted value.
+      expect(lookupCall[0]).toContain('name%20eq%20%22x%5C%22%20or%20true%20eq%20%5C%22y%22');
+    });
+
+    it('should escape backslashes and quotes in the name so the filter literal stays intact', async () => {
+      server.use(
+        http.get('https://*/openidm/managed/alpha_application', () => {
+          return HttpResponse.json({ result: [] });
+        })
+      );
+
+      // Input characters: a, backslash, b, quote, c — the backslash must be
+      // doubled and the quote escaped so the value round-trips intact.
+      await deleteOidcAppTool.toolFunction({ realm: 'alpha', name: 'a\\b"c' });
+
+      const lookupCall = getSpy().mock.calls[0];
+      expect(lookupCall[0]).toContain('name%20eq%20%22a%5C%5Cb%5C%22c%22');
+    });
+
     it('should delete IDM then AM', async () => {
       server.use(
         http.get('https://*/openidm/managed/alpha_application', () => {

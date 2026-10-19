@@ -71,6 +71,23 @@ describe('updateOidcApp', () => {
       expect(lookupCall[0]).toContain('name%20eq%20%22My%20App%22');
     });
 
+    it('should escape double quotes in the name so filter grammar cannot be injected', async () => {
+      useIdmLookupHandler();
+
+      // Injection payload: an unescaped `"` would terminate the `name eq "..."`
+      // string literal and let the remainder parse as filter grammar.
+      await updateOidcAppTool.toolFunction({
+        realm: 'alpha',
+        name: 'x" or true eq "y',
+        oauth2Client: { coreOAuth2ClientConfig: {} }
+      });
+
+      const lookupCall = getSpy().mock.calls[0];
+      // `x"` is escaped to `x\"` (URL-encoded `%5C%22`) inside the literal; the
+      // `or`/`true` grammar stays inside the quoted value.
+      expect(lookupCall[0]).toContain('name%20eq%20%22x%5C%22%20or%20true%20eq%20%5C%22y%22');
+    });
+
     it('should GET current AM config before PUT', async () => {
       useIdmLookupHandler();
       useAmHandlers();

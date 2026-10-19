@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { REALMS } from '../../utils/validationHelpers.js';
 import { buildAMRealmUrl, AM_OAUTH2_CLIENT_HEADERS } from '../../utils/amHelpers.js';
+import { escapeCrestStringLiteral } from '../../utils/crestHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 const SCOPES = ['fr:am:*', 'fr:idm:*'];
@@ -24,7 +25,7 @@ export const getOidcAppTool = {
       // Look up IDM managed application by name
       const idmQueryUrl =
         `https://${aicBaseUrl}/openidm/managed/${realm}_application` +
-        `?_queryFilter=${encodeURIComponent(`name eq "${name}"`)}&_fields=*`;
+        `?_queryFilter=${encodeURIComponent(`name eq "${escapeCrestStringLiteral(name)}"`)}&_fields=*`;
       const { data: idmQueryData, response: idmResponse } = await makeAuthenticatedRequest(idmQueryUrl, SCOPES, {
         method: 'GET'
       });

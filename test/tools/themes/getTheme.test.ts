@@ -46,8 +46,32 @@ describe('getTheme', () => {
         themeIdentifier: 'test"quote'
       });
 
-      // Double quote becomes %22 when URL-encoded
-      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('test%22quote'), expect.any(Array));
+      // The quote is escaped inside the CREST literal (`test\"quote`) before
+      // URL-encoding — a bare `%22` here would mean the quote was interpolated
+      // unescaped and could terminate the literal.
+      expect(getSpy()).toHaveBeenCalledWith(expect.stringContaining('test%5C%22quote'), expect.any(Array));
+    });
+
+    it('should escape backslash-and-quote themeIdentifier exactly once', async () => {
+      // Input characters: a, backslash, b, quote, c. `safePathSegmentSchema`
+      // rejects backslashes at the MCP boundary, so this test calls
+      // toolFunction directly to exercise the filter-construction logic
+      // beneath the schema.
+      await getThemeTool.toolFunction({
+        realm: 'alpha',
+        themeIdentifier: 'a\\b"c'
+      });
+
+      // The identifier is escaped exactly once into a local variable and reused
+      // in both clauses: backslash doubled (`%5C%5C`) and quote escaped
+      // (`%5C%22`). A double escape would produce `%5C%5C%5C%5C` (doubled
+      // backslash) or `%5C%5C%22` (neutralized quote escape).
+      expect(getSpy()).toHaveBeenCalledWith(
+        expect.stringContaining('_id%20eq%20%22a%5C%5Cb%5C%22c%22%20or%20name%20eq%20%22a%5C%5Cb%5C%22c%22'),
+        expect.any(Array)
+      );
+      expect(getSpy().mock.calls[0][0]).not.toContain('%5C%5C%5C%5C');
+      expect(getSpy().mock.calls[0][0]).not.toContain('%5C%5C%22');
     });
 
     it('should pass correct scopes to auth', async () => {

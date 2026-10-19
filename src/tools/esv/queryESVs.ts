@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
+import { escapeCrestStringLiteral } from '../../utils/crestHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -59,9 +60,9 @@ export const queryESVsTool = {
       const url = new URL(`https://${aicBaseUrl}/environment/${endpoint}`);
 
       if (queryTerm) {
-        // Escape double quotes to prevent query injection
-        const escapedTerm = queryTerm.replace(/"/g, '\\"');
-        const queryFilter = `/_id co "${escapedTerm}"`;
+        // Shared helper escapes backslashes and double quotes so the value
+        // cannot break out of the CREST string literal.
+        const queryFilter = `/_id co "${escapeCrestStringLiteral(queryTerm)}"`;
         url.searchParams.append('_queryFilter', queryFilter);
       } else {
         url.searchParams.append('_queryFilter', 'true');

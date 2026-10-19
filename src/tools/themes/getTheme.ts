@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { makeAuthenticatedRequest, createToolResponse } from '../../utils/apiHelpers.js';
 import { formatSuccess } from '../../utils/responseHelpers.js';
 import { REALMS, safePathSegmentSchema } from '../../utils/validationHelpers.js';
+import { escapeCrestStringLiteral } from '../../utils/crestHelpers.js';
 
 const aicBaseUrl = process.env.AIC_BASE_URL;
 
@@ -22,7 +23,10 @@ export const getThemeTool = {
   },
   async toolFunction({ realm, themeIdentifier }: { realm: string; themeIdentifier: string }) {
     try {
-      const queryFilter = `_id eq "${themeIdentifier}" or name eq "${themeIdentifier}"`;
+      // Escape once into a local variable — the helper is not idempotent, so it
+      // must not be applied inline to the same value twice.
+      const escapedIdentifier = escapeCrestStringLiteral(themeIdentifier);
+      const queryFilter = `_id eq "${escapedIdentifier}" or name eq "${escapedIdentifier}"`;
       const url = `https://${aicBaseUrl}/openidm/ui/theme/?realm=${encodeURIComponent(realm)}&_queryFilter=${encodeURIComponent(queryFilter)}`;
 
       const { data, response } = await makeAuthenticatedRequest(url, SCOPES);

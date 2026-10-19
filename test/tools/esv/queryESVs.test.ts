@@ -58,6 +58,20 @@ describe('queryESVs', () => {
         assert: ({ url }: any) => expect(url).toContain('_queryFilter=%2F_id+co+%22test%5C%22injection%22')
       },
       {
+        name: 'escapes a trailing backslash in queryTerm so the literal stays closed',
+        // Input characters: x, backslash. An unescaped trailing backslash would
+        // swallow the closing quote of the CREST string literal.
+        input: { type: 'variable', queryTerm: 'x\\' },
+        assert: ({ url }: any) => expect(url).toContain('_queryFilter=%2F_id+co+%22x%5C%5C%22')
+      },
+      {
+        name: 'escapes backslash and quotes so filter grammar cannot be injected',
+        // Injection payload: unescaped `"` would terminate the `/_id co "..."`
+        // string literal and let the remainder parse as filter grammar.
+        input: { type: 'variable', queryTerm: 'x" or true eq "y' },
+        assert: ({ url }: any) => expect(url).toContain('_queryFilter=%2F_id+co+%22x%5C%22+or+true+eq+%5C%22y%22')
+      },
+      {
         name: 'applies provided pageSize',
         input: { type: 'variable', pageSize: 25 },
         assert: ({ url }: any) => expect(url).toContain('_pageSize=25')
