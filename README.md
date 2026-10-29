@@ -52,7 +52,7 @@ Ask questions like "Find all alpha_users with email starting with john@example.c
 
 ### Configure Your MCP Client
 
-The MCP server requires the `AIC_BASE_URL` environment variable to be set to your PingOne AIC hostname.
+For a single tenant, set the `AIC_BASE_URL` environment variable to your PingOne AIC hostname.
 
 Add this to your MCP client configuration:
 
@@ -72,6 +72,30 @@ Add this to your MCP client configuration:
 ```
 
 **Required:** Replace `your-tenant.forgeblocks.com` with your PingOne AIC tenant URL.
+
+For multiple tenants, one MCP process can route requests to all configured environments. Define one `AIC_TENANT_<NAME>` variable per tenant instead of putting an escaped JSON object inline in the MCP configuration. The server converts these variables to `AIC_TENANTS` during startup. `AIC_ORDER_OF_TENANTS` controls the registration order of environment-specific tools and the default environment used when a tool call does not specify an environment. Each tool is registered with an environment-specific name and title, such as `sandbox_queryManagedObjects` and `Query Managed Objects (sandbox)`.
+
+```json
+{
+  "servers": {
+    "ping-aic": {
+      "type": "stdio",
+      "command": "/path/to/node",
+      "args": ["/path/to/aic-mcp-server/dist/index.js"],
+      "env": {
+        "AIC_TENANT_SANDBOX": "sandbox.example.com",
+        "AIC_TENANT_DEV": "dev.example.com",
+        "AIC_TENANT_SIT": "sit.example.com",
+        "AIC_TENANT_STAGING": "staging.example.com",
+        "AIC_TENANT_PROD": "prod.example.com",
+        "AIC_ORDER_OF_TENANTS": "sandbox,dev,sit,staging,prod"
+      }
+    }
+  }
+}
+```
+
+The server maintains separate token storage for each environment and reuses valid cached tokens across MCP server restarts. When authentication is required, multiple browser-based PKCE flows can run concurrently through the shared localhost callback, which routes each response by its OAuth state. After authentication, calls can target the environments concurrently.
 
 **Client-specific instructions:**
 

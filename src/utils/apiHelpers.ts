@@ -1,5 +1,6 @@
 // src/utils/apiHelpers.ts
 import { getAuthService } from '../services/authService.js';
+import { getEnvironment } from '../services/environmentContext.js';
 import { formatError } from './responseHelpers.js';
 import { USER_AGENT } from './version.js';
 
@@ -16,18 +17,30 @@ export async function makeAuthenticatedRequest(
   scopes: string[],
   options: RequestInit = {}
 ): Promise<{ data: unknown; response: Response }> {
-  const token = await getAuthService().getToken(scopes);
+  const environment = getEnvironment();
+  const targetUrl = new URL(url);
+  targetUrl.protocol = 'https:';
+  targetUrl.host = environment.baseUrl;
+  const authService = getAuthService(environment.name);
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'User-Agent': USER_AGENT,
-      // Only add Content-Type header if the request has a body
-      ...(options.body && { 'Content-Type': 'application/json' }),
-      ...options.headers
-    }
-  });
+  const request = async (token: string) =>
+    fetch(targetUrl, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'User-Agent': USER_AGENT,
+        // Only add Content-Type header if the request has a body
+        ...(options.body && { 'Content-Type': 'application/json' }),
+        ...options.headers
+      }
+    });
+
+  let response = await request(await authService.getToken(scopes));
+
+  if (response.status === 401) {
+    await authService.forceReauthentication();
+    response = await request(await authService.getToken(scopes));
+  }
 
   if (!response.ok) {
     const errorBody = await response.text();

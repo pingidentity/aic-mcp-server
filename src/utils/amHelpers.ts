@@ -10,8 +10,7 @@
 
 import { randomUUID } from 'crypto';
 import { makeAuthenticatedRequest } from './apiHelpers.js';
-
-const aicBaseUrl = process.env.AIC_BASE_URL;
+import { getEnvironment } from '../services/environmentContext.js';
 
 /**
  * Standard headers for AM API requests (protocol 2.1, resource 1.0).
@@ -164,7 +163,7 @@ export interface ConfigResult {
  * // Returns: 'https://tenant.forgeblocks.com/am/json/alpha/scripts/abc-123'
  */
 export function buildAMRealmUrl(realm: string, path: string): string {
-  return `https://${aicBaseUrl}/am/json/${realm}/${path}`;
+  return `https://${getEnvironment().baseUrl}/am/json/${realm}/${path}`;
 }
 
 /**
@@ -182,7 +181,7 @@ export function buildAMRealmUrl(realm: string, path: string): string {
  * // Returns: 'https://tenant.forgeblocks.com/am/json/global-config/services/CorsService/configuration/my-policy-id'
  */
 export function buildAMGlobalConfigUrl(serviceName: string, path?: string): string {
-  const base = `https://${aicBaseUrl}/am/json/global-config/services/${serviceName}/configuration`;
+  const base = `https://${getEnvironment().baseUrl}/am/json/global-config/services/${serviceName}/configuration`;
   return path ? `${base}/${path}` : base;
 }
 

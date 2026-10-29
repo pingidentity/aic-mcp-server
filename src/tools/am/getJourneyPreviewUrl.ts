@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { createToolResponse } from '../../utils/apiHelpers.js';
 import { REALMS, safePathSegmentSchema } from '../../utils/validationHelpers.js';
-
-const aicBaseUrl = process.env.AIC_BASE_URL;
+import { getEnvironment } from '../../services/environmentContext.js';
 
 export const getJourneyPreviewUrlTool = {
   name: 'getJourneyPreviewUrl',
@@ -21,7 +20,7 @@ export const getJourneyPreviewUrlTool = {
   },
   async toolFunction({ realm, journeyName }: { realm: string; journeyName?: string }) {
     // Build the base URL
-    let previewUrl = `https://${aicBaseUrl}/am/XUI/?realm=/${realm}`;
+    let previewUrl = `https://${getEnvironment().baseUrl}/am/XUI/?realm=/${realm}`;
 
     // Add journey-specific parameters if a journey name is provided
     if (journeyName) {

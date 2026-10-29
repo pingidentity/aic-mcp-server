@@ -33,9 +33,13 @@ vi.mock('open', () => ({
 
 // Mock http module for createServer
 const mockServerInstance = {
-  listen: vi.fn(),
+  listen: vi.fn((_port: number, callback?: () => void) => {
+    callback?.();
+    return mockServerInstance;
+  }),
   close: vi.fn(),
-  on: vi.fn()
+  on: vi.fn(),
+  once: vi.fn()
 };
 
 let mockRequestHandler: any = null;
@@ -92,7 +96,7 @@ async function setupPkceFlowTest(
 
   // Start authentication flow
   const tokenPromise = getAuthService().getToken(scopes);
-  await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
+  await vi.waitFor(() => expect(mockOpen).toHaveBeenCalled());
 
   // Extract state and authUrl from authorization URL
   const openModule = await import('open');
@@ -198,7 +202,7 @@ describe('AuthService PKCE Flow', () => {
       );
 
       const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
+      await vi.waitFor(() => expect(mockOpen).toHaveBeenCalled());
 
       // Extract code_challenge and state
       const authUrl = (openModule.default as any).mock.calls[0][0];
@@ -245,7 +249,7 @@ describe('AuthService PKCE Flow', () => {
 
       // First call
       const promise1 = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
+      await vi.waitFor(() => expect(mockOpen).toHaveBeenCalled());
 
       // Extract state from first authorization URL
       const openModule = await import('open');
@@ -613,6 +617,7 @@ describe('AuthService PKCE Flow', () => {
         expectClose: false
       }
     ])('$name', async ({ setupErrorHandler, trigger, expectedMessage, expectClose, needsState }) => {
+      vi.resetModules();
       const { initAuthService, getAuthService } = await import('../../../src/services/authService.js');
       initAuthService(['fr:idm:*'], {});
 
@@ -626,7 +631,7 @@ describe('AuthService PKCE Flow', () => {
       }
 
       const tokenPromise = getAuthService().getToken(['fr:idm:*']);
-      await vi.waitFor(() => expect(mockServerInstance.listen).toHaveBeenCalled());
+      await vi.waitFor(() => expect(mockOpen).toHaveBeenCalled());
 
       let state: string = '';
       if (needsState) {
@@ -822,6 +827,81 @@ describe('AuthService PKCE Flow', () => {
       const htmlContent = mockRes.end.mock.calls[0][0];
       expect(htmlContent).toContain('Authorization Failed');
       expect(htmlContent).toContain('No authorization code received');
+    });
+  });
+
+  describe('Concurrent flows (multiple tenants)', () => {
+    async function startTwoFlows() {
+      vi.resetModules();
+      const { executePkceFlow } = await import('../../../src/services/flows/pkceFlow.js');
+      const httpModule = await import('http');
+      vi.mocked(httpModule.createServer).mockClear();
+      server.use(
+        http.post('https://*/am/oauth2/access_token', async ({ request }) => {
+          const code = new URLSearchParams(await request.text()).get('code');
+          return HttpResponse.json({ access_token: `token-for-${code}`, expires_in: 3600 });
+        })
+      );
+      const flow = (host: string) =>
+        executePkceFlow({
+          scopes: ['fr:idm:*'],
+          authorizeUrl: `https://${host}/am/oauth2/authorize`,
+          tokenUrl: `https://${host}/am/oauth2/access_token`,
+          clientId: 'AICMCPClient',
+          redirectUri: 'http://localhost:3000',
+          redirectPort: 3000,
+          aicBaseUrl: host
+        });
+
+      const devFlow = flow('dev.example.com');
+      const prodFlow = flow('prod.example.com');
+      await vi.waitFor(() => expect(mockOpen).toHaveBeenCalledTimes(2));
+      const stateFor = (host: string) => {
+        const call = mockOpen.mock.calls.find(([url]) => new URL(url as string).hostname === host)!;
+        return new URL(call[0] as string).searchParams.get('state')!;
+      };
+      const redirect = (host: string, query: string) => {
+        const res = { end: vi.fn(), writeHead: vi.fn() };
+        mockRequestHandler({ url: `http://localhost:3000?${query}`, headers: { referer: `https://${host}/` } }, res);
+        return res;
+      };
+      return { devFlow, prodFlow, stateFor, redirect, createServer: vi.mocked(httpModule.createServer) };
+    }
+
+    it('shares one redirect server and resolves each flow with its own code', async () => {
+      const { devFlow, prodFlow, stateFor, redirect, createServer } = await startTwoFlows();
+
+      expect(createServer).toHaveBeenCalledTimes(1);
+      expect(stateFor('dev.example.com')).not.toBe(stateFor('prod.example.com'));
+
+      redirect('prod.example.com', `code=prod-code&state=${stateFor('prod.example.com')}`);
+      await expect(prodFlow).resolves.toEqual({ accessToken: 'token-for-prod-code', expiresIn: 3600 });
+      expect(mockServerInstance.close).not.toHaveBeenCalled();
+
+      redirect('dev.example.com', `code=dev-code&state=${stateFor('dev.example.com')}`);
+      await expect(devFlow).resolves.toEqual({ accessToken: 'token-for-dev-code', expiresIn: 3600 });
+      expect(mockServerInstance.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a redirect whose origin belongs to another pending tenant', async () => {
+      const { devFlow, prodFlow, stateFor, redirect } = await startTwoFlows();
+
+      redirect('prod.example.com', `code=stolen&state=${stateFor('dev.example.com')}`);
+      await expect(devFlow).rejects.toThrow('Origin validation failed: hostname mismatch');
+
+      redirect('prod.example.com', `code=prod-code&state=${stateFor('prod.example.com')}`);
+      await expect(prodFlow).resolves.toEqual({ accessToken: 'token-for-prod-code', expiresIn: 3600 });
+    });
+
+    it('fails every pending flow when a redirect carries an unknown state', async () => {
+      const { devFlow, prodFlow, redirect } = await startTwoFlows();
+
+      const res = redirect('dev.example.com', 'code=x&state=forged');
+
+      await expect(devFlow).rejects.toThrow('CSRF protection failed: state mismatch');
+      await expect(prodFlow).rejects.toThrow('CSRF protection failed: state mismatch');
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.anything());
+      expect(mockServerInstance.close).toHaveBeenCalledTimes(1);
     });
   });
 });

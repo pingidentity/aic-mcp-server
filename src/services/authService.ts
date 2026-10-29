@@ -4,17 +4,13 @@ import { TokenStorage, TokenData, KeychainStorage, FileStorage } from './tokenSt
 import { executePkceFlow as runPkceFlow } from './flows/pkceFlow.js';
 import { executeDeviceFlow as runDeviceFlow } from './flows/deviceFlow.js';
 import { USER_AGENT } from '../utils/version.js';
-
-// --- Configuration ---
-const AIC_BASE_URL = process.env.AIC_BASE_URL;
+import { EnvironmentConfig, getEnvironment, getEnvironmentNames } from './environmentContext.js';
 
 // Fixed OAuth configuration
 const CLIENT_ID = 'AICMCPClient';
 const EXCHANGE_CLIENT_ID = 'AICMCPExchangeClient';
 const REDIRECT_URI_PORT = 3000;
 const REDIRECT_URI = `http://localhost:${REDIRECT_URI_PORT}`;
-const AUTHORIZE_URL = `https://${AIC_BASE_URL}/am/oauth2/authorize`;
-const TOKEN_URL = `https://${AIC_BASE_URL}/am/oauth2/access_token`;
 
 /**
  * Clock skew tolerance in milliseconds
@@ -36,6 +32,9 @@ export interface AuthServiceConfig {
  * Handles user authentication and token management with automatic mode selection
  */
 class AuthService {
+  private readonly environment: EnvironmentConfig;
+  private readonly authorizeUrl: string;
+  private readonly tokenUrl: string;
   private tokenPromise: Promise<string> | null = null;
   private redirectServer: HttpServer | null = null;
   private allScopes: string[];
@@ -46,7 +45,10 @@ class AuthService {
   private mcpServer?: any;
   private deviceCodeVerifier?: string; // PKCE verifier for device code flow
 
-  constructor(allScopes: string[], config: AuthServiceConfig = {}) {
+  constructor(environment: EnvironmentConfig, allScopes: string[], config: AuthServiceConfig = {}) {
+    this.environment = environment;
+    this.authorizeUrl = `https://${environment.baseUrl}/am/oauth2/authorize`;
+    this.tokenUrl = `https://${environment.baseUrl}/am/oauth2/access_token`;
     this.allScopes = allScopes;
     this.config = config;
     this.mcpServer = config.mcpServer;
@@ -56,7 +58,12 @@ class AuthService {
 
     this.useDeviceCode = inDocker;
 
-    this.storage = inDocker ? new FileStorage('/app/tokens/token.json') : new KeychainStorage();
+    const tokenAccount = environment.name === 'default' ? 'user-token' : `user-token-${environment.name}`;
+    this.storage = inDocker
+      ? new FileStorage(
+          environment.name === 'default' ? '/app/tokens/token.json' : `/app/tokens/${environment.name}.json`
+        )
+      : new KeychainStorage('PingOneAIC_MCP_Server', tokenAccount);
   }
 
   /**
@@ -83,9 +90,9 @@ class AuthService {
           if (tokenData) {
             const { accessToken, expiresAt, aicBaseUrl } = tokenData;
 
-            if (aicBaseUrl !== AIC_BASE_URL) {
+            if (aicBaseUrl !== this.environment.baseUrl) {
               console.error(
-                `Cached token is for different tenant (${aicBaseUrl}), current tenant is ${AIC_BASE_URL}. Re-authenticating...`
+                `Cached token is for different tenant (${aicBaseUrl}), current tenant is ${this.environment.baseUrl}. Re-authenticating...`
               );
             } else if (Date.now() + CLOCK_SKEW_BUFFER_MS < expiresAt) {
               return accessToken;
@@ -124,7 +131,7 @@ class AuthService {
     params.append('scope', requestedScopes.join(' '));
     params.append('client_id', EXCHANGE_CLIENT_ID);
 
-    const response = await fetch(TOKEN_URL, {
+    const response = await fetch(this.tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -197,6 +204,11 @@ class AuthService {
     }
   }
 
+  async forceReauthentication(): Promise<void> {
+    this.hasAuthenticatedThisSession = false;
+    await this.storage.deleteToken();
+  }
+
   /**
    * Executes the OAuth2 PKCE flow to obtain a new access token
    */
@@ -204,12 +216,12 @@ class AuthService {
     try {
       const { accessToken, expiresIn } = await runPkceFlow({
         scopes,
-        authorizeUrl: AUTHORIZE_URL,
-        tokenUrl: TOKEN_URL,
+        authorizeUrl: this.authorizeUrl,
+        tokenUrl: this.tokenUrl,
         clientId: CLIENT_ID,
         redirectUri: REDIRECT_URI,
         redirectPort: REDIRECT_URI_PORT,
-        aicBaseUrl: AIC_BASE_URL!,
+        aicBaseUrl: this.environment.baseUrl,
         onServerCreated: (server) => {
           this.redirectServer = server;
         },
@@ -224,7 +236,7 @@ class AuthService {
         const tokenData: TokenData = {
           accessToken,
           expiresAt,
-          aicBaseUrl: AIC_BASE_URL!
+          aicBaseUrl: this.environment.baseUrl
         };
         await this.storage.setToken(tokenData);
       } catch (error) {
@@ -262,8 +274,8 @@ class AuthService {
     const tokenData = await runDeviceFlow({
       scopes,
       clientId: CLIENT_ID,
-      aicBaseUrl: AIC_BASE_URL!,
-      tokenUrl: TOKEN_URL,
+      aicBaseUrl: this.environment.baseUrl,
+      tokenUrl: this.tokenUrl,
       storage: this.storage,
       mcpServer: this.mcpServer,
       verifierState
@@ -289,8 +301,7 @@ class AuthService {
   }
 }
 
-// Singleton instance
-let instance: AuthService;
+let instances: Map<string, AuthService>;
 
 /**
  * Initialize the authentication service with required scopes
@@ -298,7 +309,12 @@ let instance: AuthService;
  * @param config - Optional configuration for AuthService behavior
  */
 export function initAuthService(allScopes: string[], config: AuthServiceConfig = {}): void {
-  instance = new AuthService(allScopes, config);
+  instances = new Map(
+    getEnvironmentNames().map((name) => {
+      const environment = getEnvironment(name);
+      return [name, new AuthService(environment, allScopes, config)];
+    })
+  );
 }
 
 /**
@@ -306,10 +322,17 @@ export function initAuthService(allScopes: string[], config: AuthServiceConfig =
  * @returns The AuthService instance
  * @throws Error if service not initialized
  */
-export function getAuthService(): AuthService {
-  if (!instance) {
+export function getAuthService(environmentName?: string): AuthService {
+  if (!instances) {
     throw new Error('AuthService not initialized. Call initAuthService first.');
   }
+
+  const environment = getEnvironment(environmentName);
+  const instance = instances.get(environment.name);
+  if (!instance) {
+    throw new Error(`AuthService not initialized for environment: ${environment.name}`);
+  }
+
   return instance;
 }
 
@@ -318,7 +341,9 @@ export function getAuthService(): AuthService {
  * Closes any running redirect server
  */
 export function cleanupAuthService(): void {
-  if (instance) {
-    instance.cleanup();
+  if (instances) {
+    for (const instance of instances.values()) {
+      instance.cleanup();
+    }
   }
 }
